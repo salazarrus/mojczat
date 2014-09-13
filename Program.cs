@@ -12,7 +12,7 @@ namespace MojCzat
     /// <summary>
     /// Klasa glowna aplikacji
     /// </summary>
-    static class Program
+    static class Program sdfa
     {
         /// <summary>
         /// Medota poczatkowa aplikacji
