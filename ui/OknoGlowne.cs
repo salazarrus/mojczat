@@ -18,7 +18,13 @@ namespace MojCzat.ui
         /// obiektu tego uzywamy do otwierania okna czatu z innego watku
         /// </summary>
         OtworzOknoCzatuZWiadomoscia otworzOknoCzatuDelegata;
-        
+
+
+        /// <summary>
+        /// odswiezanie okna z przez inny watek
+        /// </summary>
+        OdswiezOkno odswiezOknoDelegata;
+
         /// <summary>
         /// lista kontaktow uzytkownika
         /// </summary>
@@ -56,16 +62,47 @@ namespace MojCzat.ui
             
             // zapisujemy sie jako sluchacz wydarzenia NowaWiadomosc
             komunikator.NowaWiadomosc += komunikator_NowaWiadomosc;
+            // zapisujemy sie jako sluchacz wydarzenia ZmianaStanuPolaczen
+            komunikator.ZmianaStanuPolaczenia += komunikator_ZmianaStanuPolaczenia;
 
+            zainicjujListeKontaktow();
             // zaladuj elementy obiektu "kontakty" do interfejsu uzytkownika
-            zaladujListeKontaktow();
-          
+            lbKontakty.DataSource = this.kontakty;
+
             // inicjalizacja delegaty do otwierania okna czatu 
             otworzOknoCzatuDelegata = new OtworzOknoCzatuZWiadomoscia(otworzOknoCzat);
+            odswiezOknoDelegata = new OdswiezOkno(odswiezOkno);
         }
 
-        // ponizsza delegata jest konieczna do otwierania nowego okna czatu z watku Komunikatora
+      
+        /// <summary>
+        /// ponizsza delegata jest konieczna do otwierania nowego okna czatu z watku Komunikatora 
+        /// </summary>
+        /// <param name="id"></param>
+        /// <param name="wiadomosc"></param>
         delegate void OtworzOknoCzatuZWiadomoscia(string id, string wiadomosc);
+
+        delegate void OdswiezOkno();
+
+        /// <summary>
+        /// Ktos sie z nami polaczyl lub rozlaczyl, odswiezmy liste kontaktow
+        /// </summary>
+        void komunikator_ZmianaStanuPolaczenia(string rozmowca, bool polaczenieOtwarte)
+        {
+            odswiezStatusKontaktu(rozmowca, polaczenieOtwarte);
+            Invoke(odswiezOknoDelegata);
+        }
+
+        void zainicjujListeKontaktow() {
+            foreach (var kontakt in kontakty) {
+                kontakt.Status = komunikator.ZainicjujPolaczenie(kontakt.ID) ?
+                    "Dostepny" : "Niedostepny";
+            }
+        }
+
+        void odswiezOkno() {
+            lbKontakty.DataSource = kontakty;
+        }
 
         /// <summary>
         /// komunikator przekazal nam nowa wiadomosc
@@ -81,11 +118,12 @@ namespace MojCzat.ui
         /// <summary>
         /// Podepnij liste kontaktow interfejsu uzytkownika
         /// </summary>
-        void zaladujListeKontaktow(){
+        void odswiezStatusKontaktu(string idRozmowcy, bool polaczenieOtwarte){
             // sortowanie - najpierw dostepni, potem kolejosc alfabetyczna
-            var listaUI = kontakty.OrderByDescending(k=>k.Dostepny).ThenBy(k=>k.ID).ToList();
+            var kontakt = kontakty.Where(k => k.ID == idRozmowcy).SingleOrDefault();
+            kontakt.Status = polaczenieOtwarte ? "Dostepny" : "Niedostepny";
             
-            lbKontakty.DataSource = listaUI;
+            this.kontakty = kontakty.OrderByDescending(k=>k.Status).ThenBy(k=>k.ID).ToList();
         }
 
         void otworzOknoCzat(string idRozmowcy, string wiadomosc)
@@ -109,7 +147,8 @@ namespace MojCzat.ui
                     otwarteOkno.WindowState = FormWindowState.Normal;
                 }
                 // pokaz okno na pierwszym planie
-                otwarteOkno.BringToFront(); 
+                otwarteOkno.BringToFront();
+                otwarteOkno.Visible = true;
             }
             else //nie bylo otwarte, wiec otworz nowe
             {
@@ -121,7 +160,6 @@ namespace MojCzat.ui
             }
             return otwarteOkna[idRozmowcy];
         }
-
 
         // obługa zdarzeń interfejsu uzytkownika - poczatek
 

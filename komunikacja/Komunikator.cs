@@ -10,11 +10,17 @@ namespace MojCzat.komunikacja
     // delegata definiujaca funkcje obslugujace zdarzenie NowaWiadomosc
     public delegate void NowaWiadomosc(String id, String wiadomosc);
 
+    // delegata definiujaca funkcje obslugujace zdarzenie ZmianaStanuPolaczen
+    public delegate void ZmianaStanuPolaczenia(string idUzytkownika, bool polaczenieOtwarte);
+
     /// <summary>
     /// Obiekt odpowiedzialny za odbieranie i przesylanie wiadomosci
     /// </summary>
     public class Komunikator
     {
+        /// <summary>
+        /// Ile bajtow mozna przeslac w jednej wiadomosci
+        /// </summary>
         const int rozmiarBufora = 1024;
 
         /// <summary>
@@ -64,6 +70,30 @@ namespace MojCzat.komunikacja
         public event NowaWiadomosc NowaWiadomosc;
 
         /// <summary>
+        /// Nawiazane zostalo nowe polaczenie badz stare zostalo zerwane
+        /// </summary>
+        public event ZmianaStanuPolaczenia ZmianaStanuPolaczenia;
+
+        /// <summary>
+        /// Sprawdz dostepnosc uzytkownika
+        /// </summary>
+        /// <param name="idUzytkownika"></param>
+        /// <returns></returns>
+        public bool ZainicjujPolaczenie(string idUzytkownika) {
+            try
+            {
+                // jesli niedostepny rzuci wyjatek
+                TcpClient polaczenie = dajPolaczenie(idUzytkownika);
+                czekajNaWiadomosc(polaczenie, idUzytkownika); 
+                return true;
+            }
+            catch (SocketException problem) {
+                return false;
+            }
+        }
+
+
+        /// <summary>
         /// wyslij wiadomosc tekstowa do innego
         /// </summary>
         /// <param name="idRozmowcy">Identyfikator rozmowcy</param>
@@ -71,34 +101,13 @@ namespace MojCzat.komunikacja
         public void Pisz(String idRozmowcy, String wiadomosc) { 
             try
             {
-                // wyszuaj adres IP i Port rozmowcy
-                IPEndPoint punktKontatku = idNaIpep[idRozmowcy];
-                TcpClient polaczenie;
-                
-                // sprawdz, czy to polaczenie nie jest juz otwarte
-                if (otwartePolaczenia.ContainsKey(idRozmowcy))
-                {
-                    polaczenie = otwartePolaczenia[idRozmowcy]; 
-                }
-                else 
-                {
-                    // tworzymy nowe polaczenie 
-                    polaczenie = new TcpClient();
-                    polaczenie.Connect(punktKontatku);
-                    // zachowujemy nowe polaczenie na pozniej
-                    otwartePolaczenia.Add(idRozmowcy, polaczenie);
-                }
-                if (idRozmowcy != null && !buforWiadomosci.ContainsKey(idRozmowcy))
-                {
-                    buforWiadomosci.Add(idRozmowcy, new byte[rozmiarBufora]);
-                }
+                TcpClient polaczenie = dajPolaczenie(idRozmowcy);
 
                 // tranformacja tekstu w bajty
                 Byte[] bajty = System.Text.Encoding.ASCII.GetBytes(wiadomosc);         
                 // wysylanie bajtow polaczeniem TCP 
                 polaczenie.GetStream().Write(bajty, 0, bajty.Length);
-                polaczenie.GetStream().BeginRead(buforWiadomosci[idRozmowcy], 0,
-                        rozmiarBufora, new AsyncCallback(zdarzenieNowaWiadomosc), idRozmowcy); 
+                czekajNaWiadomosc(polaczenie, idRozmowcy);
 
             }
             catch (SocketException ex)
@@ -134,10 +143,11 @@ namespace MojCzat.komunikacja
                     String idNadawcy = ipNaId.ContainsKey(puntkKontaktuKlienta.Address) ?
                         ipNaId[puntkKontaktuKlienta.Address] : null;
                     // sprawdzy czy polaczenie z tego punktu kontaktu istnieje. Zamknij je.
-                    if (idNadawcy != null && otwartePolaczenia.ContainsKey(idNadawcy)) 
+                    if (idNadawcy != null && otwartePolaczenia.ContainsKey(idNadawcy))
                     {
                         otwartePolaczenia[idNadawcy].Close();
                     }
+                    
                     // sprawdz czy bufor wiadmosci dla tego punktu kontatku istnieje. Jesli nie, stworz.
                     if (idNadawcy != null && !buforWiadomosci.ContainsKey(idNadawcy))
                     {
@@ -147,13 +157,11 @@ namespace MojCzat.komunikacja
                     // zachowaj to polaczenie na pozniej
                     otwartePolaczenia.Add(idNadawcy, polaczenie);
 
-                    // sprawdzamy, od ktos sie z nami polaczyl
-                    string idRozmowcy = ipNaId.ContainsKey(puntkKontaktuKlienta.Address) ?
-                    ipNaId[puntkKontaktuKlienta.Address] : null;
-                    
+                    if (ZmianaStanuPolaczenia != null) { ZmianaStanuPolaczenia(idNadawcy, true); }
+
                     // czekaj (pasywnie) na nadchodzace wiadomosci
                     polaczenie.GetStream().BeginRead(buforWiadomosci[idNadawcy], 0,
-                        rozmiarBufora, new AsyncCallback(zdarzenieNowaWiadomosc), idRozmowcy); 
+                        rozmiarBufora, new AsyncCallback(zdarzenieNowaWiadomosc), idNadawcy); 
                 }
             }
             
@@ -174,7 +182,38 @@ namespace MojCzat.komunikacja
         public void Stop() {
             if (serwer != null) { serwer.Stop(); }
         }
-               
+
+        void czekajNaWiadomosc(TcpClient polaczenie, string idRozmowcy) {
+            polaczenie.GetStream().BeginRead(buforWiadomosci[idRozmowcy], 0,
+                rozmiarBufora, new AsyncCallback(zdarzenieNowaWiadomosc), idRozmowcy); 
+        }
+
+        TcpClient dajPolaczenie(string idUzytkownika) {
+            TcpClient polaczenie;
+            IPEndPoint punktKontatku = idNaIpep[idUzytkownika];
+            
+            // sprawdz, czy to polaczenie nie jest juz otwarte
+            if (otwartePolaczenia.ContainsKey(idUzytkownika))
+            {
+                polaczenie = otwartePolaczenia[idUzytkownika];
+            }
+            else
+            {
+                // tworzymy nowe polaczenie 
+                polaczenie = new TcpClient(new IPEndPoint(
+                    IPAddress.Parse(ConfigurationManager.AppSettings["ip"]), 12345));
+                polaczenie.Connect(punktKontatku);
+                // zachowujemy nowe polaczenie na pozniej
+                otwartePolaczenia.Add(idUzytkownika, polaczenie);
+            }
+            if (idUzytkownika != null && !buforWiadomosci.ContainsKey(idUzytkownika))
+            {
+                buforWiadomosci.Add(idUzytkownika, new byte[rozmiarBufora]);
+            }
+           
+            return polaczenie;
+        }
+
         /// <summary>
         /// Nadeszla nowa wiadomosc
         /// </summary>
@@ -187,6 +226,12 @@ namespace MojCzat.komunikacja
             // dekodujemy wiadomosc
             // usuwamy \0 z konca lancucha
             int index = Array.FindIndex(buforWiadomosci[nadawca], x=> x==0);
+            if (index == 0) // polaczenie zostalo zamkniete 
+            {
+                otwartePolaczenia.Remove(nadawca);
+                if (ZmianaStanuPolaczenia != null) { ZmianaStanuPolaczenia(nadawca, false); }
+                return;
+            }
             string wiadomosc = index > 0 ?
                 Encoding.ASCII.GetString(buforWiadomosci[nadawca], 0, index) :
                 Encoding.ASCII.GetString(buforWiadomosci[nadawca]);
@@ -201,9 +246,7 @@ namespace MojCzat.komunikacja
             // zakoncz operacje asynchroniczna
             otwartePolaczenia[nadawca].GetStream().EndRead(wynik);
             // rozpocznij nowa operacje asynchroniczna - czekaj na nowa wiadomosc
-            otwartePolaczenia[nadawca].GetStream()
-                .BeginRead(buforWiadomosci[nadawca],
-                0, rozmiarBufora, new AsyncCallback(zdarzenieNowaWiadomosc), nadawca); 
+            czekajNaWiadomosc(otwartePolaczenia[nadawca], nadawca); 
         }
     }
 }

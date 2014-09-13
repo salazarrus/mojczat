@@ -22,9 +22,9 @@ namespace MojCzat.model
         public IPEndPoint PunktKontaktu { get; set; }
  
         /// <summary>
-        /// Flaga pokazujaca dostepnosc czatu z tym uzytkownikiem
+        /// Dostepnosc czatu z tym uzytkownikiem
         /// </summary>
-        public bool Dostepny { get; set; }
+        public string Status { get; set; }
 
 
         public static List<Kontakt> WczytajListeKontaktow(string plik) {

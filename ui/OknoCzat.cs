@@ -83,6 +83,16 @@ namespace MojCzat.ui
         }
 
         /// <summary>
+        /// Nie zamykaj okna, tylko je ukryj
+        /// </summary>
+        /// <param name="e"></param>
+        protected override void OnClosing(System.ComponentModel.CancelEventArgs e)
+        {
+            e.Cancel = true;
+            this.Visible = false;
+        }
+
+        /// <summary>
         /// Wiadomosc zostala wyslana, czyscimy wiec pole wpisywania wiadomosci
         /// </summary>
         void wyczyscPoleWiadomosci(){
