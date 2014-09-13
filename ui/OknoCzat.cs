@@ -28,11 +28,6 @@ namespace MojCzat.ui
         Komunikator komunikator;
 
         /// <summary>
-        /// obiekt do wyswietlania wiadomosci przez inny watek
-        /// </summary>
-        WyswietlNowaWiadomosc wyswietlWiadomoscDelegata;
-        
-        /// <summary>
         /// publiczny dostep do pola idRozmowcy
         /// </summary>
         public string IDRozmowcy
@@ -51,29 +46,24 @@ namespace MojCzat.ui
             InitializeComponent();
             // ustalanie naglowka okna
             this.Text = String.Format("Mój Czat z {0}", idRozmowcy);
-            var p = Parent;
+
             this.mojeId = ConfigurationManager.AppSettings["mojeId"]; 
             // zapisywanie referencji
             this.idRozmowcy = idRozmowcy;
             this.komunikator = komunikator;
-
-            this.wyswietlWiadomoscDelegata = new WyswietlNowaWiadomosc(WyswietlWiadomosc);
-            // zapisywanie sie jako sluchacz wydarzenia NowaWiadomosc
         }
-
+        
         /// <summary>
-        /// Delegata dla wyswietlania wiadomosci przez inny watek
+        /// Dodaj wiadomosc do rozmowy
         /// </summary>
-        /// <param name="wiadomosc"></param>
-        delegate void WyswietlNowaWiadomosc(string wiadomosc);
-
+        /// <param name="wiadomosc">tresc wiadomosci</param>
         public void WyswietlWiadomosc(string wiadomosc)
         {
             tbCzat.AppendText(String.Format("[{0}] {1}\n", IDRozmowcy, wiadomosc));
         }
 
         /// <summary>
-        /// Centralne pozycjonowanie okna wzledem rodzica
+        /// Centralne pozycjonowanie okna wzgledem OknaGlownego
         /// </summary>
         /// <param name="e"></param>
         protected override void OnShown(EventArgs e)
@@ -98,10 +88,10 @@ namespace MojCzat.ui
         void wyczyscPoleWiadomosci(){
             // wyczysc pole z tekstu
             tbWiadomosc.Text = String.Empty;
-            // ustaw kursor w pozycji poczatkowej
-            tbWiadomosc.Select(0, 0);
             // przygotuj do wpisywania
-            tbWiadomosc.Focus();            
+            tbWiadomosc.Focus();
+            // ustaw kursor w pozycji poczatkowej
+            tbWiadomosc.Select(0, 0);               
         }
 
         /// <summary>
@@ -116,7 +106,7 @@ namespace MojCzat.ui
             if (wiadomosc == String.Empty) { return; }
 
             // wysylamy wiadomosc
-            komunikator.Pisz(IDRozmowcy, wiadomosc);
+            komunikator.WyslijWiadomosc(IDRozmowcy, wiadomosc);
                        
             // dodajemy wiadomosc do naszego okna czatu
             tbCzat.AppendText(String.Format("[{0}] {1}\n", mojeId, wiadomosc));
@@ -139,7 +129,10 @@ namespace MojCzat.ui
             // ten klawisz zostal wcisniety, wysylamy wiadomosc
             if (e.KeyCode == Keys.Enter && cbWyslijEnter.Checked) {
                 wyslijWpisanaWiadomosc();
+                // nie chcemy nowej linii w polu wiadomosci
+                e.SuppressKeyPress = true;
             }
+            
         }
 
         // obługa zdarzeń interfejsu uzytkownika - koniec

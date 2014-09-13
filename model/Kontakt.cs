@@ -25,13 +25,17 @@ namespace MojCzat.model
         /// Dostepnosc czatu z tym uzytkownikiem
         /// </summary>
         public string Status { get; set; }
-
-
-        public static List<Kontakt> WczytajListeKontaktow(string plik) {
+        
+        /// <summary>
+        /// Wczytaj liste kontaktow z pliku XML
+        /// </summary>
+        /// <param name="sciezkaPliku">sciezka do pliku</param>
+        /// <returns></returns>
+        public static List<Kontakt> WczytajListeKontaktow(string sciezkaPliku) {
             List<Kontakt> listaWynikowa = new List<Kontakt>();
-            XmlDocument listaPlik = new XmlDocument();
-            listaPlik.Load(plik);
-            foreach (XmlNode node in listaPlik.DocumentElement.ChildNodes)
+            XmlDocument plikXML = new XmlDocument();
+            plikXML.Load(sciezkaPliku);
+            foreach (XmlNode node in plikXML.DocumentElement.ChildNodes)
             {
                 string id = node.Attributes["id"].InnerText;
                 string ip = node.Attributes["ip"].InnerText;
@@ -43,30 +47,37 @@ namespace MojCzat.model
             return listaWynikowa;        
         }
 
-        public static void ZapiszListeKontaktow(List<Kontakt> lista, string plik) {
-            XmlDocument listaPlik = new XmlDocument();
 
-            var head = listaPlik.CreateElement("xml");
+        /// <summary>
+        /// Zapisz liste kontaktow do pliku XML
+        /// </summary>
+        /// <param name="lista">lista do zapisania</param>
+        /// <param name="sciezkaPliku"></param>
+        public static void ZapiszListeKontaktow(List<Kontakt> lista, string sciezkaPliku)
+        {
+            XmlDocument plikXML = new XmlDocument();
+
+            var elementGlowny = plikXML.CreateElement("xml");
             foreach(var kontakt in lista){
                 
-                var element = listaPlik.CreateElement("kontakt");
-                var attrId = listaPlik.CreateAttribute("id") ;
-                attrId.InnerText = kontakt.ID;
-                element.Attributes.Append(attrId);
+                var elementKontakt = plikXML.CreateElement("kontakt");
+                var atrybutID = plikXML.CreateAttribute("id") ;
+                atrybutID.InnerText = kontakt.ID;
+                elementKontakt.Attributes.Append(atrybutID);
 
-                var attrIp = listaPlik.CreateAttribute("ip") ;
-                attrIp.InnerText = kontakt.PunktKontaktu.Address.ToString();
-                element.Attributes.Append(attrIp);
+                var atrybutIP = plikXML.CreateAttribute("ip") ;
+                atrybutIP.InnerText = kontakt.PunktKontaktu.Address.ToString();
+                elementKontakt.Attributes.Append(atrybutIP);
                 
-                var attrPort = listaPlik.CreateAttribute("port") ;
-                attrPort.InnerText = kontakt.PunktKontaktu.Port.ToString();
-                element.Attributes.Append(attrPort);
+                var atrybutPort = plikXML.CreateAttribute("port") ;
+                atrybutPort.InnerText = kontakt.PunktKontaktu.Port.ToString();
+                elementKontakt.Attributes.Append(atrybutPort);
 
-                head.AppendChild(element);
-                
+                elementGlowny.AppendChild(elementKontakt);                
             }
-            listaPlik.AppendChild(head);
-            listaPlik.Save(plik);        
+
+            plikXML.AppendChild(elementGlowny);
+            plikXML.Save(sciezkaPliku);        
         }
     }
 }

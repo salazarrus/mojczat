@@ -25,13 +25,16 @@ namespace MojCzat
             
             // zaladuj liste kontaktow uzytkownika
             var kontakty = Kontakt.WczytajListeKontaktow("kontakty.xml");
-            // stworz mape (adres IP,Port)->(ID) uzytkownikow z wczytanej listy kontakow
-            var idNaIpep = new Dictionary<string, IPEndPoint>();
-            kontakty.ForEach(k => idNaIpep.Add(k.ID, k.PunktKontaktu)); 
+            
+            // stworz mape (ID)->(adres IP,Port) uzytkownikow z wczytanej listy kontakow
+            var mapaAdresowIpKontaktow = new Dictionary<string, IPEndPoint>();
+            kontakty.ForEach(k => mapaAdresowIpKontaktow.Add(k.ID, k.PunktKontaktu)); 
+            
             // zainicjalizuj obiekt odpowiedzialny za przesylanie / odbieranie wiadomosci
-            var komunikator = new Komunikator(idNaIpep);
+            var komunikator = new Komunikator(mapaAdresowIpKontaktow);
+            
             // uruchom oddzielny watek dla obiektu odpowiedzialnego za komunikacje
-            var watekKomunikator = new Thread(komunikator.Sluchaj);
+            var watekKomunikator = new Thread(komunikator.Start);
             watekKomunikator.Start();
             
             // uruchom okno glowne programu w glowny watku programu
@@ -40,6 +43,7 @@ namespace MojCzat
             // glowne okno programu zostalo zamkniete, dlatego zatrzymujemy dzialanie
             // obiektu odpowiedzialnego za komunikacje
             komunikator.Stop();
+           
             // zakoncz watek obiektu odpowiedzialnego za komunikacje
             watekKomunikator.Join();
         }
