@@ -118,8 +118,8 @@ namespace MojCzat.komunikacja
         }
 
         public void ZamknijPolaczenie(string idUzytkownika) {
-            if (!otwartePolaczenia.ContainsKey(idUzytkownika)) { return; }
-            otwartePolaczenia[idUzytkownika].Close();
+            if (otwartePolaczenia.ContainsKey(idUzytkownika)) { otwartePolaczenia[idUzytkownika].Close(); }
+            if (otwarteStrumienie.ContainsKey(idUzytkownika)) { otwarteStrumienie[idUzytkownika].Close(); }
         }
 
 
@@ -187,11 +187,19 @@ namespace MojCzat.komunikacja
         public void Stop() {
             // zatrzymaj nasluch
             if (serwer != null) { serwer.Stop(); }
-            
+
+
+            foreach (var strumien in otwarteStrumienie)
+            {
+                strumien.Value.Close();
+            }
+
             // zamknij otwarte polaczenia
             foreach(var polaczenie in otwartePolaczenia){
                 polaczenie.Value.Close();
             }
+            
+
         }
 
         bool ValidateServerCertificate(object sender, X509Certificate certificate,
@@ -222,6 +230,11 @@ namespace MojCzat.komunikacja
             {
                 polaczenie.Close();
                 return;
+            }
+
+            if (nadawca != null && otwarteStrumienie.ContainsKey(nadawca))
+            {
+                otwarteStrumienie[nadawca].Close();
             }
 
             // sprawdzy czy polaczenie z tego punktu kontaktu istnieje. Zamknij je.
@@ -309,6 +322,7 @@ namespace MojCzat.komunikacja
             if (index == 0) // polaczenie zostalo zamkniete 
             {
                 otwartePolaczenia.Remove(nadawca);
+                otwarteStrumienie.Remove(nadawca);
                 if (ZmianaStanuPolaczenia != null) { ZmianaStanuPolaczenia(nadawca, false); }
                 return;
             }
