@@ -2,8 +2,10 @@
 using System.Collections.Generic;
 using System.Configuration;
 using System.Net;
+using System.Net.NetworkInformation;
 using System.Net.Sockets;
 using System.Text;
+using System.Linq;
 
 namespace MojCzat.komunikacja
 {    
@@ -166,6 +168,7 @@ namespace MojCzat.komunikacja
                     // nieznajomy
                     if (nadawca == null) {
                         polaczenie.Close();
+                        continue;
                     }
 
                     // sprawdzy czy polaczenie z tego punktu kontaktu istnieje. Zamknij je.
@@ -206,7 +209,13 @@ namespace MojCzat.komunikacja
         /// zatrzymaj serwer
         /// </summary>
         public void Stop() {
+            // zatrzymaj nasluch
             if (serwer != null) { serwer.Stop(); }
+            
+            // zamknij otwarte polaczenia
+            foreach(var polaczenie in otwartePolaczenia){
+                polaczenie.Value.Close();
+            }
         }
 
         /// <summary>
@@ -226,7 +235,7 @@ namespace MojCzat.komunikacja
         /// <returns> polaczenie do uzytkownika</returns>
         TcpClient dajPolaczenie(string idUzytkownika) {
             IPEndPoint punktKontaktu = mapa_ID_PunktKontaktu[idUzytkownika];
-            TcpClient polaczenie;
+            TcpClient polaczenie = null;
 
             // sprawdz, czy to polaczenie nie jest juz otwarte
             if (otwartePolaczenia.ContainsKey(idUzytkownika))
@@ -237,8 +246,9 @@ namespace MojCzat.komunikacja
             {
                 // tworzymy nowe polaczenie 
                 polaczenie = new TcpClient(new IPEndPoint(
-                    IPAddress.Parse(ConfigurationManager.AppSettings["ip"]), 12345));
+                    IPAddress.Parse(ConfigurationManager.AppSettings["ip"]), new Random().Next(10000,20000)));
                 polaczenie.Connect(punktKontaktu);
+                           
                 // zachowujemy nowe polaczenie na pozniej
                 otwartePolaczenia.Add(idUzytkownika, polaczenie);
             }

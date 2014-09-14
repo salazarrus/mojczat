@@ -3,6 +3,7 @@ using MojCzat.model;
 using MojCzat.ui;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Net;
 using System.Threading;
 using System.Windows.Forms;
@@ -22,30 +23,30 @@ namespace MojCzat
         {
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
+
+            /* ODKOMENTOWAC DLA WERSJI RELEASE
+             * 
+             * 
+            Process[] pname = Process.GetProcessesByName("mojczat");
+            if (pname.Length > 1) 
+            {
+                MessageBox.Show("Aplikacja jest juz otwarta na tym komputerze.");
+                return; 
+            } 
+            */
             
+            starujApplikacje();
+        }
+
+        /// <summary>
+        /// Wczytaj konfiguracje i pokaz glowne okno programu
+        /// </summary>
+        static void starujApplikacje() {
             // zaladuj liste kontaktow uzytkownika
             var kontakty = Kontakt.WczytajListeKontaktow("kontakty.xml");
             
-            // stworz mape (ID)->(adres IP,Port) uzytkownikow z wczytanej listy kontakow
-            var mapaAdresowIpKontaktow = new Dictionary<string, IPEndPoint>();
-            kontakty.ForEach(k => mapaAdresowIpKontaktow.Add(k.ID, k.PunktKontaktu)); 
-            
-            // zainicjalizuj obiekt odpowiedzialny za przesylanie / odbieranie wiadomosci
-            var komunikator = new Komunikator(mapaAdresowIpKontaktow);
-            
-            // uruchom oddzielny watek dla obiektu odpowiedzialnego za komunikacje
-            var watekKomunikator = new Thread(komunikator.Start);
-            watekKomunikator.Start();
-            
             // uruchom okno glowne programu w glowny watku programu
-            Application.Run(new OknoGlowne(kontakty, komunikator));
-            
-            // glowne okno programu zostalo zamkniete, dlatego zatrzymujemy dzialanie
-            // obiektu odpowiedzialnego za komunikacje
-            komunikator.Stop();
-           
-            // zakoncz watek obiektu odpowiedzialnego za komunikacje
-            watekKomunikator.Join();
-        }
+            Application.Run(new OknoGlowne(kontakty));
+        }       
     }
 }
