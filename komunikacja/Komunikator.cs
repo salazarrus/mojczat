@@ -78,6 +78,17 @@ namespace MojCzat.komunikacja
         /// </summary>
         public event ZmianaStanuPolaczenia ZmianaStanuPolaczenia;
 
+        public void DodajKontaktDoMapy(string idUzytkownika, IPEndPoint punkKontaktu) {
+            mapa_IP_ID.Add(punkKontaktu.Address, idUzytkownika);
+            mapa_ID_PunktKontaktu.Add(idUzytkownika, punkKontaktu);
+        }
+
+        public void UsunKontaktZMap(string idUzytkownika, IPEndPoint punkKontaktu)
+        {
+            mapa_IP_ID.Remove(punkKontaktu.Address);
+            mapa_ID_PunktKontaktu.Remove(idUzytkownika);
+        }
+
         /// <summary>
         /// Polacz sie z uzytkownikiem
         /// </summary>
@@ -91,9 +102,14 @@ namespace MojCzat.komunikacja
                 czekajNaWiadomosc(polaczenie, idUzytkownika); 
                 return true;
             }
-            catch{
+            catch(SocketException ex) {
                 return false;
             }
+        }
+
+        public void ZamknijPolaczenie(string idUzytkownika) {
+            if (!otwartePolaczenia.ContainsKey(idUzytkownika)) { return; }
+            otwartePolaczenia[idUzytkownika].Close();
         }
 
 
@@ -146,6 +162,12 @@ namespace MojCzat.komunikacja
 
                     String nadawca = mapa_IP_ID.ContainsKey(puntkKontaktuKlienta.Address) ?
                         mapa_IP_ID[puntkKontaktuKlienta.Address] : null;
+                    
+                    // nieznajomy
+                    if (nadawca == null) {
+                        polaczenie.Close();
+                    }
+
                     // sprawdzy czy polaczenie z tego punktu kontaktu istnieje. Zamknij je.
                     if (nadawca != null && otwartePolaczenia.ContainsKey(nadawca))
                     {
@@ -203,9 +225,9 @@ namespace MojCzat.komunikacja
         /// <param name="idUzytkownika">Identyfikator uzytkownika do ktorego chcemy polaczenia</param>
         /// <returns> polaczenie do uzytkownika</returns>
         TcpClient dajPolaczenie(string idUzytkownika) {
+            IPEndPoint punktKontaktu = mapa_ID_PunktKontaktu[idUzytkownika];
             TcpClient polaczenie;
-            IPEndPoint punktKontatku = mapa_ID_PunktKontaktu[idUzytkownika];
-            
+
             // sprawdz, czy to polaczenie nie jest juz otwarte
             if (otwartePolaczenia.ContainsKey(idUzytkownika))
             {
@@ -216,7 +238,7 @@ namespace MojCzat.komunikacja
                 // tworzymy nowe polaczenie 
                 polaczenie = new TcpClient(new IPEndPoint(
                     IPAddress.Parse(ConfigurationManager.AppSettings["ip"]), 12345));
-                polaczenie.Connect(punktKontatku);
+                polaczenie.Connect(punktKontaktu);
                 // zachowujemy nowe polaczenie na pozniej
                 otwartePolaczenia.Add(idUzytkownika, polaczenie);
             }
@@ -226,9 +248,11 @@ namespace MojCzat.komunikacja
             {
                 buforWiadomosci.Add(idUzytkownika, new byte[rozmiarBufora]);
             }
-           
+
             return polaczenie;
         }
+
+
 
         /// <summary>
         /// Nadeszla nowa wiadomosc
