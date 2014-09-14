@@ -150,7 +150,7 @@ namespace MojCzat.ui
         void polaczSieZKontaktami() 
         {
             foreach (var kontakt in kontakty) {
-                polaczSieZKontaktem(kontakt);
+                polaczSieZKontaktem(kontakt, false);
             }
         }
 
@@ -158,13 +158,12 @@ namespace MojCzat.ui
         /// Inicjowanie polaczenia z uzytkownikem
         /// </summary>
         /// <param name="kontakt"></param>
-        void polaczSieZKontaktem(Kontakt kontakt) 
+        void polaczSieZKontaktem(Kontakt kontakt, bool nowy) 
         {
-            kontakt.Status = komunikator.ZainicjujPolaczenie(kontakt.ID) ?
-                "Dostepny" : "Niedostepny";        
+            kontakt.Status = komunikator.ZainicjujPolaczenie(kontakt.ID) 
+                ? "Dostepny" : "Niedostepny";        
         }
-
-                
+                        
         /// <summary>
         /// Odswiez liste kontaktow
         /// </summary>
@@ -244,8 +243,8 @@ namespace MojCzat.ui
                 return;
             }
             kontakty.Add(kontakt);
-            komunikator.DodajKontaktDoMapy(kontakt.ID, kontakt.PunktKontaktu);
-            polaczSieZKontaktem(kontakt);
+            komunikator.DodajKontakt(kontakt.ID, kontakt.PunktKontaktu);
+            polaczSieZKontaktem(kontakt, true);
             odswiezListeKontaktow();
             Kontakt.ZapiszListeKontaktow(kontakty, "kontakty.xml");
         }
@@ -269,7 +268,7 @@ namespace MojCzat.ui
             kontakty.RemoveAll(k => k.ID == kontakt.ID &&
                 k.PunktKontaktu == kontakt.PunktKontaktu);
             komunikator.Rozlacz(kontakt.ID);
-            komunikator.UsunKontaktZMap(kontakt.ID, kontakt.PunktKontaktu);                
+            komunikator.UsunKontakt(kontakt.ID);                
             odswiezListeKontaktow();
             Kontakt.ZapiszListeKontaktow(kontakty, "kontakty.xml");
         }

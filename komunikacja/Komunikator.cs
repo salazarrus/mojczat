@@ -8,6 +8,8 @@ using System.Text;
 using System.Linq;
 using System.Security.Cryptography.X509Certificates;
 using System.Net.Security;
+using System.IO;
+using System.Security.Authentication;
 
 namespace MojCzat.komunikacja
 {    
@@ -47,6 +49,9 @@ namespace MojCzat.komunikacja
         /// </summary>
         Dictionary<string, TcpClient> otwartePolaczenia = new Dictionary<string, TcpClient>();
 
+        /// <summary>
+        /// Strumienie ktore zostaly otwarte
+        /// </summary>
         Dictionary<string, SslStream> otwarteStrumienie = new Dictionary<string, SslStream>();
 
         /// <summary>
@@ -54,6 +59,9 @@ namespace MojCzat.komunikacja
         /// </summary>
         TcpListener serwer;
 
+        /// <summary>
+        /// Certyfikat serwera - pozwala laczyc sie przez SSL/TLS
+        /// </summary>
         X509Certificate certyfikat; 
 
         /// <summary>
@@ -65,15 +73,13 @@ namespace MojCzat.komunikacja
         {           
             //inicjalizacja i wypelnianie mapowan pochodnych
             this.mapa_ID_PunktKontaktu = mapa_ID_PunktKontaktu;
-            this.mapa_IP_ID = new Dictionary<IPAddress, string>();
-
+                        
             // generuj mape mapa_IP_ID
-            foreach (var i in mapa_ID_PunktKontaktu)
-            {
-                mapa_IP_ID.Add(i.Value.Address, i.Key);
-            }
+            this.mapa_IP_ID = new Dictionary<IPAddress, string>();
+            foreach (var i in mapa_ID_PunktKontaktu) { mapa_IP_ID.Add(i.Value.Address, i.Key); }
+            
+            //otworz certyfikat serwer SSL
             certyfikat = new X509Certificate2("cert\\cert1.pfx", "cert1pwd");
-
         }
 
         /// <summary>
@@ -88,14 +94,24 @@ namespace MojCzat.komunikacja
         /// </summary>
         public event ZmianaStanuPolaczenia ZmianaStanuPolaczenia;
 
-        public void DodajKontaktDoMapy(string idUzytkownika, IPEndPoint punkKontaktu) {
-            mapa_IP_ID.Add(punkKontaktu.Address, idUzytkownika);
-            mapa_ID_PunktKontaktu.Add(idUzytkownika, punkKontaktu);
+        /// <summary>
+        /// Nowy uzytkownik na liscie kontaktow
+        /// </summary>
+        /// <param name="idUzytkownika"></param>
+        /// <param name="punktKontaktu"></param>
+        public void DodajKontakt(string idUzytkownika, IPEndPoint punktKontaktu)
+        {
+            mapa_IP_ID.Add(punktKontaktu.Address, idUzytkownika);
+            mapa_ID_PunktKontaktu.Add(idUzytkownika, punktKontaktu);
         }
 
-        public void UsunKontaktZMap(string idUzytkownika, IPEndPoint punkKontaktu)
+        /// <summary>
+        /// Usunieto uzytkownika z list kontaktow
+        /// </summary>
+        /// <param name="idUzytkownika"></param>
+        public void UsunKontakt(string idUzytkownika)
         {
-            mapa_IP_ID.Remove(punkKontaktu.Address);
+            mapa_IP_ID.Remove(mapa_ID_PunktKontaktu[idUzytkownika].Address);
             mapa_ID_PunktKontaktu.Remove(idUzytkownika);
         }
 
@@ -105,6 +121,7 @@ namespace MojCzat.komunikacja
         /// <param name="idUzytkownika"></param>
         /// <returns></returns>
         public bool ZainicjujPolaczenie(string idUzytkownika) {
+            
             try
             {
                 // jesli niedostepny rzuci wyjatek
@@ -112,18 +129,22 @@ namespace MojCzat.komunikacja
                 czekajNaWiadomosc(polaczenie, idUzytkownika); 
                 return true;
             }
-            catch(SocketException ex) {
+            catch{
                 return false;
             }
         }
 
+        /// <summary>
+        /// Rozlacz sie z uzytkownikiem
+        /// </summary>
+        /// <param name="idUzytkownika"></param>
         public void Rozlacz(string idUzytkownika) {
             zamknijPolaczenie(idUzytkownika);
             zamknijStrumien(idUzytkownika);
         }
 
         /// <summary>
-        /// wyslij wiadomosc tekstowa do innego uzytkownika
+        /// Wyslij wiadomosc tekstowa do innego uzytkownika
         /// </summary>
         /// <param name="idRozmowcy">Identyfikator rozmowcy</param>
         /// <param name="wiadomosc">Nowa wiadomosc</param>
@@ -190,7 +211,10 @@ namespace MojCzat.komunikacja
             mapa_ID_PunktKontaktu.Keys.ToList().ForEach(id => Rozlacz(id));
         }
 
-
+        /// <summary>
+        /// Zwalniamy zasoby
+        /// </summary>
+        /// <param name="idUzytkownika"></param>
         void zamknijPolaczenie(string idUzytkownika) 
         {
             if (otwartePolaczenia.ContainsKey(idUzytkownika)) 
@@ -200,6 +224,10 @@ namespace MojCzat.komunikacja
             }
         }
 
+        /// <summary>
+        /// Zwalniamy zasoby
+        /// </summary>
+        /// <param name="idUzytkownika"></param>
         void zamknijStrumien(string idUzytkownika)
         {
             if (otwarteStrumienie.ContainsKey(idUzytkownika)) 
@@ -209,7 +237,15 @@ namespace MojCzat.komunikacja
             }
         }
 
-        bool SprawdzCertyfikat(object sender, X509Certificate certificate,
+        /// <summary>
+        /// Spradzamy waznosc certyfikatu
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="certificate"></param>
+        /// <param name="chain"></param>
+        /// <param name="sslPolicyErrors"></param>
+        /// <returns></returns>
+        bool sprawdzCertyfikat(object sender, X509Certificate certificate,
             X509Chain chain, SslPolicyErrors sslPolicyErrors)
         {
             return true;
@@ -223,22 +259,27 @@ namespace MojCzat.komunikacja
         void czekajNaWiadomosc(SslStream strumien, string idRozmowcy)
         {
             strumien.BeginRead(buforWiadomosci[idRozmowcy], 0,
-                rozmiarBufora, new AsyncCallback(zdarzenieNowaWiadomosc), idRozmowcy);
+                rozmiarBufora, new AsyncCallback(obsluzNowaWiadomosc), idRozmowcy);
         }
 
+        /// <summary>
+        /// Nadeszlo polaczenie, obslugujemy je
+        /// </summary>
+        /// <param name="polaczenie"></param>
         void zajmijSieKlientem(TcpClient polaczenie) {            
-            var puntkKontaktuKlienta = (IPEndPoint)polaczenie.Client.RemoteEndPoint;
+            var punktKontaktu = (IPEndPoint)polaczenie.Client.RemoteEndPoint;
 
-            String nadawca = mapa_IP_ID.ContainsKey(puntkKontaktuKlienta.Address) ?
-                mapa_IP_ID[puntkKontaktuKlienta.Address] : null;
+            String nadawca = mapa_IP_ID.ContainsKey(punktKontaktu.Address) ?
+                mapa_IP_ID[punktKontaktu.Address] : null;
 
-            // nieznajomy
+            // nieznajomy, do widzenia
             if (nadawca == null)
             {
                 polaczenie.Close();
                 return;
             }
 
+            // jesli juz jestesmy z nim polaczeni, posprzatajmy stare polaczenie
             Rozlacz(nadawca);
 
             // sprawdz czy bufor wiadmosci dla tego punktu kontatku istnieje. Jesli nie, stworz.
@@ -247,8 +288,9 @@ namespace MojCzat.komunikacja
                 buforWiadomosci.Add(nadawca, new byte[rozmiarBufora]);
             }
                         
+            // otworz strumien dla wiadomosci
             var strumien = new SslStream(polaczenie.GetStream(), false);
-            strumien.AuthenticateAsServer(certyfikat, false, System.Security.Authentication.SslProtocols.Tls, false);
+            strumien.AuthenticateAsServer(certyfikat, false, SslProtocols.Tls, false);
 
             // zachowaj to polaczenie na pozniej
             otwartePolaczenia.Add(nadawca, polaczenie);
@@ -280,17 +322,17 @@ namespace MojCzat.komunikacja
             {
                 // tworzymy nowe polaczenie 
                 var klient = new TcpClient(new IPEndPoint(
-                    IPAddress.Parse(ConfigurationManager.AppSettings["ip"]), new Random().Next(10000,20000)));
+                    IPAddress.Parse(ConfigurationManager.AppSettings["ip"]), 
+                    new Random().Next(10000,20000)));
                 klient.Connect(punktKontaktu);
 
                 strumien = new SslStream(klient.GetStream(), true, new
-                  RemoteCertificateValidationCallback(SprawdzCertyfikat));
+                  RemoteCertificateValidationCallback(sprawdzCertyfikat));
                 string host = ((IPEndPoint)klient.Client.RemoteEndPoint).Address.ToString();
                 strumien.AuthenticateAsClient(host);
                 
                 // zachowujemy nowe polaczenie na pozniej
                 otwartePolaczenia.Add(idUzytkownika, klient);
-
                 otwarteStrumienie.Add(idUzytkownika, strumien);
             }
 
@@ -310,7 +352,7 @@ namespace MojCzat.komunikacja
         /// </summary>
         /// <param name="wynik"> obiektu tego uzywamy do zakonczenia jednej 
         /// operacji asynchronicznej i rozpoczecia nowej </param>
-        void zdarzenieNowaWiadomosc(IAsyncResult wynik)
+        void obsluzNowaWiadomosc(IAsyncResult wynik)
         {         
             // od kogo przyszla wiadomosc
             var nadawca = (string)wynik.AsyncState;
