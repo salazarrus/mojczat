@@ -117,11 +117,10 @@ namespace MojCzat.komunikacja
             }
         }
 
-        public void ZamknijPolaczenie(string idUzytkownika) {
-            if (otwartePolaczenia.ContainsKey(idUzytkownika)) { otwartePolaczenia[idUzytkownika].Close(); }
-            if (otwarteStrumienie.ContainsKey(idUzytkownika)) { otwarteStrumienie[idUzytkownika].Close(); }
+        public void Rozlacz(string idUzytkownika) {
+            zamknijPolaczenie(idUzytkownika);
+            zamknijStrumien(idUzytkownika);
         }
-
 
         /// <summary>
         /// wyslij wiadomosc tekstowa do innego uzytkownika
@@ -166,7 +165,7 @@ namespace MojCzat.komunikacja
                 {
                     // czekaj na przychodzace polaczenia
                     TcpClient polaczenie = serwer.AcceptTcpClient();
-                    ZajmijSieKlientem(polaczenie);
+                    zajmijSieKlientem(polaczenie);
                 }
             }
             
@@ -188,21 +187,29 @@ namespace MojCzat.komunikacja
             // zatrzymaj nasluch
             if (serwer != null) { serwer.Stop(); }
 
-
-            foreach (var strumien in otwarteStrumienie)
-            {
-                strumien.Value.Close();
-            }
-
-            // zamknij otwarte polaczenia
-            foreach(var polaczenie in otwartePolaczenia){
-                polaczenie.Value.Close();
-            }
-            
-
+            mapa_ID_PunktKontaktu.Keys.ToList().ForEach(id => Rozlacz(id));
         }
 
-        bool ValidateServerCertificate(object sender, X509Certificate certificate,
+
+        void zamknijPolaczenie(string idUzytkownika) 
+        {
+            if (otwartePolaczenia.ContainsKey(idUzytkownika)) 
+            {
+                otwartePolaczenia[idUzytkownika].Close();
+                otwartePolaczenia.Remove(idUzytkownika);
+            }
+        }
+
+        void zamknijStrumien(string idUzytkownika)
+        {
+            if (otwarteStrumienie.ContainsKey(idUzytkownika)) 
+            { 
+                otwarteStrumienie[idUzytkownika].Close();
+                otwarteStrumienie.Remove(idUzytkownika);
+            }
+        }
+
+        bool SprawdzCertyfikat(object sender, X509Certificate certificate,
             X509Chain chain, SslPolicyErrors sslPolicyErrors)
         {
             return true;
@@ -219,7 +226,7 @@ namespace MojCzat.komunikacja
                 rozmiarBufora, new AsyncCallback(zdarzenieNowaWiadomosc), idRozmowcy);
         }
 
-        void ZajmijSieKlientem(TcpClient polaczenie) {            
+        void zajmijSieKlientem(TcpClient polaczenie) {            
             var puntkKontaktuKlienta = (IPEndPoint)polaczenie.Client.RemoteEndPoint;
 
             String nadawca = mapa_IP_ID.ContainsKey(puntkKontaktuKlienta.Address) ?
@@ -232,16 +239,7 @@ namespace MojCzat.komunikacja
                 return;
             }
 
-            if (nadawca != null && otwarteStrumienie.ContainsKey(nadawca))
-            {
-                otwarteStrumienie[nadawca].Close();
-            }
-
-            // sprawdzy czy polaczenie z tego punktu kontaktu istnieje. Zamknij je.
-            if (nadawca != null && otwartePolaczenia.ContainsKey(nadawca))
-            {
-                otwartePolaczenia[nadawca].Close();
-            }
+            Rozlacz(nadawca);
 
             // sprawdz czy bufor wiadmosci dla tego punktu kontatku istnieje. Jesli nie, stworz.
             if (nadawca != null && !buforWiadomosci.ContainsKey(nadawca))
@@ -254,7 +252,6 @@ namespace MojCzat.komunikacja
 
             // zachowaj to polaczenie na pozniej
             otwartePolaczenia.Add(nadawca, polaczenie);
-
             otwarteStrumienie.Add(nadawca, strumien);
 
             // powiadom zainteresowanych o nowym polaczeniu
@@ -287,7 +284,7 @@ namespace MojCzat.komunikacja
                 klient.Connect(punktKontaktu);
 
                 strumien = new SslStream(klient.GetStream(), true, new
-                  RemoteCertificateValidationCallback(ValidateServerCertificate));
+                  RemoteCertificateValidationCallback(SprawdzCertyfikat));
                 string host = ((IPEndPoint)klient.Client.RemoteEndPoint).Address.ToString();
                 strumien.AuthenticateAsClient(host);
                 
@@ -321,8 +318,7 @@ namespace MojCzat.komunikacja
             int index = Array.FindIndex(buforWiadomosci[nadawca], x=> x==0);
             if (index == 0) // polaczenie zostalo zamkniete 
             {
-                otwartePolaczenia.Remove(nadawca);
-                otwarteStrumienie.Remove(nadawca);
+                Rozlacz(nadawca);
                 if (ZmianaStanuPolaczenia != null) { ZmianaStanuPolaczenia(nadawca, false); }
                 return;
             }

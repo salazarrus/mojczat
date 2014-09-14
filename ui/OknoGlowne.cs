@@ -268,7 +268,7 @@ namespace MojCzat.ui
             var kontakt = (Kontakt)lbKontakty.SelectedItem;
             kontakty.RemoveAll(k => k.ID == kontakt.ID &&
                 k.PunktKontaktu == kontakt.PunktKontaktu);
-            komunikator.ZamknijPolaczenie(kontakt.ID);
+            komunikator.Rozlacz(kontakt.ID);
             komunikator.UsunKontaktZMap(kontakt.ID, kontakt.PunktKontaktu);                
             odswiezListeKontaktow();
             Kontakt.ZapiszListeKontaktow(kontakty, "kontakty.xml");
