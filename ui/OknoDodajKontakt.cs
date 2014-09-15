@@ -24,14 +24,20 @@ namespace MojCzat.ui
             this.nowyKontakt = nowyKontakt;
         }
 
-        private void btnDodaj_Click(object sender, EventArgs e)
+        protected override void OnShown(EventArgs e)
+        {
+            base.OnShown(e);
+            CenterToParent();
+        }
+
+        void btnDodaj_Click(object sender, EventArgs e)
         {
             nowyKontakt.ID = this.tbId.Text;
             nowyKontakt.PunktKontaktu = new IPEndPoint(IPAddress.Parse(tbIP.Text), int.Parse(tbPort.Text));
             Close();
         }
 
-        private void btnAnuluj_Click(object sender, EventArgs e)
+        void btnAnuluj_Click(object sender, EventArgs e)
         {
             Close();
         }

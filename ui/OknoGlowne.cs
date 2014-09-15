@@ -291,7 +291,8 @@ namespace MojCzat.ui
 
         private void btnUstawienia_Click(object sender, EventArgs e)
         {
-
+            var ustawienia = new OknoUstawienia(Ustawienia.Wczytaj("ustawienia.xml"));
+            ustawienia.ShowDialog(this);
         }
 
         /// <summary>
