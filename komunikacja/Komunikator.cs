@@ -52,7 +52,7 @@ namespace MojCzat.komunikacja
         /// <summary>
         /// Strumienie ktore zostaly otwarte
         /// </summary>
-        Dictionary<string, SslStream> otwarteStrumienie = new Dictionary<string, SslStream>();
+        Dictionary<string, Stream> otwarteStrumienie = new Dictionary<string, Stream>();
 
         /// <summary>
         /// obiekt nasluchujacy nadchodzacych polaczen
@@ -60,26 +60,19 @@ namespace MojCzat.komunikacja
         TcpListener serwer;
 
         /// <summary>
-        /// Certyfikat serwera - pozwala laczyc sie przez SSL/TLS
-        /// </summary>
-        X509Certificate certyfikat; 
-
-        /// <summary>
         /// Konstruktor komunikatora
         /// </summary>
         /// <param name="ipepNaId">Mapowanie punktu kontatku (adres IP,Port) do 
         /// Identyfikatora rozmowcy wszystkich kontaktow uzytkownika</param>
         public Komunikator(Dictionary<string, IPEndPoint> mapa_ID_PunktKontaktu)
-        {           
+        {
             //inicjalizacja i wypelnianie mapowan pochodnych
             this.mapa_ID_PunktKontaktu = mapa_ID_PunktKontaktu;
                         
             // generuj mape mapa_IP_ID
             this.mapa_IP_ID = new Dictionary<IPAddress, string>();
             foreach (var i in mapa_ID_PunktKontaktu) { mapa_IP_ID.Add(i.Value.Address, i.Key); }
-            
-            //otworz certyfikat serwer SSL
-            certyfikat = new X509Certificate2("cert\\cert1.pfx", "cert1pwd");
+
         }
 
         /// <summary>
@@ -125,8 +118,8 @@ namespace MojCzat.komunikacja
             try
             {
                 // jesli niedostepny rzuci wyjatek
-                SslStream polaczenie = dajPolaczenie(idUzytkownika);
-                czekajNaWiadomosc(polaczenie, idUzytkownika); 
+                Stream polaczenie = dajStrumien(idUzytkownika);
+                czekajNaWiadomosc(idUzytkownika); 
                 return true;
             }
             catch{
@@ -151,7 +144,7 @@ namespace MojCzat.komunikacja
         public void WyslijWiadomosc(String idRozmowcy, String wiadomosc) { 
             try
             {
-                SslStream strumien = dajPolaczenie(idRozmowcy);
+                Stream strumien = dajStrumien(idRozmowcy);
 
                 // tranformacja tekstu w bajty
                 Byte[] bajty = System.Text.Encoding.UTF8.GetBytes(wiadomosc);         
@@ -190,15 +183,11 @@ namespace MojCzat.komunikacja
                 }
             }
             
-            catch (SocketException e)
+            catch
             {
                 //TODO zdobic cos z tym
             }
-            finally
-            {
-                // zatrzymaj serwer
-                serwer.Stop();
-            }
+            finally { Stop(); }
         }
 
         /// <summary>
@@ -209,6 +198,15 @@ namespace MojCzat.komunikacja
             if (serwer != null) { serwer.Stop(); }
 
             mapa_ID_PunktKontaktu.Keys.ToList().ForEach(id => Rozlacz(id));
+        }
+
+        protected virtual Stream dajStrumienJakoKlient(TcpClient polaczenie){
+            return polaczenie.GetStream();
+        }
+
+        protected virtual Stream dajStrumienJakoSerwer(TcpClient polaczenie)
+        {
+            return polaczenie.GetStream();
         }
 
         /// <summary>
@@ -235,30 +233,16 @@ namespace MojCzat.komunikacja
                 otwarteStrumienie[idUzytkownika].Close();
                 otwarteStrumienie.Remove(idUzytkownika);
             }
-        }
-
-        /// <summary>
-        /// Spradzamy waznosc certyfikatu
-        /// </summary>
-        /// <param name="sender"></param>
-        /// <param name="certificate"></param>
-        /// <param name="chain"></param>
-        /// <param name="sslPolicyErrors"></param>
-        /// <returns></returns>
-        bool sprawdzCertyfikat(object sender, X509Certificate certificate,
-            X509Chain chain, SslPolicyErrors sslPolicyErrors)
-        {
-            return true;
-        }
+        }        
 
         /// <summary>
         /// Czekaj (pasywnie) na wiadomosci
         /// </summary>
         /// <param name="polaczenie">kanal, ktorym przychodzi wiadomosc</param>
         /// <param name="idRozmowcy">Identyfikator nadawcy</param>
-        void czekajNaWiadomosc(SslStream strumien, string idRozmowcy)
+        void czekajNaWiadomosc(string idRozmowcy)
         {
-            strumien.BeginRead(buforWiadomosci[idRozmowcy], 0,
+            otwarteStrumienie[idRozmowcy].BeginRead(buforWiadomosci[idRozmowcy], 0,
                 rozmiarBufora, new AsyncCallback(obsluzNowaWiadomosc), idRozmowcy);
         }
 
@@ -272,35 +256,22 @@ namespace MojCzat.komunikacja
             String nadawca = mapa_IP_ID.ContainsKey(punktKontaktu.Address) ?
                 mapa_IP_ID[punktKontaktu.Address] : null;
 
-            // nieznajomy, do widzenia
+            // Nieznajomy? Do widzenia.
             if (nadawca == null)
             {
                 polaczenie.Close();
                 return;
             }
 
-            // jesli juz jestesmy z nim polaczeni, posprzatajmy stare polaczenie
-            Rozlacz(nadawca);
-
-            // sprawdz czy bufor wiadmosci dla tego punktu kontatku istnieje. Jesli nie, stworz.
-            if (nadawca != null && !buforWiadomosci.ContainsKey(nadawca))
-            {
-                buforWiadomosci.Add(nadawca, new byte[rozmiarBufora]);
-            }
-                        
-            // otworz strumien dla wiadomosci
-            var strumien = new SslStream(polaczenie.GetStream(), false);
-            strumien.AuthenticateAsServer(certyfikat, false, SslProtocols.Tls, false);
-
-            // zachowaj to polaczenie na pozniej
-            otwartePolaczenia.Add(nadawca, polaczenie);
-            otwarteStrumienie.Add(nadawca, strumien);
+            Rozlacz(nadawca); // jesli bylismy polaczeni, posprzatajmy
+            utworzBuforNaWiadomosci(nadawca);
+            var strumien = dajStrumienJakoSerwer(polaczenie);// otworz strumien dla wiadomosci
+            zachowajPolaczenie(nadawca, polaczenie, strumien); // zatrzymujemy referencje
 
             // powiadom zainteresowanych o nowym polaczeniu
             if (ZmianaStanuPolaczenia != null) { ZmianaStanuPolaczenia(nadawca, true); }
 
-            // czekaj (pasywnie) na wiadomosc z tego polaczenia
-            czekajNaWiadomosc(strumien, nadawca);
+            czekajNaWiadomosc(nadawca);// czekaj (pasywnie) na wiadomosc z tego polaczenia
         }
 
         /// <summary>
@@ -308,10 +279,10 @@ namespace MojCzat.komunikacja
         /// </summary>
         /// <param name="idUzytkownika">Identyfikator uzytkownika do ktorego chcemy polaczenia</param>
         /// <returns> polaczenie do uzytkownika</returns>
-        SslStream dajPolaczenie(string idUzytkownika)
+        Stream dajStrumien(string idUzytkownika)
         {
             IPEndPoint punktKontaktu = mapa_ID_PunktKontaktu[idUzytkownika];
-            SslStream strumien = null;
+            Stream strumien = null;
 
             // sprawdz, czy to polaczenie nie jest juz otwarte
             if (otwarteStrumienie.ContainsKey(idUzytkownika))
@@ -321,31 +292,35 @@ namespace MojCzat.komunikacja
             else
             {
                 // tworzymy nowe polaczenie 
-                var klient = new TcpClient(new IPEndPoint(
+                var polaczanie = new TcpClient(new IPEndPoint(
                     IPAddress.Parse(ConfigurationManager.AppSettings["ip"]), 
                     new Random().Next(10000,20000)));
-                klient.Connect(punktKontaktu);
+                polaczanie.Connect(punktKontaktu);
 
-                strumien = new SslStream(klient.GetStream(), true, new
-                  RemoteCertificateValidationCallback(sprawdzCertyfikat));
-                string host = ((IPEndPoint)klient.Client.RemoteEndPoint).Address.ToString();
-                strumien.AuthenticateAsClient(host);
-                
+                strumien = dajStrumienJakoKlient(polaczanie);
                 // zachowujemy nowe polaczenie na pozniej
-                otwartePolaczenia.Add(idUzytkownika, klient);
-                otwarteStrumienie.Add(idUzytkownika, strumien);
-            }
+                zachowajPolaczenie(idUzytkownika, polaczanie, strumien);
 
-            //utworz bufor dla tego polaczenia, jesli jeszcze nie istnieje
-            if (idUzytkownika != null && !buforWiadomosci.ContainsKey(idUzytkownika))
-            {
-                buforWiadomosci.Add(idUzytkownika, new byte[rozmiarBufora]);
+                //utworz bufor dla tego polaczenia, jesli jeszcze nie istnieje
+                utworzBuforNaWiadomosci(idUzytkownika);
             }
-
+           
             return strumien;
         }
 
+        void zachowajPolaczenie(string idUzytkownika, TcpClient polaczenie, Stream strumien) 
+        {
+            otwartePolaczenia.Add(idUzytkownika, polaczenie);
+            otwarteStrumienie.Add(idUzytkownika, strumien);
+        }
 
+        void utworzBuforNaWiadomosci(string idUzytkownika) 
+        {
+            if (!buforWiadomosci.ContainsKey(idUzytkownika))
+            {
+                buforWiadomosci.Add(idUzytkownika, new byte[rozmiarBufora]);
+            }        
+        }
 
         /// <summary>
         /// Nadeszla nowa wiadomosc
@@ -381,7 +356,7 @@ namespace MojCzat.komunikacja
             var strumien = otwarteStrumienie[nadawca] ;
             strumien.EndRead(wynik);
             // rozpocznij nowa operacje asynchroniczna - czekaj na nowa wiadomosc
-            czekajNaWiadomosc(strumien, nadawca); 
+            czekajNaWiadomosc(nadawca); 
         }
     }
 }

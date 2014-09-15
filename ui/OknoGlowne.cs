@@ -104,7 +104,7 @@ namespace MojCzat.ui
             kontakty.ForEach(k => mapaAdresowIpKontaktow.Add(k.ID, k.PunktKontaktu));
 
             // zainicjalizuj obiekt odpowiedzialny za przesylanie / odbieranie wiadomosci
-            var komunikator = new Komunikator(mapaAdresowIpKontaktow);
+            var komunikator = new KomunikatorSSL(mapaAdresowIpKontaktow);
             return komunikator;
         }
 
