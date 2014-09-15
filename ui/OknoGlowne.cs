@@ -46,6 +46,8 @@ namespace MojCzat.ui
 
         Thread watekKomunikator;
 
+        bool polaczony;
+
         /// <summary>
         /// Konstruktor okna glownego
         /// </summary>
@@ -96,7 +98,7 @@ namespace MojCzat.ui
         protected override void OnClosed(EventArgs e)
         {
             base.OnClosed(e);
-            rozlaczSie();
+            if (polaczony) { rozlaczSie(); }
         }
 
         Komunikator dajKomunikator() {
@@ -111,7 +113,7 @@ namespace MojCzat.ui
         void polaczSie() {
             // uruchom oddzielny watek dla obiektu odpowiedzialnego za komunikacje
             komunikator = dajKomunikator();
-
+            polaczony = true;
             // zapisujemy sie jako sluchacz wydarzenia NowaWiadomosc
             komunikator.NowaWiadomosc += komunikator_NowaWiadomosc;
             // zapisujemy sie jako sluchacz wydarzenia ZmianaStanuPolaczenia
@@ -122,15 +124,18 @@ namespace MojCzat.ui
             
             watekKomunikator = new Thread(komunikator.Start);
             watekKomunikator.Start();
+            oknaCzatu.Values.ToList().ForEach(o => o.Komunikator = komunikator);
         }
 
         void rozlaczSie() {
             // glowne okno programu zostalo zamkniete, dlatego zatrzymujemy dzialanie
             // obiektu odpowiedzialnego za komunikacje
             komunikator.Stop();
-
+            polaczony = false;
             // zakoncz watek obiektu odpowiedzialnego za komunikacje
             watekKomunikator.Join();
+            // zaktualizuj obiekt w oknach czat
+            oknaCzatu.Values.ToList().ForEach(o => o.Komunikator = null);            
             watekKomunikator = null;
             komunikator = null;
         }
@@ -227,7 +232,8 @@ namespace MojCzat.ui
             }
             else //nie bylo otwarte, wiec otworz nowe
             {
-                OknoCzat noweOkno = new OknoCzat(idRozmowcy, komunikator);
+                OknoCzat noweOkno = new OknoCzat(idRozmowcy);
+                noweOkno.Komunikator = komunikator;
                 // zachowujemy nowe okno na liscie otwartych okien
                 oknaCzatu.Add(idRozmowcy, noweOkno);
                 // pokazujemy nowe okno
@@ -326,10 +332,10 @@ namespace MojCzat.ui
             {
                 polaczSie();
                 odswiezListeKontaktow();
-            } else if (comboStatus.SelectedIndex == 1 &&
-                komunikator != null && watekKomunikator != null) 
-            {  
+            } else if (comboStatus.SelectedIndex == 1 && polaczony) 
+            {
                 rozlaczSie();
+                
                 foreach (var kontakt in kontakty) {
                     kontakt.Status = "Niedostepny";
                 }

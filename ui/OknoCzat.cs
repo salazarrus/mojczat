@@ -35,12 +35,14 @@ namespace MojCzat.ui
             get { return idRozmowcy; }
         }
 
+        public Komunikator Komunikator { set { komunikator = value; } }
+
         /// <summary>
         /// Konstruktor okna czatu
         /// </summary>
         /// <param name="idRozmowcy">Identyfikator drugiego uczestnika czatu</param>
         /// <param name="komunikator">Obiekt odpowiedzialny za przesylanie i odbieranie wiadomosci</param>
-        public OknoCzat(string idRozmowcy, Komunikator komunikator)
+        public OknoCzat(string idRozmowcy)
         {           
             // inicjalizacja elementow graficznych okna
             InitializeComponent();
@@ -50,7 +52,6 @@ namespace MojCzat.ui
             this.mojeId = ConfigurationManager.AppSettings["mojeId"]; 
             // zapisywanie referencji
             this.idRozmowcy = idRozmowcy;
-            this.komunikator = komunikator;
         }
         
         /// <summary>
@@ -98,6 +99,12 @@ namespace MojCzat.ui
         /// wysylamy nowa wiadomosc
         /// </summary>
         void wyslijWpisanaWiadomosc() {
+            if (komunikator == null) 
+            { 
+                MessageBox.Show("Jestes rozlaczony.");
+                return;
+            }
+            
             String wiadomosc = tbWiadomosc.Text;
 
             // usuwamy biale znaki z lewej i prawej strony tekstu
