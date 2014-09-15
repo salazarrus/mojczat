@@ -12,19 +12,20 @@ using System.Threading.Tasks;
 
 namespace MojCzat.komunikacja
 {
-    class KomunikatorSSL: Komunikator
+    class CentralaSSL:Centrala
     {
         /// <summary>
         /// Certyfikat serwera - pozwala laczyc sie przez SSL/TLS
         /// </summary>
         X509Certificate certyfikat;
 
-        public KomunikatorSSL(Dictionary<string, IPEndPoint> mapa_ID_PunktKontaktu):base(mapa_ID_PunktKontaktu)
+
+        public CentralaSSL()
         {
-            //otworz certyfikat serwer SSL
             certyfikat = new X509Certificate2("cert\\cert1.pfx", "cert1pwd");
         }
 
+         
         protected override Stream dajStrumienJakoKlient(TcpClient polaczenie)
         {
             var strumien = new SslStream(polaczenie.GetStream(), true, new
@@ -56,7 +57,5 @@ namespace MojCzat.komunikacja
         {
             return true;
         }
-
-
     }
 }

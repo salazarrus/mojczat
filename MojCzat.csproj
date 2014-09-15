@@ -46,8 +46,8 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="komunikacja\Centrala.cs" />
+    <Compile Include="komunikacja\CentralaSSL.cs" />
     <Compile Include="komunikacja\Komunikator.cs" />
-    <Compile Include="komunikacja\KomunikatorSSL.cs" />
     <Compile Include="model\Kontakt.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
