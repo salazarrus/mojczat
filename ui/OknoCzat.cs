@@ -1,4 +1,5 @@
 ﻿using MojCzat.komunikacja;
+using MojCzat.model;
 using System;
 using System.Configuration;
 using System.Windows.Forms;
@@ -13,22 +14,15 @@ namespace MojCzat.ui
     public partial class OknoCzat : Form
     {
         /// <summary>
-        /// Identyfikator drugiego uczestnika czatu
+        /// Drugi uczestnik czatu
         /// </summary>
-        string idRozmowcy;
+        Kontakt rozmowca;
 
         /// <summary>
         /// Obiekt odpowiedzialny za przesylanie i odbieranie wiadomosci
         /// </summary>
         Komunikator komunikator;
 
-        /// <summary>
-        /// publiczny dostep do pola idRozmowcy
-        /// </summary>
-        public string IDRozmowcy
-        {
-            get { return idRozmowcy; }
-        }
 
         public Komunikator Komunikator { set { komunikator = value; } }
 
@@ -37,15 +31,15 @@ namespace MojCzat.ui
         /// </summary>
         /// <param name="idRozmowcy">Identyfikator drugiego uczestnika czatu</param>
         /// <param name="komunikator">Obiekt odpowiedzialny za przesylanie i odbieranie wiadomosci</param>
-        public OknoCzat(string idRozmowcy)
+        public OknoCzat(Kontakt rozmowca)
         {           
             // inicjalizacja elementow graficznych okna
             InitializeComponent();
             // ustalanie naglowka okna
-            this.Text = String.Format("Mój Czat z {0}", idRozmowcy);
+            this.Text = String.Format("Mój Czat z {0}", rozmowca.Nazwa);
 
             // zapisywanie referencji
-            this.idRozmowcy = idRozmowcy;
+            this.rozmowca = rozmowca;
         }
         
         /// <summary>
@@ -54,7 +48,7 @@ namespace MojCzat.ui
         /// <param name="wiadomosc">tresc wiadomosci</param>
         public void WyswietlWiadomosc(string wiadomosc)
         {
-            tbCzat.AppendText(String.Format("[{0}] {1}\n", IDRozmowcy, wiadomosc));
+            tbCzat.AppendText(String.Format("[{0}] {1}\n", rozmowca.Nazwa, wiadomosc));
         }
 
         /// <summary>
@@ -107,7 +101,7 @@ namespace MojCzat.ui
             if (wiadomosc == String.Empty) { return; }
 
             // wysylamy wiadomosc
-            if (komunikator.WyslijWiadomosc(IDRozmowcy, wiadomosc))
+            if (komunikator.WyslijWiadomosc(rozmowca.ID, wiadomosc))
             {
                 // dodajemy wiadomosc do naszego okna czatu
                 tbCzat.AppendText(String.Format("[{0}] {1}\n", "Ty", wiadomosc));

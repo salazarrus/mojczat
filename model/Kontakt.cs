@@ -25,7 +25,13 @@ namespace MojCzat.model
         /// Dostepnosc czatu z tym uzytkownikiem
         /// </summary>
         public string Status { get; set; }
-        
+
+
+        /// <summary>
+        /// Nazwa wyswietlana
+        /// </summary>
+        public string Nazwa { get; set; }
+
         /// <summary>
         /// Wczytaj liste kontaktow z pliku XML
         /// </summary>
@@ -39,9 +45,11 @@ namespace MojCzat.model
                 plikXML.Load(sciezkaPliku); 
                 foreach (XmlNode node in plikXML.DocumentElement.ChildNodes)
                 {
-                    string id = node.Attributes["id"].InnerText;
+                    
                     string ip = node.Attributes["ip"].InnerText;
-                    listaWynikowa.Add(new Kontakt() { ID = id, IP = IPAddress.Parse(ip), Status="Niedostepny" });
+                    string id = ip;
+                    string nazwa = node.Attributes["nazwa"].InnerText;
+                    listaWynikowa.Add(new Kontakt() { ID = id, IP = IPAddress.Parse(ip), Nazwa = nazwa ,Status="Niedostepny" });
                 }
             } catch { return listaWynikowa; }
 
@@ -62,14 +70,15 @@ namespace MojCzat.model
             foreach(var kontakt in lista){
                 
                 var elementKontakt = plikXML.CreateElement("kontakt");
-                var atrybutID = plikXML.CreateAttribute("id") ;
-                atrybutID.InnerText = kontakt.ID;
-                elementKontakt.Attributes.Append(atrybutID);
-
+                
                 var atrybutIP = plikXML.CreateAttribute("ip") ;
                 atrybutIP.InnerText = kontakt.IP.ToString();
                 elementKontakt.Attributes.Append(atrybutIP);
 
+                var atrybutNazwa = plikXML.CreateAttribute("nazwa");
+                atrybutNazwa.InnerText = kontakt.Nazwa;
+                elementKontakt.Attributes.Append(atrybutNazwa);
+                
                 elementGlowny.AppendChild(elementKontakt);                
             }
 

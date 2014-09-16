@@ -33,7 +33,7 @@
             this.btnAnuluj = new System.Windows.Forms.Button();
             this.label1 = new System.Windows.Forms.Label();
             this.label3 = new System.Windows.Forms.Label();
-            this.tbId = new System.Windows.Forms.TextBox();
+            this.tbNazwa = new System.Windows.Forms.TextBox();
             this.tbIP = new System.Windows.Forms.TextBox();
             this.SuspendLayout();
             // 
@@ -62,9 +62,9 @@
             this.label1.AutoSize = true;
             this.label1.Location = new System.Drawing.Point(24, 19);
             this.label1.Name = "label1";
-            this.label1.Size = new System.Drawing.Size(18, 13);
+            this.label1.Size = new System.Drawing.Size(40, 13);
             this.label1.TabIndex = 2;
-            this.label1.Text = "ID";
+            this.label1.Text = "Nazwa";
             // 
             // label3
             // 
@@ -75,18 +75,18 @@
             this.label3.TabIndex = 4;
             this.label3.Text = "IP";
             // 
-            // tbId
+            // tbNazwa
             // 
-            this.tbId.Location = new System.Drawing.Point(57, 16);
-            this.tbId.Name = "tbId";
-            this.tbId.Size = new System.Drawing.Size(129, 20);
-            this.tbId.TabIndex = 5;
+            this.tbNazwa.Location = new System.Drawing.Point(70, 16);
+            this.tbNazwa.Name = "tbNazwa";
+            this.tbNazwa.Size = new System.Drawing.Size(116, 20);
+            this.tbNazwa.TabIndex = 5;
             // 
             // tbIP
             // 
-            this.tbIP.Location = new System.Drawing.Point(57, 42);
+            this.tbIP.Location = new System.Drawing.Point(70, 42);
             this.tbIP.Name = "tbIP";
-            this.tbIP.Size = new System.Drawing.Size(129, 20);
+            this.tbIP.Size = new System.Drawing.Size(116, 20);
             this.tbIP.TabIndex = 6;
             // 
             // OknoDodajKontakt
@@ -95,7 +95,7 @@
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(215, 124);
             this.Controls.Add(this.tbIP);
-            this.Controls.Add(this.tbId);
+            this.Controls.Add(this.tbNazwa);
             this.Controls.Add(this.label3);
             this.Controls.Add(this.label1);
             this.Controls.Add(this.btnAnuluj);
@@ -116,7 +116,7 @@
         private System.Windows.Forms.Button btnAnuluj;
         private System.Windows.Forms.Label label1;
         private System.Windows.Forms.Label label3;
-        private System.Windows.Forms.TextBox tbId;
+        private System.Windows.Forms.TextBox tbNazwa;
         private System.Windows.Forms.TextBox tbIP;
     }
 }

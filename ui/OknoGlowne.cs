@@ -84,13 +84,12 @@ namespace MojCzat.ui
             odswiezOknoDelegata = new OdswiezOkno(odswiezListeKontaktow);
         }
 
-      
         /// <summary>
         /// ponizsza delegata jest konieczna do otwierania nowego okna czatu z watku Komunikatora 
         /// </summary>
-        /// <param name="id">Identyfikator rozmowcy</param>
+        /// <param name="rozmowca"></param>
         /// <param name="wiadomosc">Wiadomosc, ktora wpiszemy do okna czatu</param>
-        delegate void OtworzOknoCzatuZWiadomoscia(string idRozmowcy, string wiadomosc);
+        delegate void OtworzOknoCzatuZWiadomoscia(Kontakt rozmowca, string wiadomosc);
 
         /// <summary>
         /// Gdy nastapila zmiana dostepnosci kontaktow, odswiezamy okno
@@ -220,7 +219,8 @@ namespace MojCzat.ui
          void komunikator_NowaWiadomosc(string id, string wiadomosc)
         {
             // otworz okno przez delegate poniewaz jestesmy w innym watku
-            Invoke(otworzOknoCzatuDelegata, id, wiadomosc);
+            var kontakt = kontakty.Where(k => k.ID == id).SingleOrDefault();
+            Invoke(otworzOknoCzatuDelegata, kontakt, wiadomosc);
         }
         
         /// <summary>
@@ -232,7 +232,7 @@ namespace MojCzat.ui
             kontakt.Status = polaczenieOtwarte ? "Dostepny" : "Niedostepny";
             
             // sortowanie - najpierw dostepni, potem kolejosc alfabetyczna
-            this.kontakty = kontakty.OrderByDescending(k=>k.Status).ThenBy(k=>k.ID).ToList();
+            this.kontakty = kontakty.OrderByDescending(k=>k.Status).ThenBy(k=>k.Nazwa).ToList();
         }
 
         /// <summary>
@@ -240,9 +240,9 @@ namespace MojCzat.ui
         /// </summary>
         /// <param name="idRozmowcy">nadawca wiadomosci </param>
         /// <param name="wiadomosc">tresc wiadomosci</param>
-        void otworzOknoCzat(string idRozmowcy, string wiadomosc)
+        void otworzOknoCzat(Kontakt rozmowca, string wiadomosc)
         {
-            var okno = otworzOknoCzat(idRozmowcy);
+            var okno = otworzOknoCzat(rozmowca);
             okno.WyswietlWiadomosc(wiadomosc);
         }
         
@@ -250,12 +250,12 @@ namespace MojCzat.ui
         /// Pokaz okno czatu z innym uzytkownikiem. Jesli okno jeszcze nie istnieje, stworz je
         /// </summary>
         /// <param name="idRozmowcy">Identyfikator rozmowcy</param>
-        OknoCzat otworzOknoCzat(string idRozmowcy) {
+        OknoCzat otworzOknoCzat(Kontakt rozmowca) {
             // jesli okno czatu jest juz otware, pokaz je
-            if (oknaCzatu.ContainsKey(idRozmowcy))
+            if (oknaCzatu.ContainsKey(rozmowca.ID))
             { 
                 // znajdz okno
-                OknoCzat otwarteOkno = oknaCzatu[idRozmowcy];
+                OknoCzat otwarteOkno = oknaCzatu[rozmowca.ID];
                 // jesli okno jest zminimalizowane, przywroc je na pulpit
                 if (otwarteOkno.WindowState == FormWindowState.Minimized) 
                 {
@@ -268,18 +268,18 @@ namespace MojCzat.ui
             }
             else //nie bylo otwarte, wiec otworz nowe
             {
-                OknoCzat noweOkno = new OknoCzat(idRozmowcy);
+                OknoCzat noweOkno = new OknoCzat(rozmowca);
                 noweOkno.Komunikator = komunikator;
                 // zachowujemy nowe okno na liscie otwartych okien
-                oknaCzatu.Add(idRozmowcy, noweOkno);
+                oknaCzatu.Add(rozmowca.ID, noweOkno);
                 // pokazujemy nowe okno
                 noweOkno.Show(this);
             }
-            return oknaCzatu[idRozmowcy];
+            return oknaCzatu[rozmowca.ID];
         }
 
         void dodajNowyKontakt(Kontakt kontakt) {
-            if (kontakty.Any(k => k.ID == kontakt.ID || k.IP == kontakt.IP)) 
+            if (kontakty.Any(k => k.ID == kontakt.ID)) 
             {
                 // juz cos takiego mamy
                 return;
@@ -302,7 +302,7 @@ namespace MojCzat.ui
         {
             Kontakt nowyKontakt = new Kontakt();
             new OknoDodajKontakt(nowyKontakt).ShowDialog(this);
-            if (nowyKontakt.ID != null && nowyKontakt.IP != null) {
+            if (nowyKontakt.Nazwa != null && nowyKontakt.IP != null) {
                 dodajNowyKontakt(nowyKontakt);
             }
         }
@@ -312,8 +312,7 @@ namespace MojCzat.ui
             if (lbKontakty.SelectedItem == null) { return; }
             
             var kontakt = (Kontakt)lbKontakty.SelectedItem;
-            kontakty.RemoveAll(k => k.ID == kontakt.ID &&
-                k.IP == kontakt.IP);
+            kontakty.RemoveAll(k => k.ID == kontakt.ID);
             if (polaczony) { 
                 komunikator.Rozlacz(kontakt.ID);
                 komunikator.UsunKontakt(kontakt.ID);                
@@ -355,7 +354,7 @@ namespace MojCzat.ui
             if (lbKontakty.SelectedItem != null) 
             {
                 var elementWybrany = (Kontakt)lbKontakty.SelectedItem;
-                otworzOknoCzat(elementWybrany.ID); 
+                otworzOknoCzat(elementWybrany); 
             }
         }
 
@@ -370,7 +369,7 @@ namespace MojCzat.ui
             if (e.KeyCode == Keys.Enter && lbKontakty.SelectedItem != null)
             {
                 var elementWybrany = (Kontakt)lbKontakty.SelectedItem;
-                otworzOknoCzat(elementWybrany.ID);
+                otworzOknoCzat(elementWybrany);
             }
         }
 

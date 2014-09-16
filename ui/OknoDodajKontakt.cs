@@ -32,7 +32,7 @@ namespace MojCzat.ui
 
         void btnDodaj_Click(object sender, EventArgs e)
         {
-            nowyKontakt.ID = this.tbId.Text;
+            nowyKontakt.Nazwa = this.tbNazwa.Text;
             nowyKontakt.IP = IPAddress.Parse(tbIP.Text);
             Close();
         }

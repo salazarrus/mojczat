@@ -85,7 +85,7 @@ namespace MojCzat.ui
                                                    e.Bounds.Height - margines.Bottom - (int)czcionkaTytul.GetHeight() - 2 - margines.Vertical - margines.Top);
 
             // rysuj tekst
-            e.Graphics.DrawString(kontakt.ID, czcionkaTytul, Brushes.Black, ramyTytul, format);
+            e.Graphics.DrawString(kontakt.Nazwa, czcionkaTytul, Brushes.Black, ramyTytul, format);
             e.Graphics.DrawString(kontakt.Status, czcionkaDetal, Brushes.DarkGray, ramyDetal, format);
 
             e.DrawFocusRectangle();
