@@ -29,7 +29,12 @@ namespace MojCzat.komunikacja
         /// Ile bajtow mozna przeslac w jednej wiadomosci
         /// </summary>
         const int rozmiarBufora = 1024;
-
+        
+        /// <summary>
+        /// Na jakim porcie nasluchujemy wiadomosci
+        /// </summary>
+        int port;
+        
         /// <summary>
         /// Do kazdego kontaktu jest przypisany bufor na przesylane przez niego wiadomosci
         /// </summary>
@@ -38,7 +43,7 @@ namespace MojCzat.komunikacja
         /// <summary>
         /// Mapowanie Identyfikatora rozmowcy do punktu kontatku (adres IP,Port)
         /// </summary>
-        Dictionary<string, IPEndPoint> ID_IPEP;
+        Dictionary<string, IPAddress> ID_IP;
 
         Dictionary<IPAddress, string> IP_ID; 
 
@@ -52,24 +57,33 @@ namespace MojCzat.komunikacja
         /// </summary>
         Centrala centrala;
 
-
-        Ustawienia ustawienia;
-
         /// <summary>
         /// Konstruktor komunikatora
         /// </summary>
         /// <param name="ipepNaId">Mapowanie punktu kontatku (adres IP,Port) do 
         /// Identyfikatora rozmowcy wszystkich kontaktow uzytkownika</param>
-        public Komunikator(Dictionary<string, IPEndPoint> mapa_ID_PunktKontaktu, Ustawienia ustawienia)
+        public Komunikator(Dictionary<string, IPAddress> mapa_ID_PunktKontaktu, Ustawienia ustawienia)
         {
+            const int portBezSSL = 5080;
+            const int portSSL = 5443;
+
             //inicjalizacja i wypelnianie mapowan pochodnych
-            this.ID_IPEP = mapa_ID_PunktKontaktu;
+            this.ID_IP = mapa_ID_PunktKontaktu;
                         
             // generuj mape mapa_IP_ID
             this.IP_ID = new Dictionary<IPAddress, string>();
-            foreach (var i in mapa_ID_PunktKontaktu) { IP_ID.Add(i.Value.Address, i.Key); }
+            foreach (var i in mapa_ID_PunktKontaktu) { IP_ID.Add(i.Value, i.Key); }
 
-            centrala = ustawienia.SSLWlaczone ? new CentralaSSL(ustawienia.Certyfikat) : new Centrala();
+            if(ustawienia.SSLWlaczone)
+            {
+                centrala = new CentralaSSL(ustawienia.Certyfikat) ;
+                port = portSSL;
+            }
+            else
+            {
+                centrala = new Centrala();
+                port = portBezSSL; 
+            }
         }
 
         /// <summary>
@@ -89,10 +103,10 @@ namespace MojCzat.komunikacja
         /// </summary>
         /// <param name="idUzytkownika"></param>
         /// <param name="punktKontaktu"></param>
-        public void DodajKontakt(string idUzytkownika, IPEndPoint punktKontaktu)
+        public void DodajKontakt(string idUzytkownika, IPAddress punktKontaktu)
         {
-            IP_ID.Add(punktKontaktu.Address, idUzytkownika);
-            ID_IPEP.Add(idUzytkownika, punktKontaktu);
+            IP_ID.Add(punktKontaktu, idUzytkownika);
+            ID_IP.Add(idUzytkownika, punktKontaktu);
         }
 
         /// <summary>
@@ -101,8 +115,8 @@ namespace MojCzat.komunikacja
         /// <param name="idUzytkownika"></param>
         public void UsunKontakt(string idUzytkownika)
         {
-            IP_ID.Remove(ID_IPEP[idUzytkownika].Address);
-            ID_IPEP.Remove(idUzytkownika);
+            IP_ID.Remove(ID_IP[idUzytkownika]);
+            ID_IP.Remove(idUzytkownika);
         }
 
         /// <summary>
@@ -157,12 +171,7 @@ namespace MojCzat.komunikacja
         {           
             try
             {
-                // konfiguracja nasluchu
-                int port = 0;
-                int.TryParse(ConfigurationManager.AppSettings["port"], out port);
-                IPAddress ipSerwera = IPAddress.Parse(ConfigurationManager.AppSettings["ip"]);
-
-                serwer = new TcpListener(ipSerwera, port); // stworz serwer
+                serwer = new TcpListener(IPAddress.Any, port); // stworz serwer
                 serwer.Start(); //uruchom serwer
 
                 while (true) // zapetlamy
@@ -189,7 +198,7 @@ namespace MojCzat.komunikacja
         }
 
         IPAddress dajIp(string idUzytkownika) {
-            return ID_IPEP[idUzytkownika].Address;
+            return ID_IP[idUzytkownika];
         }
 
         /// <summary>
@@ -231,13 +240,14 @@ namespace MojCzat.komunikacja
         /// <returns> polaczenie do uzytkownika</returns>
         Stream dajStrumien(string idUzytkownika)
         {
-            IPEndPoint cel = ID_IPEP[idUzytkownika];
+            IPAddress cel = ID_IP[idUzytkownika];
 
             // sprawdz, czy to polaczenie nie jest juz otwarte
-            if (centrala[cel.Address] != null) { return centrala[cel.Address]; }
+            if (centrala[cel] != null) { return centrala[cel]; }
 
+            var polaczenie = centrala.NawiazPolaczenie(new IPEndPoint(cel, port));
             utworzBuforNaWiadomosci(idUzytkownika); 
-            return centrala.NawiazPolaczenie(cel);
+            return polaczenie;
         }
         
         void utworzBuforNaWiadomosci(string idUzytkownika) 

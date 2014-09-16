@@ -17,9 +17,9 @@ namespace MojCzat.model
         public String ID { get; set; }
  
         /// <summary>
-        /// Adres IP i port uzytkownika
+        /// Adres IP uzytkownika
         /// </summary>
-        public IPEndPoint PunktKontaktu { get; set; }
+        public IPAddress IP { get; set; }
  
         /// <summary>
         /// Dostepnosc czatu z tym uzytkownikiem
@@ -41,9 +41,7 @@ namespace MojCzat.model
                 {
                     string id = node.Attributes["id"].InnerText;
                     string ip = node.Attributes["ip"].InnerText;
-                    int port = int.Parse(node.Attributes["port"].InnerText);
-                    listaWynikowa.Add(new Kontakt() { ID = id, PunktKontaktu = 
-                        new IPEndPoint(IPAddress.Parse(ip), port) , Status="Niedostepny" });
+                    listaWynikowa.Add(new Kontakt() { ID = id, IP = IPAddress.Parse(ip), Status="Niedostepny" });
                 }
             } catch { return listaWynikowa; }
 
@@ -69,12 +67,8 @@ namespace MojCzat.model
                 elementKontakt.Attributes.Append(atrybutID);
 
                 var atrybutIP = plikXML.CreateAttribute("ip") ;
-                atrybutIP.InnerText = kontakt.PunktKontaktu.Address.ToString();
+                atrybutIP.InnerText = kontakt.IP.ToString();
                 elementKontakt.Attributes.Append(atrybutIP);
-                
-                var atrybutPort = plikXML.CreateAttribute("port") ;
-                atrybutPort.InnerText = kontakt.PunktKontaktu.Port.ToString();
-                elementKontakt.Attributes.Append(atrybutPort);
 
                 elementGlowny.AppendChild(elementKontakt);                
             }

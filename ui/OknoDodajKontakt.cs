@@ -33,7 +33,7 @@ namespace MojCzat.ui
         void btnDodaj_Click(object sender, EventArgs e)
         {
             nowyKontakt.ID = this.tbId.Text;
-            nowyKontakt.PunktKontaktu = new IPEndPoint(IPAddress.Parse(tbIP.Text), int.Parse(tbPort.Text));
+            nowyKontakt.IP = IPAddress.Parse(tbIP.Text);
             Close();
         }
 

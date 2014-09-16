@@ -24,16 +24,13 @@ namespace MojCzat
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
 
-            /* ODKOMENTOWAC DLA WERSJI RELEASE
-             * 
-             * 
             Process[] pname = Process.GetProcessesByName("mojczat");
             if (pname.Length > 1) 
             {
                 MessageBox.Show("Aplikacja jest juz otwarta na tym komputerze.");
                 return; 
             } 
-            */
+            
             
             starujApplikacje();
         }

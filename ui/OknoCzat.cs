@@ -18,11 +18,6 @@ namespace MojCzat.ui
         string idRozmowcy;
 
         /// <summary>
-        /// Identyfikator wlasny
-        /// </summary>
-        string mojeId;
-
-        /// <summary>
         /// Obiekt odpowiedzialny za przesylanie i odbieranie wiadomosci
         /// </summary>
         Komunikator komunikator;
@@ -49,7 +44,6 @@ namespace MojCzat.ui
             // ustalanie naglowka okna
             this.Text = String.Format("Mój Czat z {0}", idRozmowcy);
 
-            this.mojeId = ConfigurationManager.AppSettings["mojeId"]; 
             // zapisywanie referencji
             this.idRozmowcy = idRozmowcy;
         }
@@ -116,7 +110,7 @@ namespace MojCzat.ui
             if (komunikator.WyslijWiadomosc(IDRozmowcy, wiadomosc))
             {
                 // dodajemy wiadomosc do naszego okna czatu
-                tbCzat.AppendText(String.Format("[{0}] {1}\n", mojeId, wiadomosc));
+                tbCzat.AppendText(String.Format("[{0}] {1}\n", "Ty", wiadomosc));
                 // czyscimy pole wpisywania dla nowej wiadomosci
                 wyczyscPoleWiadomosci();
             }

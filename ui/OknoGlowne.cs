@@ -72,7 +72,7 @@ namespace MojCzat.ui
             CenterToScreen();
             
             // ustalamy naglowek okna
-            this.Text = String.Format("Mój Czat ({0})", ConfigurationManager.AppSettings["mojeId"]);
+            this.Text = "Mój Czat";
                                  
             // zaladuj elementy obiektu "kontakty" do interfejsu uzytkownika
             listaZrodlo.DataSource = this.kontakty;
@@ -115,8 +115,8 @@ namespace MojCzat.ui
         }
 
         Komunikator dajKomunikator() {
-            var mapaAdresowIpKontaktow = new Dictionary<string, IPEndPoint>();
-            kontakty.ForEach(k => mapaAdresowIpKontaktow.Add(k.ID, k.PunktKontaktu));
+            var mapaAdresowIpKontaktow = new Dictionary<string, IPAddress>();
+            kontakty.ForEach(k => mapaAdresowIpKontaktow.Add(k.ID, k.IP));
 
             if (ustawienia.SSLWlaczone && ustawienia.Certyfikat == null) 
             { 
@@ -279,7 +279,7 @@ namespace MojCzat.ui
         }
 
         void dodajNowyKontakt(Kontakt kontakt) {
-            if (kontakty.Any(k => k.ID == kontakt.ID || k.PunktKontaktu == kontakt.PunktKontaktu)) 
+            if (kontakty.Any(k => k.ID == kontakt.ID || k.IP == kontakt.IP)) 
             {
                 // juz cos takiego mamy
                 return;
@@ -287,7 +287,7 @@ namespace MojCzat.ui
             kontakty.Add(kontakt);
             if (polaczony)
             {
-                komunikator.DodajKontakt(kontakt.ID, kontakt.PunktKontaktu);
+                komunikator.DodajKontakt(kontakt.ID, kontakt.IP);
                 polaczSieZKontaktem(kontakt, true);
             }
             else { kontakt.Status = "Niedostepny"; }
@@ -302,7 +302,7 @@ namespace MojCzat.ui
         {
             Kontakt nowyKontakt = new Kontakt();
             new OknoDodajKontakt(nowyKontakt).ShowDialog(this);
-            if (nowyKontakt.ID != null && nowyKontakt.PunktKontaktu != null) {
+            if (nowyKontakt.ID != null && nowyKontakt.IP != null) {
                 dodajNowyKontakt(nowyKontakt);
             }
         }
@@ -313,7 +313,7 @@ namespace MojCzat.ui
             
             var kontakt = (Kontakt)lbKontakty.SelectedItem;
             kontakty.RemoveAll(k => k.ID == kontakt.ID &&
-                k.PunktKontaktu == kontakt.PunktKontaktu);
+                k.IP == kontakt.IP);
             if (polaczony) { 
                 komunikator.Rozlacz(kontakt.ID);
                 komunikator.UsunKontakt(kontakt.ID);                

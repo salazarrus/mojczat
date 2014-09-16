@@ -36,10 +36,9 @@ namespace MojCzat.komunikacja
             Stream strumien;
 
             // tworzymy nowe polaczenie 
-            var polaczanie = new TcpClient(new IPEndPoint(
-                IPAddress.Parse(ConfigurationManager.AppSettings["ip"]),
-                new Random().Next(10000, 20000)));
-            polaczanie.Connect(punktKontaktu);
+            var polaczanie = new TcpClient();
+            var wynik = polaczanie.BeginConnect(punktKontaktu.Address, punktKontaktu.Port, null, null);
+            var sukces = wynik.AsyncWaitHandle.WaitOne(TimeSpan.FromSeconds(1));//czekaj max 1s
 
             strumien = dajStrumienJakoKlient(polaczanie);
             // zachowujemy nowe polaczenie na pozniej
