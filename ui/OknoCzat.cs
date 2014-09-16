@@ -135,6 +135,13 @@ namespace MojCzat.ui
             
         }
 
+        private void OknoCzat_KeyDown(object sender, KeyEventArgs e)
+        {
+            if (e.KeyCode == Keys.Escape) {
+                Close();
+            }
+        }
+
         // obługa zdarzeń interfejsu uzytkownika - koniec
     }
 }

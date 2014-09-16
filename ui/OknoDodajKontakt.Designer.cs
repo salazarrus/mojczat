@@ -49,13 +49,13 @@
             // 
             // btnAnuluj
             // 
+            this.btnAnuluj.DialogResult = System.Windows.Forms.DialogResult.Cancel;
             this.btnAnuluj.Location = new System.Drawing.Point(108, 84);
             this.btnAnuluj.Name = "btnAnuluj";
             this.btnAnuluj.Size = new System.Drawing.Size(75, 23);
             this.btnAnuluj.TabIndex = 1;
             this.btnAnuluj.Text = "Anuluj";
             this.btnAnuluj.UseVisualStyleBackColor = true;
-            this.btnAnuluj.Click += new System.EventHandler(this.btnAnuluj_Click);
             // 
             // label1
             // 
@@ -101,10 +101,12 @@
             this.Controls.Add(this.btnAnuluj);
             this.Controls.Add(this.btnDodaj);
             this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
+            this.KeyPreview = true;
             this.MaximizeBox = false;
             this.MinimizeBox = false;
             this.Name = "OknoDodajKontakt";
             this.Text = "Dodaj Kontakt";
+            this.KeyDown += new System.Windows.Forms.KeyEventHandler(this.OknoDodajKontakt_KeyDown);
             this.ResumeLayout(false);
             this.PerformLayout();
 

@@ -300,10 +300,11 @@ namespace MojCzat.ui
 
         private void btnDodaj_Click(object sender, EventArgs e)
         {
-            Kontakt nowyKontakt = new Kontakt();
-            new OknoDodajKontakt(nowyKontakt).ShowDialog(this);
-            if (nowyKontakt.Nazwa != null && nowyKontakt.IP != null) {
-                dodajNowyKontakt(nowyKontakt);
+            var okno = new OknoDodajKontakt();
+            var wynik = okno.ShowDialog(this);
+            if (wynik == System.Windows.Forms.DialogResult.OK)
+            {
+                dodajNowyKontakt(okno.NowyKontakt);
             }
         }
 

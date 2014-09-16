@@ -14,14 +14,13 @@ namespace MojCzat.ui
 {
     public partial class OknoDodajKontakt : Form
     {
-        Kontakt nowyKontakt;
+        public Kontakt NowyKontakt { get; private set; }
 
-        public OknoDodajKontakt(Kontakt nowyKontakt)
+
+        public OknoDodajKontakt()
         {
             InitializeComponent();
             CenterToParent();
-
-            this.nowyKontakt = nowyKontakt;
         }
 
         protected override void OnShown(EventArgs e)
@@ -32,14 +31,37 @@ namespace MojCzat.ui
 
         void btnDodaj_Click(object sender, EventArgs e)
         {
-            nowyKontakt.Nazwa = this.tbNazwa.Text;
-            nowyKontakt.IP = IPAddress.Parse(tbIP.Text);
-            Close();
-        }
+            IPAddress adres;
+            string nazwa = this.tbNazwa.Text.Trim();
 
-        void btnAnuluj_Click(object sender, EventArgs e)
-        {
+            if (this.tbNazwa.Text.Trim() == String.Empty) {
+                MessageBox.Show("Pole nazwa nie moze byc puste.");
+                return;
+            }
+            
+            if (!IPAddress.TryParse(this.tbIP.Text, out adres)) {
+                MessageBox.Show("Niepoprawy adres IP.");
+                return;
+            }
+
+            var kontakt = new Kontakt();
+            kontakt.Nazwa = nazwa;
+            kontakt.IP = adres;
+            kontakt.ID = adres.ToString();
+            kontakt.Status = "Niedostepny";
+
+            NowyKontakt = kontakt;
+            this.DialogResult = System.Windows.Forms.DialogResult.OK;
             Close();
+
+        }
+        
+        private void OknoDodajKontakt_KeyDown(object sender, KeyEventArgs e)
+        {
+            if (e.KeyCode == Keys.Escape) {
+                DialogResult = System.Windows.Forms.DialogResult.Cancel;
+                Close();
+            }
         }
     }
 }

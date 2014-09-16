@@ -88,8 +88,10 @@
             this.Controls.Add(this.tbWiadomosc);
             this.Controls.Add(this.tbCzat);
             this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
+            this.KeyPreview = true;
             this.MaximizeBox = false;
             this.Name = "OknoCzat";
+            this.KeyDown += new System.Windows.Forms.KeyEventHandler(this.OknoCzat_KeyDown);
             this.ResumeLayout(false);
             this.PerformLayout();
 
