@@ -72,6 +72,12 @@
     <Compile Include="ui\OknoGlowne.Designer.cs">
       <DependentUpon>OknoGlowne.cs</DependentUpon>
     </Compile>
+    <Compile Include="ui\OknoHasloCertyfikat.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="ui\OknoHasloCertyfikat.Designer.cs">
+      <DependentUpon>OknoHasloCertyfikat.cs</DependentUpon>
+    </Compile>
     <Compile Include="ui\OknoUstawienia.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -95,6 +101,9 @@
     </EmbeddedResource>
     <EmbeddedResource Include="ui\OknoGlowne.resx">
       <DependentUpon>OknoGlowne.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="ui\OknoHasloCertyfikat.resx">
+      <DependentUpon>OknoHasloCertyfikat.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="ui\OknoUstawienia.resx">
       <DependentUpon>OknoUstawienia.cs</DependentUpon>

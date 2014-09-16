@@ -10,6 +10,7 @@ using System.Security.Cryptography.X509Certificates;
 using System.Net.Security;
 using System.IO;
 using System.Security.Authentication;
+using MojCzat.model;
 
 namespace MojCzat.komunikacja
 {    
@@ -51,12 +52,15 @@ namespace MojCzat.komunikacja
         /// </summary>
         Centrala centrala;
 
+
+        Ustawienia ustawienia;
+
         /// <summary>
         /// Konstruktor komunikatora
         /// </summary>
         /// <param name="ipepNaId">Mapowanie punktu kontatku (adres IP,Port) do 
         /// Identyfikatora rozmowcy wszystkich kontaktow uzytkownika</param>
-        public Komunikator(Dictionary<string, IPEndPoint> mapa_ID_PunktKontaktu, bool uzywajSSL)
+        public Komunikator(Dictionary<string, IPEndPoint> mapa_ID_PunktKontaktu, Ustawienia ustawienia)
         {
             //inicjalizacja i wypelnianie mapowan pochodnych
             this.ID_IPEP = mapa_ID_PunktKontaktu;
@@ -65,7 +69,7 @@ namespace MojCzat.komunikacja
             this.IP_ID = new Dictionary<IPAddress, string>();
             foreach (var i in mapa_ID_PunktKontaktu) { IP_ID.Add(i.Value.Address, i.Key); }
 
-            centrala = uzywajSSL ? new CentralaSSL() : new Centrala();
+            centrala = ustawienia.SSLWlaczone ? new CentralaSSL(ustawienia.Certyfikat) : new Centrala();
         }
 
         /// <summary>

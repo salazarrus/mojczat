@@ -17,12 +17,12 @@ namespace MojCzat.komunikacja
         /// <summary>
         /// Certyfikat serwera - pozwala laczyc sie przez SSL/TLS
         /// </summary>
-        X509Certificate certyfikat;
+        X509Certificate2 certyfikat;
 
 
-        public CentralaSSL()
+        public CentralaSSL(X509Certificate2 certyfikat)
         {
-            certyfikat = new X509Certificate2("cert\\cert1.pfx", "cert1pwd");
+            this.certyfikat = certyfikat;
         }
 
          

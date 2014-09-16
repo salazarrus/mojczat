@@ -34,7 +34,7 @@ namespace MojCzat.ui
         
         void ustawObszarSSL(){            
             tbCertyfikat.Text = ustawienia.SSLWlaczone? 
-                ustawienia.SSLSciezkaCertyfikat : String.Empty;
+                ustawienia.SSLCertyfikatSciezka : String.Empty;
 
             chBoxWlaczSSL.Checked = tbCertyfikat.Enabled = 
                 btnWybierz.Enabled  = ustawienia.SSLWlaczone;
@@ -57,7 +57,7 @@ namespace MojCzat.ui
             }
 
             ustawienia.SSLWlaczone = chBoxWlaczSSL.Checked;
-            ustawienia.SSLSciezkaCertyfikat = tbCertyfikat.Text;
+            ustawienia.SSLCertyfikatSciezka = tbCertyfikat.Text;
             ustawienia.Zapisz("ustawienia.xml");
             Close();
         }

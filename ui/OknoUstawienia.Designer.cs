@@ -94,6 +94,7 @@
             // 
             // btnZapisz
             // 
+            this.btnZapisz.DialogResult = System.Windows.Forms.DialogResult.OK;
             this.btnZapisz.Location = new System.Drawing.Point(114, 202);
             this.btnZapisz.Name = "btnZapisz";
             this.btnZapisz.Size = new System.Drawing.Size(75, 23);
@@ -104,6 +105,7 @@
             // 
             // btnAnuluj
             // 
+            this.btnAnuluj.DialogResult = System.Windows.Forms.DialogResult.Cancel;
             this.btnAnuluj.Location = new System.Drawing.Point(195, 202);
             this.btnAnuluj.Name = "btnAnuluj";
             this.btnAnuluj.Size = new System.Drawing.Size(75, 23);

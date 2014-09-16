@@ -34,16 +34,19 @@ namespace MojCzat.model
         public static List<Kontakt> WczytajListeKontaktow(string sciezkaPliku) {
             List<Kontakt> listaWynikowa = new List<Kontakt>();
             XmlDocument plikXML = new XmlDocument();
-            plikXML.Load(sciezkaPliku);
-            foreach (XmlNode node in plikXML.DocumentElement.ChildNodes)
-            {
-                string id = node.Attributes["id"].InnerText;
-                string ip = node.Attributes["ip"].InnerText;
-                int port = int.Parse(node.Attributes["port"].InnerText);
-                listaWynikowa.Add(new Kontakt() { ID = id, PunktKontaktu = 
-                    new IPEndPoint(IPAddress.Parse(ip), port) });
-            }
-            
+            try 
+            { 
+                plikXML.Load(sciezkaPliku); 
+                foreach (XmlNode node in plikXML.DocumentElement.ChildNodes)
+                {
+                    string id = node.Attributes["id"].InnerText;
+                    string ip = node.Attributes["ip"].InnerText;
+                    int port = int.Parse(node.Attributes["port"].InnerText);
+                    listaWynikowa.Add(new Kontakt() { ID = id, PunktKontaktu = 
+                        new IPEndPoint(IPAddress.Parse(ip), port) , Status="Niedostepny" });
+                }
+            } catch { return listaWynikowa; }
+
             return listaWynikowa;        
         }
 

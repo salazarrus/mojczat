@@ -44,9 +44,9 @@ namespace MojCzat
         static void starujApplikacje() {
             // zaladuj liste kontaktow uzytkownika
             var kontakty = Kontakt.WczytajListeKontaktow("kontakty.xml");
-            
             // uruchom okno glowne programu w glowny watku programu
-            Application.Run(new OknoGlowne(kontakty));
+            var ustawienia = Ustawienia.Wczytaj("ustawienia.xml");            
+            Application.Run(new OknoGlowne(kontakty, ustawienia));
         }       
     }
 }

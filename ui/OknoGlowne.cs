@@ -5,6 +5,8 @@ using System.Collections.Generic;
 using System.Configuration;
 using System.Linq;
 using System.Net;
+using System.Security.Cryptography;
+using System.Security.Cryptography.X509Certificates;
 using System.Threading;
 using System.Windows.Forms;
 
@@ -48,23 +50,25 @@ namespace MojCzat.ui
 
         bool polaczony;
 
+        Ustawienia ustawienia;
+
         /// <summary>
         /// Konstruktor okna glownego
         /// </summary>
         /// <param name="listaKontaktow">elementy tej listy prezentowane sa w spisie kontaktow</param>
         /// <param name="komunikator">referencja do komunikatora potrzebna jest do zapisania sie jako sluchacz wydarzen (nowa wiadomosc etc.)</param>
-        public OknoGlowne(List<Kontakt> listaKontaktow)
+        public OknoGlowne(List<Kontakt> listaKontaktow, Ustawienia ustawienia)
         {
+            // inicjalizacja elementow formy
+            InitializeComponent();
                   
             // zapisujemy referencje
             this.kontakty = listaKontaktow;
-                   
+            this.ustawienia = ustawienia;        
+
             polaczSie();
-
-            // inicjalizacja elementow formy
-            InitializeComponent();
-
-            comboStatus.SelectedIndex = 0;
+                        
+            comboStatus.SelectedIndex = 1;
 
             // centralne ustawienie okna na ekranie
             CenterToScreen();
@@ -95,24 +99,54 @@ namespace MojCzat.ui
         /// </summary>
         delegate void OdswiezOkno();
 
-        protected override void OnClosed(EventArgs e)
+        protected override void OnClosing(System.ComponentModel.CancelEventArgs e)
         {
-            base.OnClosed(e);
+            base.OnClosing(e);
             if (polaczony) { rozlaczSie(); }
+        }
+
+        string poprosHasloCertyfikatu(){
+            var oknoHaslo = new OknoHasloCertyfikat();
+            var wynik = oknoHaslo.ShowDialog(this);
+            return (wynik == System.Windows.Forms.DialogResult.OK) ? 
+                oknoHaslo.Haslo : null;
         }
 
         Komunikator dajKomunikator() {
             var mapaAdresowIpKontaktow = new Dictionary<string, IPEndPoint>();
             kontakty.ForEach(k => mapaAdresowIpKontaktow.Add(k.ID, k.PunktKontaktu));
 
+            if (ustawienia.SSLWlaczone && ustawienia.Certyfikat == null) 
+            { 
+                var haslo = poprosHasloCertyfikatu();
+                if (haslo == null)
+                {
+                    MessageBox.Show("Brak hasla do certyfikatu uniemozliwia uzywanie go.");
+                    return null;
+                }
+                
+                try{
+                    ustawienia.Certyfikat = new X509Certificate2(ustawienia.SSLCertyfikatSciezka, haslo);
+                }catch(CryptographicException ex){
+                    MessageBox.Show("Nastąpił błąd podczas otwierania certyfikatu: " + ex.Message);
+                    return null;
+                }
+            }
+
             // zainicjalizuj obiekt odpowiedzialny za przesylanie / odbieranie wiadomosci
-            var komunikator = new Komunikator(mapaAdresowIpKontaktow, true);
+            var komunikator = new Komunikator(mapaAdresowIpKontaktow, ustawienia);
             return komunikator;
         }
 
         void polaczSie() {
             // uruchom oddzielny watek dla obiektu odpowiedzialnego za komunikacje
             komunikator = dajKomunikator();
+            if (komunikator == null) 
+            {
+                comboStatus.SelectedIndex = 1;
+                return; 
+            }
+
             polaczony = true;
             // zapisujemy sie jako sluchacz wydarzenia NowaWiadomosc
             komunikator.NowaWiadomosc += komunikator_NowaWiadomosc;
@@ -249,8 +283,13 @@ namespace MojCzat.ui
                 return;
             }
             kontakty.Add(kontakt);
-            komunikator.DodajKontakt(kontakt.ID, kontakt.PunktKontaktu);
-            polaczSieZKontaktem(kontakt, true);
+            if (polaczony)
+            {
+                komunikator.DodajKontakt(kontakt.ID, kontakt.PunktKontaktu);
+                polaczSieZKontaktem(kontakt, true);
+            }
+            else { kontakt.Status = "Niedostepny"; }
+            
             odswiezListeKontaktow();
             Kontakt.ZapiszListeKontaktow(kontakty, "kontakty.xml");
         }
@@ -273,8 +312,11 @@ namespace MojCzat.ui
             var kontakt = (Kontakt)lbKontakty.SelectedItem;
             kontakty.RemoveAll(k => k.ID == kontakt.ID &&
                 k.PunktKontaktu == kontakt.PunktKontaktu);
-            komunikator.Rozlacz(kontakt.ID);
-            komunikator.UsunKontakt(kontakt.ID);                
+            if (polaczony) { 
+                komunikator.Rozlacz(kontakt.ID);
+                komunikator.UsunKontakt(kontakt.ID);                
+            }
+
             odswiezListeKontaktow();
             Kontakt.ZapiszListeKontaktow(kontakty, "kontakty.xml");
         }
@@ -292,7 +334,10 @@ namespace MojCzat.ui
         private void btnUstawienia_Click(object sender, EventArgs e)
         {
             var ustawienia = new OknoUstawienia(Ustawienia.Wczytaj("ustawienia.xml"));
-            ustawienia.ShowDialog(this);
+            var wynik = ustawienia.ShowDialog(this);
+            if (wynik == System.Windows.Forms.DialogResult.OK) { 
+            
+            }
         }
 
         /// <summary>
