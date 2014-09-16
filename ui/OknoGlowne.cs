@@ -65,9 +65,7 @@ namespace MojCzat.ui
             // zapisujemy referencje
             this.kontakty = listaKontaktow;
             this.ustawienia = ustawienia;        
-
-            polaczSie();
-                        
+                       
             comboStatus.SelectedIndex = 1;
 
             // centralne ustawienie okna na ekranie
@@ -102,7 +100,11 @@ namespace MojCzat.ui
         protected override void OnClosing(System.ComponentModel.CancelEventArgs e)
         {
             base.OnClosing(e);
-            if (polaczony) { rozlaczSie(); }
+            if (polaczony) {
+                komunikator.NowaWiadomosc -= komunikator_NowaWiadomosc;
+                komunikator.ZmianaStanuPolaczenia -= komunikator_ZmianaStanuPolaczenia;
+                rozlaczSie(); 
+            }
         }
 
         string poprosHasloCertyfikatu(){

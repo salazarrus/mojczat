@@ -25,5 +25,13 @@ namespace MojCzat.ui
             Haslo = tbHaslo.Text;
         }
 
+        private void tbHaslo_KeyDown(object sender, KeyEventArgs e)
+        {
+            if (e.KeyCode == Keys.Enter) { 
+                btnOK_Click(sender, e);
+                DialogResult = System.Windows.Forms.DialogResult.OK;
+                Close();
+            }           
+        }
     }
 }

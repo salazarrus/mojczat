@@ -53,6 +53,7 @@
             this.tbHaslo.PasswordChar = '*';
             this.tbHaslo.Size = new System.Drawing.Size(175, 20);
             this.tbHaslo.TabIndex = 1;
+            this.tbHaslo.KeyDown += new System.Windows.Forms.KeyEventHandler(this.tbHaslo_KeyDown);
             // 
             // btnAnuluj
             // 
