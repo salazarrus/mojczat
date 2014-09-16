@@ -121,7 +121,7 @@ namespace MojCzat.ui
                 var haslo = poprosHasloCertyfikatu();
                 if (haslo == null)
                 {
-                    MessageBox.Show("Brak hasla do certyfikatu uniemozliwia uzywanie go.");
+                    MessageBox.Show("Brak hasła do certyfikatu uniemożliwia połączenie.");
                     return null;
                 }
                 
@@ -333,10 +333,11 @@ namespace MojCzat.ui
 
         private void btnUstawienia_Click(object sender, EventArgs e)
         {
-            var ustawienia = new OknoUstawienia(Ustawienia.Wczytaj("ustawienia.xml"));
-            var wynik = ustawienia.ShowDialog(this);
-            if (wynik == System.Windows.Forms.DialogResult.OK) { 
-            
+            var okno = new OknoUstawienia(Ustawienia.Wczytaj("ustawienia.xml"));
+            var wynik = okno.ShowDialog(this);
+            if (wynik == System.Windows.Forms.DialogResult.OK) {
+                ustawienia = okno.Ustawienia;
+                ustawienia.Zapisz("ustawienia.xml");
             }
         }
 

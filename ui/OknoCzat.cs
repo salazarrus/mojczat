@@ -101,7 +101,7 @@ namespace MojCzat.ui
         void wyslijWpisanaWiadomosc() {
             if (komunikator == null) 
             { 
-                MessageBox.Show("Jestes rozlaczony.");
+                MessageBox.Show("Nie możesz przesyłać wiadości, gdy jestes niedostępny.");
                 return;
             }
             
@@ -113,12 +113,17 @@ namespace MojCzat.ui
             if (wiadomosc == String.Empty) { return; }
 
             // wysylamy wiadomosc
-            komunikator.WyslijWiadomosc(IDRozmowcy, wiadomosc);
-                       
-            // dodajemy wiadomosc do naszego okna czatu
-            tbCzat.AppendText(String.Format("[{0}] {1}\n", mojeId, wiadomosc));
-            // czyscimy pole wpisywania dla nowej wiadomosci
-            wyczyscPoleWiadomosci();
+            if (komunikator.WyslijWiadomosc(IDRozmowcy, wiadomosc))
+            {
+                // dodajemy wiadomosc do naszego okna czatu
+                tbCzat.AppendText(String.Format("[{0}] {1}\n", mojeId, wiadomosc));
+                // czyscimy pole wpisywania dla nowej wiadomosci
+                wyczyscPoleWiadomosci();
+            }
+            else
+            {
+                MessageBox.Show("Wiadomość nie została wysłana.");            
+            }
         }
 
         // obługa zdarzeń interfejsu uzytkownika - poczatek

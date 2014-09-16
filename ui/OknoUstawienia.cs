@@ -14,12 +14,13 @@ namespace MojCzat.ui
 {
     public partial class OknoUstawienia : Form
     {
-        Ustawienia ustawienia;
+        public Ustawienia Ustawienia { get; private set; }
+
 
         public OknoUstawienia(Ustawienia obecne)
         {
             InitializeComponent();
-            this.ustawienia = obecne;
+            Ustawienia = obecne;
             
             ustawObszarSSL();
         }
@@ -33,11 +34,11 @@ namespace MojCzat.ui
 
         
         void ustawObszarSSL(){            
-            tbCertyfikat.Text = ustawienia.SSLWlaczone? 
-                ustawienia.SSLCertyfikatSciezka : String.Empty;
+            tbCertyfikat.Text = Ustawienia.SSLWlaczone?
+                Ustawienia.SSLCertyfikatSciezka : String.Empty;
 
-            chBoxWlaczSSL.Checked = tbCertyfikat.Enabled = 
-                btnWybierz.Enabled  = ustawienia.SSLWlaczone;
+            chBoxWlaczSSL.Checked = tbCertyfikat.Enabled =
+                btnWybierz.Enabled = Ustawienia.SSLWlaczone;
         }
 
         void btnWybierz_Click(object sender, EventArgs e)
@@ -56,9 +57,8 @@ namespace MojCzat.ui
                 return;
             }
 
-            ustawienia.SSLWlaczone = chBoxWlaczSSL.Checked;
-            ustawienia.SSLCertyfikatSciezka = tbCertyfikat.Text;
-            ustawienia.Zapisz("ustawienia.xml");
+            Ustawienia.SSLWlaczone = chBoxWlaczSSL.Checked;
+            Ustawienia.SSLCertyfikatSciezka = tbCertyfikat.Text;
             Close();
         }
 
@@ -69,7 +69,7 @@ namespace MojCzat.ui
 
         private void chBoxWlaczSSL_CheckedChanged(object sender, EventArgs e)
         {
-            ustawienia.SSLWlaczone = chBoxWlaczSSL.Checked;
+            Ustawienia.SSLWlaczone = chBoxWlaczSSL.Checked;
             ustawObszarSSL();
         }
     }

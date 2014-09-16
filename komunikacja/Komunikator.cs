@@ -136,20 +136,18 @@ namespace MojCzat.komunikacja
         /// </summary>
         /// <param name="idRozmowcy">Identyfikator rozmowcy</param>
         /// <param name="wiadomosc">Nowa wiadomosc</param>
-        public void WyslijWiadomosc(String idRozmowcy, String wiadomosc) { 
+        public bool WyslijWiadomosc(String idRozmowcy, String wiadomosc) {
             try
             {
                 Stream strumien = dajStrumien(idRozmowcy);
 
                 // tranformacja tekstu w bajty
-                Byte[] bajty = System.Text.Encoding.UTF8.GetBytes(wiadomosc);         
+                Byte[] bajty = System.Text.Encoding.UTF8.GetBytes(wiadomosc);
                 // wysylanie bajtow polaczeniem TCP 
                 strumien.Write(bajty, 0, bajty.Length);
+                return true;
             }
-            catch (SocketException ex)
-            {
-                //TODO cos z tym zrobic
-            }
+            catch { return false; }           
         }
 
         /// <summary>
