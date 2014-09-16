@@ -335,11 +335,15 @@ namespace MojCzat.ui
 
         private void btnUstawienia_Click(object sender, EventArgs e)
         {
-            var okno = new OknoUstawienia(Ustawienia.Wczytaj("ustawienia.xml"));
+            var okno = new OknoUstawienia(ustawienia);
             var wynik = okno.ShowDialog(this);
-            if (wynik == System.Windows.Forms.DialogResult.OK) {
-                ustawienia = okno.Ustawienia;
-                ustawienia.Zapisz("ustawienia.xml");
+            if (wynik != System.Windows.Forms.DialogResult.OK || okno.Ustawienia == ustawienia) { return; }
+
+            ustawienia = okno.Ustawienia;
+            ustawienia.Zapisz("ustawienia.xml");
+            if (polaczony) {
+                rozlaczSie();
+                polaczSie();
             }
         }
 

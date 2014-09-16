@@ -16,11 +16,13 @@ namespace MojCzat.ui
     {
         public Ustawienia Ustawienia { get; private set; }
 
+        private Ustawienia pierwotne;
 
         public OknoUstawienia(Ustawienia obecne)
         {
+            Ustawienia = obecne.Kopiuj();
+
             InitializeComponent();
-            Ustawienia = obecne;
             
             ustawObszarSSL();
         }

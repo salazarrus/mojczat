@@ -15,6 +15,14 @@ namespace MojCzat.model
         public X509Certificate2 Certyfikat { get; set; }
 
 
+        public Ustawienia Kopiuj() {
+            return new Ustawienia()
+            {
+                SSLCertyfikatSciezka = this.SSLCertyfikatSciezka,
+                SSLWlaczone = this.SSLWlaczone
+            }; 
+        }
+
         /// <summary>
         /// Wczytaj liste kontaktow z pliku XML
         /// </summary>
@@ -64,7 +72,17 @@ namespace MojCzat.model
             plikXML.Save(sciezkaPliku);
         }
 
+        public override bool Equals(object obj)
+        {
+            var ustawienia = obj as Ustawienia;
+            
+            if (ustawienia != null) {
+                return this.SSLCertyfikatSciezka == ustawienia.SSLCertyfikatSciezka &&
+                    this.SSLWlaczone == ustawienia.SSLWlaczone;
+            }
 
+            return base.Equals(obj);
+        }
 
 
     }
