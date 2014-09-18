@@ -181,11 +181,7 @@ namespace MojCzat.komunikacja
                     if (adresKlienta != null) { zajmijSieKlientem(adresKlienta); }                    
                 }
             }
-            catch(Exception ex)
-            {
-                MessageBox.Show(ex.ToString());
-                //TODO zdobic cos z tym
-            }
+            catch(Exception ex){ } // program zostal zamkniety
             finally { Stop(); }
         }
 

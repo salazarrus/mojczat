@@ -146,7 +146,6 @@ namespace MojCzat.komunikacja
 
         void zachowajPolaczenie(IPAddress ipUzytkownika, TcpClient polaczenie, Stream strumien, bool nawiaz)
         {
-            MessageBox.Show("zachowujemy polaczenie " + nawiaz);
             otwartePolaczenia.Add(ipUzytkownika, polaczenie);
             otwarteStrumienie.Add(ipUzytkownika, strumien);
         }
