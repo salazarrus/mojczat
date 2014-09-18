@@ -21,7 +21,7 @@ namespace MojCzat.ui
         /// <summary>
         /// obiektu tego uzywamy do otwierania okna czatu z innego watku
         /// </summary>
-        OtworzOknoCzatuZWiadomoscia otworzOknoCzatuDelegata;
+        ObluzNowaWiadomoscUI obsluzNowaWiadomoscUI;
 
 
         /// <summary>
@@ -79,7 +79,7 @@ namespace MojCzat.ui
             lbKontakty.DataSource = listaZrodlo;
 
             // inicjalizacja delegaty do otwierania okna czatu 
-            otworzOknoCzatuDelegata = new OtworzOknoCzatuZWiadomoscia(otworzOknoCzat);
+            obsluzNowaWiadomoscUI = new ObluzNowaWiadomoscUI(obsluzWiadomosc);
             // inicjalizacja delegaty do odswiezania okna
             odswiezOknoDelegata = new OdswiezOkno(odswiezListeKontaktow);
         }
@@ -89,7 +89,7 @@ namespace MojCzat.ui
         /// </summary>
         /// <param name="rozmowca"></param>
         /// <param name="wiadomosc">Wiadomosc, ktora wpiszemy do okna czatu</param>
-        delegate void OtworzOknoCzatuZWiadomoscia(Kontakt rozmowca, string wiadomosc);
+        delegate void ObluzNowaWiadomoscUI(Kontakt rozmowca, Wiadomosc rodzaj ,string wiadomosc);
 
         /// <summary>
         /// Gdy nastapila zmiana dostepnosci kontaktow, odswiezamy okno
@@ -158,6 +158,7 @@ namespace MojCzat.ui
             polaczSieZKontaktami();            
             
             watekKomunikator = new Thread(komunikator.Start);
+            watekKomunikator.Name = "komunikator";
             watekKomunikator.Start();
             oknaCzatu.Values.ToList().ForEach(o => o.Komunikator = komunikator);
         }
@@ -216,11 +217,11 @@ namespace MojCzat.ui
         /// </summary>
         /// <param name="id">Identyfikator nadawcy</param>
         /// <param name="wiadomosc">tresc wiadomosci</param>
-         void komunikator_NowaWiadomosc(string id, string wiadomosc)
+         void komunikator_NowaWiadomosc(string id, Wiadomosc rodzaj , string wiadomosc)
         {
             // otworz okno przez delegate poniewaz jestesmy w innym watku
             var kontakt = kontakty.Where(k => k.ID == id).SingleOrDefault();
-            Invoke(otworzOknoCzatuDelegata, kontakt, wiadomosc);
+            Invoke(obsluzNowaWiadomoscUI, kontakt, rodzaj , wiadomosc); 
         }
         
         /// <summary>
@@ -235,6 +236,16 @@ namespace MojCzat.ui
             this.kontakty = kontakty.OrderByDescending(k=>k.Status).ThenBy(k=>k.Nazwa).ToList();
         }
 
+        void obsluzWiadomosc(Kontakt rozmowca, Wiadomosc rodzaj , string wiadomosc) {
+            if (rodzaj == Wiadomosc.Zwykla) { otworzOknoCzat(rozmowca, wiadomosc); }
+            else if (rodzaj == Wiadomosc.Opis) { zmienOpisKontaktu(rozmowca, wiadomosc); }
+        }
+
+        void zmienOpisKontaktu(Kontakt rozmowca, string opis) {
+            rozmowca.Opis = opis;
+            odswiezListeKontaktow();
+        }
+        
         /// <summary>
         /// Pokaz okno czatu z innym uzytkownikiem i wyswietl w nim wiadomosc
         /// </summary>

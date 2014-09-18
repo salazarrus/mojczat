@@ -52,9 +52,13 @@ namespace MojCzat.komunikacja
         /// <param name="chain"></param>
         /// <param name="sslPolicyErrors"></param>
         /// <returns></returns>
-        bool sprawdzCertyfikat(object sender, X509Certificate certificate,
-            X509Chain chain, SslPolicyErrors sslPolicyErrors)
-        {
+        bool sprawdzCertyfikat(object sender, X509Certificate certyfikat,
+            X509Chain lancuch, SslPolicyErrors bledy)
+        {            
+            // w rzeczywistosci powinno byc tak, ale nie mamy testowych certyfikatow
+            // podpisanych przez instytucje zaufane przez Microsoft
+            // return bledy == SslPolicyErrors.None;
+            
             return true;
         }
     }

@@ -32,6 +32,9 @@ namespace MojCzat.model
         /// </summary>
         public string Nazwa { get; set; }
 
+
+        public string Opis { get; set; }
+
         /// <summary>
         /// Wczytaj liste kontaktow z pliku XML
         /// </summary>

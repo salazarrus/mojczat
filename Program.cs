@@ -21,6 +21,8 @@ namespace MojCzat
         [STAThread]
         static void Main()
         {
+            Thread.CurrentThread.Name = "Glowny";
+
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
 
