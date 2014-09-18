@@ -30,21 +30,13 @@ namespace MojCzat.komunikacja
     /// </summary>
     public class Komunikator
     {
-        /// <summary>
-        /// Ile bajtow mozna przeslac w jednej wiadomosci
-        /// </summary>
-        const int rozmiarBufora = 1024;
+     
         
         /// <summary>
         /// Na jakim porcie nasluchujemy wiadomosci
         /// </summary>
         int port;
-        
-        /// <summary>
-        /// Do kazdego kontaktu jest przypisany bufor na przesylane przez niego wiadomosci
-        /// </summary>
-        Dictionary<string, byte[]> bufory = new Dictionary<string, byte[]>();
-        
+            
         /// <summary>
         /// Mapowanie Identyfikatora rozmowcy do punktu kontatku (adres IP,Port)
         /// </summary>
@@ -62,16 +54,13 @@ namespace MojCzat.komunikacja
         /// </summary>
         Centrala centrala;
 
-        Dictionary<string, Queue<byte[]>> kolejkaWiadomosci = new Dictionary<string, Queue<byte[]>>();
-        Dictionary<string, Boolean> wysylaKomunikaty = new Dictionary<string,Boolean>();
+        Dictionary<string, Queue<byte[]>> komunikatyWychodzace = new Dictionary<string, Queue<byte[]>>();
+        Dictionary<string, Boolean> wysylanieWToku = new Dictionary<string,Boolean>();
         Dictionary<string, object> zamkiWysylania = new Dictionary<string, object>();
 
         public String opis = "";
 
-        const byte koniecPolaczenia = 0;
-        const byte zwyklaWiadomosc = 1;
-        const byte dajMiSwojOpis = 2;
-        const byte otoMojOpis = 3;
+        Buforownia buforownia = new Buforownia();
 
         /// <summary>
         /// Konstruktor komunikatora
@@ -90,7 +79,7 @@ namespace MojCzat.komunikacja
             this.IP_ID = new Dictionary<IPAddress, string>();
             foreach (var i in mapa_ID_PunktKontaktu) { 
                 IP_ID.Add(i.Value, i.Key);
-                wysylaKomunikaty.Add(i.Key, false);
+                wysylanieWToku.Add(i.Key, false);
                 zamkiWysylania.Add(i.Key, new object());
             }
                 
@@ -129,7 +118,7 @@ namespace MojCzat.komunikacja
             IP_ID.Add(punktKontaktu, idUzytkownika);
             ID_IP.Add(idUzytkownika, punktKontaktu);
             zamkiWysylania.Add(idUzytkownika, new object());
-            wysylaKomunikaty.Add(idUzytkownika, false);
+            wysylanieWToku.Add(idUzytkownika, false);
         }
 
         /// <summary>
@@ -141,8 +130,8 @@ namespace MojCzat.komunikacja
             IP_ID.Remove(ID_IP[idUzytkownika]);
             ID_IP.Remove(idUzytkownika);
             zamkiWysylania.Remove(idUzytkownika);
-            wysylaKomunikaty.Remove(idUzytkownika);
-            bufory.Remove(idUzytkownika);
+            wysylanieWToku.Remove(idUzytkownika);
+            buforownia.Usun(idUzytkownika);
         }
 
         /// <summary>
@@ -157,7 +146,7 @@ namespace MojCzat.komunikacja
                 dajStrumien(idUzytkownika);
                 wyslijOpis(idUzytkownika);
                 poprosOpis(idUzytkownika);
-                czekajNaZadanie(idUzytkownika); 
+                czekajNaZapytanie(idUzytkownika); 
                 return true;
             }
             catch{
@@ -183,8 +172,8 @@ namespace MojCzat.komunikacja
             {
                 Stream strumien = dajStrumien(idRozmowcy);
                 // tranformacja tekstu w bajty
-                wiadomosc = Encoding.UTF8.GetString(new byte[] {zwyklaWiadomosc}) + wiadomosc;
-                Byte[] bajty = Encoding.UTF8.GetBytes(wiadomosc);  
+                
+                Byte[] bajty = stworzKomunikat(Protokol.ZwyklaWiadomosc, wiadomosc);  
                 // wysylanie bajtow polaczeniem TCP 
                 dajKolejkeWiadomosci(idRozmowcy).Enqueue(bajty);
                 wysylajZKolejki(idRozmowcy);
@@ -230,29 +219,36 @@ namespace MojCzat.komunikacja
             ID_IP.Keys.ToList().ForEach(s => wyslijOpis(s));
         }
 
+        public void poprosOpis(string id)
+        {
+            var bajty = stworzKomunikat(Protokol.DajMiSwojOpis, "");
+            dajKolejkeWiadomosci(id).Enqueue(bajty);
+            wysylajZKolejki(id);
+        }
+
         IPAddress dajIp(string idUzytkownika) {
             return ID_IP[idUzytkownika];
         }
 
-        class StatusObsluzZadanie {
-            public byte[] typ;
-            public String idNadawcy;
+        byte[] stworzKomunikat(byte rodzaj , string wiadomosc) {
+            wiadomosc = Encoding.UTF8.GetString(new byte[] { rodzaj }) + wiadomosc;
+            return  Encoding.UTF8.GetBytes(wiadomosc);  
         }
-
+   
         /// <summary>
         /// Czekaj (pasywnie) na wiadomosci
         /// </summary>
         /// <param name="polaczenie">kanal, ktorym przychodzi wiadomosc</param>
         /// <param name="idRozmowcy">Identyfikator nadawcy</param>
-        void czekajNaZadanie(string idRozmowcy)
+        void czekajNaZapytanie(string idRozmowcy)
         {
-            var wynik = new StatusObsluzZadanie(){ idNadawcy=idRozmowcy, typ=new byte[1]};
-            centrala[dajIp(idRozmowcy)].BeginRead(wynik.typ, 0, 1, obsluzZadanie, wynik);
+            var wynik = new StatusObsluzZapytanie(){ idNadawcy=idRozmowcy, typ=new byte[1]};
+            centrala[dajIp(idRozmowcy)].BeginRead(wynik.typ, 0, 1, obsluzZapytanie, wynik);
 
         }
 
-        void obsluzZadanie(IAsyncResult wynik){
-            var status = (StatusObsluzZadanie)wynik.AsyncState;
+        void obsluzZapytanie(IAsyncResult wynik){
+            var status = (StatusObsluzZapytanie)wynik.AsyncState;
             if (centrala[dajIp(status.idNadawcy)] == null) { return; }
 
             try
@@ -266,63 +262,52 @@ namespace MojCzat.komunikacja
             var rodzaj = Encoding.UTF8.GetString(status.typ);
 
             switch (status.typ[0]) { 
-                case koniecPolaczenia:
+                case Protokol.KoniecPolaczenia:
                     Rozlacz(status.idNadawcy);
                     if (ZmianaStanuPolaczenia != null) 
                     {
                         ZmianaStanuPolaczenia(status.idNadawcy, false); 
                     }
                     return;
-                case zwyklaWiadomosc://zwykla wiadomosc
+                case Protokol.ZwyklaWiadomosc://zwykla wiadomosc
                     czytajWiadomosc(status.idNadawcy, Wiadomosc.Zwykla);
                     break;
-                case dajMiSwojOpis:
+                case Protokol.DajMiSwojOpis:
                     wyslijOpis(status.idNadawcy);
-                    czekajNaZadanie(status.idNadawcy);
+                    czekajNaZapytanie(status.idNadawcy);
                     break;
-                case otoMojOpis:
+                case Protokol.OtoMojOpis:
                     czytajWiadomosc(status.idNadawcy, Wiadomosc.Opis);
                     break;
                 default:
-                    czekajNaZadanie(status.idNadawcy);
+                    czekajNaZapytanie(status.idNadawcy);
                     break;
             }          
         }
 
-        class IDRW {
-            public String id { get; set; }
-            public Wiadomosc rodzaj { get; set; }
-        }
 
         void czytajWiadomosc(string id, Wiadomosc rodzaj) { 
-            centrala[dajIp(id)].BeginRead(dajBufor(id), 0,
-                rozmiarBufora, new AsyncCallback(obsluzWiadomosc), new IDRW(){id= id, rodzaj= rodzaj} );
+            centrala[dajIp(id)].BeginRead(buforownia[id], 0,
+                Buforownia.RozmiarBufora, new AsyncCallback(obsluzWiadomosc), 
+                new CzytajWiadomoscStatus(){id= id, rodzaj= rodzaj} );
         }
 
 
-        void wyslijOpis(string id) { 
-            var bajty = Encoding.UTF8.GetBytes(Encoding.UTF8.GetString(new byte[]{ otoMojOpis})  + opis);
-            dajKolejkeWiadomosci(id).Enqueue(bajty);
-            wysylajZKolejki(id);
-        }
-
-        public void poprosOpis(string id)
-        {
-            var bajty = Encoding.UTF8.GetBytes(Encoding.UTF8.GetString(new byte[]{ dajMiSwojOpis}));
-            dajKolejkeWiadomosci(id).Enqueue(bajty);
+        void wyslijOpis(string id) {
+            dajKolejkeWiadomosci(id).Enqueue(stworzKomunikat(Protokol.OtoMojOpis, opis));
             wysylajZKolejki(id);
         }
 
         void wysylajZKolejki(string idUzytkownika) {
             byte[] doWyslania = null;
             lock (zamkiWysylania[idUzytkownika]) {
-                if (wysylaKomunikaty[idUzytkownika]) {
+                if (wysylanieWToku[idUzytkownika]) {
                     return;
                 }
 
                 if (dajKolejkeWiadomosci(idUzytkownika).Any()) {
                     doWyslania = dajKolejkeWiadomosci(idUzytkownika).Dequeue();
-                    wysylaKomunikaty[idUzytkownika] = true;
+                    wysylanieWToku[idUzytkownika] = true;
                 }
             }
 
@@ -337,7 +322,7 @@ namespace MojCzat.komunikacja
             centrala[dajIp(id)].EndWrite(wynik);
         
             lock (zamkiWysylania[id]) {
-                wysylaKomunikaty[id] = false;    
+                wysylanieWToku[id] = false;    
             }
             wysylajZKolejki(id);
         }                 
@@ -358,7 +343,40 @@ namespace MojCzat.komunikacja
             if (ZmianaStanuPolaczenia != null)
             { ZmianaStanuPolaczenia(nadawca, true); }
 
-            czekajNaZadanie(nadawca);// czekaj (pasywnie) na wiadomosc z tego polaczenia
+            czekajNaZapytanie(nadawca);// czekaj (pasywnie) na wiadomosc z tego polaczenia
+        }
+
+      
+        /// <summary>
+        /// Nadeszla nowa wiadomosc
+        /// </summary>
+        /// <param name="wynik"> obiektu tego uzywamy do zakonczenia jednej 
+        /// operacji asynchronicznej i rozpoczecia nowej </param>
+        void obsluzWiadomosc(IAsyncResult wynik)
+        {   
+            // od kogo przyszla wiadomosc
+            var status = (CzytajWiadomoscStatus)wynik.AsyncState;
+            // zakoncz operacje asynchroniczna
+            var strumien = centrala[dajIp(status.id)];
+            strumien.EndRead(wynik);
+
+            int index = Array.FindIndex(buforownia[status.id], x=> x==0);
+            // dekodujemy wiadomosc
+            // usuwamy \0 z konca lancucha
+            string wiadomosc = index >= 0 ?
+                Encoding.UTF8.GetString(buforownia[status.id], 0, index) :
+                Encoding.UTF8.GetString(buforownia[status.id]);
+
+            // czyscimy bufor
+            Array.Clear(buforownia[status.id], 0, Buforownia.RozmiarBufora); 
+            // jesli sa zainteresowani, informujemy ich o nowej wiadomosci
+            if(NowaWiadomosc != null){
+                // informujemy zainteresowanych
+                NowaWiadomosc(status.id, status.rodzaj , wiadomosc);
+            }
+
+            // rozpocznij nowa operacje asynchroniczna - czekaj na nowa wiadomosc
+            czekajNaZapytanie(status.id); 
         }
 
         /// <summary>
@@ -376,52 +394,30 @@ namespace MojCzat.komunikacja
             var polaczenie = centrala.NawiazPolaczenie(new IPEndPoint(cel, port));
             return polaczenie;
         }
-        
-        Queue<byte[]> dajKolejkeWiadomosci(string id) {
-            if (!kolejkaWiadomosci.ContainsKey(id)) {
-                kolejkaWiadomosci.Add(id, new Queue<byte[]>());
-            }
-            return kolejkaWiadomosci[id];
-        }
 
-        byte[] dajBufor(string id) {
-            if (!bufory.ContainsKey(id))
+        Queue<byte[]> dajKolejkeWiadomosci(string id)
+        {
+            if (!komunikatyWychodzace.ContainsKey(id))
             {
-                bufory.Add(id, new byte[rozmiarBufora]);
+                komunikatyWychodzace.Add(id, new Queue<byte[]>());
             }
-            return bufory[id];
+            return komunikatyWychodzace[id];
+        }
+        
+        class CzytajWiadomoscStatus
+        {
+            public String id { get; set; }
+            public Wiadomosc rodzaj { get; set; }
         }
 
-        /// <summary>
-        /// Nadeszla nowa wiadomosc
-        /// </summary>
-        /// <param name="wynik"> obiektu tego uzywamy do zakonczenia jednej 
-        /// operacji asynchronicznej i rozpoczecia nowej </param>
-        void obsluzWiadomosc(IAsyncResult wynik)
-        {   
-            // od kogo przyszla wiadomosc
-            var status = (IDRW)wynik.AsyncState;
-            // zakoncz operacje asynchroniczna
-            var strumien = centrala[dajIp(status.id)];
-            strumien.EndRead(wynik);
 
-            int index = Array.FindIndex(dajBufor(status.id), x=> x==0);
-            // dekodujemy wiadomosc
-            // usuwamy \0 z konca lancucha
-            string wiadomosc = index >= 0 ?
-                Encoding.UTF8.GetString(dajBufor(status.id), 0, index) :
-                Encoding.UTF8.GetString(dajBufor(status.id));
-
-            // czyscimy bufor
-            Array.Clear(dajBufor(status.id), 0, rozmiarBufora); 
-            // jesli sa zainteresowani, informujemy ich o nowej wiadomosci
-            if(NowaWiadomosc != null){
-                // informujemy zainteresowanych
-                NowaWiadomosc(status.id, status.rodzaj , wiadomosc);
-            }
-
-            // rozpocznij nowa operacje asynchroniczna - czekaj na nowa wiadomosc
-            czekajNaZadanie(status.id); 
+        class StatusObsluzZapytanie
+        {
+            public byte[] typ;
+            public String idNadawcy;
         }
+
+
+
     }
 }

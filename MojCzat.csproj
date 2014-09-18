@@ -48,9 +48,11 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="komunikacja\Buforownia.cs" />
     <Compile Include="komunikacja\Centrala.cs" />
     <Compile Include="komunikacja\CentralaSSL.cs" />
     <Compile Include="komunikacja\Komunikator.cs" />
+    <Compile Include="komunikacja\Protokol.cs" />
     <Compile Include="model\Kontakt.cs" />
     <Compile Include="model\Ustawienia.cs" />
     <Compile Include="Program.cs" />
