@@ -100,18 +100,16 @@ namespace MojCzat.ui
             // nie chcemy wysylac pustych wiadomosci
             if (wiadomosc == String.Empty) { return; }
 
+            //TODO: sprawdz czy wiadomosc zostala wyslana (async)
+             
             // wysylamy wiadomosc
-            if (komunikator.WyslijWiadomosc(rozmowca.ID, wiadomosc))
-            {
-                // dodajemy wiadomosc do naszego okna czatu
-                tbCzat.AppendText(String.Format("[{0}] {1}\n", "Ty", wiadomosc));
-                // czyscimy pole wpisywania dla nowej wiadomosci
-                wyczyscPoleWiadomosci();
-            }
-            else
-            {
-                MessageBox.Show("Wiadomość nie została wysłana.");            
-            }
+            komunikator.WyslijWiadomosc(rozmowca.ID, wiadomosc);
+            
+            // dodajemy wiadomosc do naszego okna czatu
+            tbCzat.AppendText(String.Format("[{0}] {1}\n", "Ty", wiadomosc));
+            // czyscimy pole wpisywania dla nowej wiadomosci
+            wyczyscPoleWiadomosci();
+            
         }
 
         // obługa zdarzeń interfejsu uzytkownika - poczatek

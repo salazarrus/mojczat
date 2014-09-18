@@ -19,13 +19,10 @@ namespace MojCzat.komunikacja
         /// </summary>
         X509Certificate2 certyfikat;
 
-
-
         public CentralaSSL(Dictionary<string, IPAddress> ID_IP, Dictionary<IPAddress, String> IP_ID, int port ,X509Certificate2 certyfikat):base(ID_IP, IP_ID, port)
         {
             this.certyfikat = certyfikat;
         }
-
          
         protected override Stream dajStrumienJakoKlient(TcpClient polaczenie)
         {

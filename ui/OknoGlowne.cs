@@ -89,7 +89,7 @@ namespace MojCzat.ui
         /// </summary>
         /// <param name="rozmowca"></param>
         /// <param name="wiadomosc">Wiadomosc, ktora wpiszemy do okna czatu</param>
-        delegate void ObluzNowaWiadomoscUI(Kontakt rozmowca, Wiadomosc rodzaj ,string wiadomosc);
+        delegate void ObluzNowaWiadomoscUI(Kontakt rozmowca, TypWiadomosci rodzaj ,string wiadomosc);
 
         /// <summary>
         /// Gdy nastapila zmiana dostepnosci kontaktow, odswiezamy okno
@@ -154,7 +154,7 @@ namespace MojCzat.ui
             // zapisujemy sie jako sluchacz wydarzenia ZmianaStanuPolaczenia
             komunikator.ZmianaStanuPolaczeniaWydarzenie += komunikator_ZmianaStanuPolaczenia;
 
-            komunikator.opis = this.tbOpis.Text;
+            komunikator.Opis = this.tbOpis.Text;
             // nawiaz polaczenia z kontaktami
             polaczSieZKontaktami();            
             
@@ -217,7 +217,7 @@ namespace MojCzat.ui
         /// </summary>
         /// <param name="id">Identyfikator nadawcy</param>
         /// <param name="wiadomosc">tresc wiadomosci</param>
-         void komunikator_NowaWiadomosc(string id, Wiadomosc rodzaj , string wiadomosc)
+         void komunikator_NowaWiadomosc(string id, TypWiadomosci rodzaj , string wiadomosc)
         {
             // otworz okno przez delegate poniewaz jestesmy w innym watku
             var kontakt = kontakty.Where(k => k.ID == id).SingleOrDefault();
@@ -236,9 +236,9 @@ namespace MojCzat.ui
             this.kontakty = kontakty.OrderByDescending(k=>k.Status).ThenBy(k=>k.Nazwa).ToList();
         }
 
-        void obsluzWiadomosc(Kontakt rozmowca, Wiadomosc rodzaj , string wiadomosc) {
-            if (rodzaj == Wiadomosc.Zwykla) { otworzOknoCzat(rozmowca, wiadomosc); }
-            else if (rodzaj == Wiadomosc.Opis) { zmienOpisKontaktu(rozmowca, wiadomosc); }
+        void obsluzWiadomosc(Kontakt rozmowca, TypWiadomosci rodzaj , string wiadomosc) {
+            if (rodzaj == TypWiadomosci.Zwykla) { otworzOknoCzat(rozmowca, wiadomosc); }
+            else if (rodzaj == TypWiadomosci.Opis) { zmienOpisKontaktu(rozmowca, wiadomosc); }
         }
 
         void zmienOpisKontaktu(Kontakt rozmowca, string opis) {
@@ -410,7 +410,7 @@ namespace MojCzat.ui
         private void btnUstawOpis_Click(object sender, EventArgs e)
         {
             if (!polaczony) { return; }
-            komunikator.opis = this.tbOpis.Text;
+            komunikator.Opis = this.tbOpis.Text;
             komunikator.ZautualizujOpis();
         }       
 

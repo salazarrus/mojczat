@@ -11,11 +11,13 @@ using System.Windows.Forms;
 
 namespace MojCzat.komunikacja
 {
+    public delegate void NowePolaczenie(string idUzytkownika);
+
     class Centrala
     {
         public event ZmianaStanuPolaczenia ZmianaStanuPolaczenia;
 
-        public event ZmianaStanuPolaczenia NawiazalismyPolaczenie;
+        public event NowePolaczenie NowePolaczenie;
         /// <summary>
         /// Polaczenia TCP ktore zostaly otwarte
         /// </summary>
@@ -25,24 +27,18 @@ namespace MojCzat.komunikacja
         /// Strumienie ktore zostaly otwarte
         /// </summary>
         Dictionary<IPAddress, Stream> otwarteStrumienie = new Dictionary<IPAddress, Stream>();
-
-
+        
         Dictionary<string, IPAddress> ID_IP;
         Dictionary<IPAddress, String> IP_ID;
-
-
+        
         int port;
+
+        const int POLOCZENIE_TIMEOUT = 1000;
 
         public Stream this[String idUzytkownika]
         {
-            get {
-                IPAddress cel = ID_IP[idUzytkownika];
-
-                // sprawdz, czy to polaczenie nie jest juz otwarte
-                return this[cel];
-            }
+            get { return this[ID_IP[idUzytkownika]]; }
         }
-
 
         public Stream this[IPAddress idUzytkownika]
         {
@@ -58,75 +54,24 @@ namespace MojCzat.komunikacja
             this.IP_ID = IP_ID;
             this.port = port;
         }
-
-        public IPAddress dajIp(string idUzytkownika)
-        {
-            return ID_IP[idUzytkownika];
-        }    
                 
         public void NawiazPolaczenie(String id)
         {
-            //MessageBox.Show("nazwiazujemy");
             // tworzymy nowe polaczenie 
             var klient = new TcpClient();
-            
-            var wynik = klient.BeginConnect(ID_IP[id], port,
-                new AsyncCallback(nawiazPolaczenieWynik), new r1() { id = id, c = klient });
+            var wynik = klient.BeginConnect(ID_IP[id], port, new AsyncCallback(nawiazPolaczenieWynik), 
+                new NawiazPolaczenieStatus() { idUzytkownika = id, polaczenie = klient });
 
-            var notimeout = wynik.AsyncWaitHandle.WaitOne(1000, true);
-            if (!notimeout) {
-                //MessageBox.Show("Timeout");
-                //klient.EndConnect(wynik);
-            }
-            
-        }
-
-        void nawiazPolaczenieWynik(IAsyncResult wynik) {
-            try{
-                r1 r = (r1)wynik.AsyncState;
-                r.c.EndConnect(wynik);
-                Stream strumien;
-                
-                if(!r.c.Connected){
-                    MessageBox.Show("Closing failed connection.");
-                    r.c.Close();
-                    return; 
-                }
-                if (this[r.id] != null) 
-                {
-                    r.c.Close();
-                    return;
-                }
-                strumien = dajStrumienJakoKlient(r.c);
-                        
-                // zachowujemy nowe polaczenie na pozniej
-
-                ZachowajPolaczenie(ID_IP[r.id], r.c, strumien, true);
-                if (NawiazalismyPolaczenie != null) {
-                    NawiazalismyPolaczenie(r.id, true);
-                }
-
-                if(ZmianaStanuPolaczenia != null)
-                {
-                    ZmianaStanuPolaczenia(r.id, true);
-                }
-            }
-            catch (Exception ex) {
-                MessageBox.Show(ex.ToString());
-            }
+            wynik.AsyncWaitHandle.WaitOne(POLOCZENIE_TIMEOUT, true);
         }
 
         public IPAddress CzekajNaPolaczenie(TcpListener serwer) {
             TcpClient polaczenie = serwer.AcceptTcpClient();
-            //MessageBox.Show("czekaj");
             var punktKontaktu = (IPEndPoint)polaczenie.Client.RemoteEndPoint;
             if (this[punktKontaktu.Address] != null) { return punktKontaktu.Address; }
-
-            // posprzataj stare polaczenie
-            //ZamknijPolaczenie(punktKontaktu.Address);
-
+            
             var strumien = dajStrumienJakoSerwer(polaczenie);// otworz strumien dla wiadomosci
-            ZachowajPolaczenie(punktKontaktu.Address, polaczenie, strumien, false); // zatrzymujemy referencje  
+            zachowajPolaczenie(punktKontaktu.Address, polaczenie, strumien, false); // zatrzymujemy referencje  
             if (ZmianaStanuPolaczenia != null)
             {
                 ZmianaStanuPolaczenia(IP_ID[punktKontaktu.Address], true);
@@ -156,7 +101,7 @@ namespace MojCzat.komunikacja
         /// <summary>
         /// Rozlacz wszystkie polaczenia
         /// </summary>
-        public void Rozlacz() {
+        public void RozlaczWszystkich() {
             otwartePolaczenia.Keys.ToList().ForEach(i => ZamknijPolaczenie(i));
         }
         
@@ -170,18 +115,45 @@ namespace MojCzat.komunikacja
             return polaczenie.GetStream();
         }
 
-        void ZachowajPolaczenie(IPAddress ipUzytkownika, TcpClient polaczenie, Stream strumien, bool nawiaz)
+        void nawiazPolaczenieWynik(IAsyncResult wynik)
+        {
+            try
+            {
+                NawiazPolaczenieStatus status = (NawiazPolaczenieStatus)wynik.AsyncState;
+                status.polaczenie.EndConnect(wynik);
+                
+                if (!status.polaczenie.Connected || this[status.idUzytkownika] != null)
+                {
+                    status.polaczenie.Close();
+                    return;
+                }
+
+                zachowajPolaczenie(ID_IP[status.idUzytkownika], status.polaczenie, 
+                    dajStrumienJakoKlient(status.polaczenie), true);
+                
+                if (NowePolaczenie != null){ NowePolaczenie(status.idUzytkownika); }
+
+                if (ZmianaStanuPolaczenia != null)
+                {
+                    ZmianaStanuPolaczenia(status.idUzytkownika, true);
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.ToString());
+            }
+        }
+
+        void zachowajPolaczenie(IPAddress ipUzytkownika, TcpClient polaczenie, Stream strumien, bool nawiaz)
         {
             MessageBox.Show("zachowujemy polaczenie " + nawiaz);
             otwartePolaczenia.Add(ipUzytkownika, polaczenie);
             otwarteStrumienie.Add(ipUzytkownika, strumien);
         }
 
-        class r1 {
-            public TcpClient c { get; set; }
-            public string id { get; set; }
-
-        
+        class NawiazPolaczenieStatus {
+            public TcpClient polaczenie { get; set; }
+            public string idUzytkownika { get; set; }
         }
     }
 }
