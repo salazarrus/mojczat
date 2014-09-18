@@ -35,9 +35,12 @@
             this.btnUstawienia = new System.Windows.Forms.Button();
             this.groupBox1 = new System.Windows.Forms.GroupBox();
             this.label2 = new System.Windows.Forms.Label();
-            this.lbKontakty = new MojCzat.ui.ListaKontaktowUI();
             this.label1 = new System.Windows.Forms.Label();
             this.comboStatus = new System.Windows.Forms.ComboBox();
+            this.btnUstawOpis = new System.Windows.Forms.Button();
+            this.tbOpis = new System.Windows.Forms.TextBox();
+            this.label3 = new System.Windows.Forms.Label();
+            this.lbKontakty = new MojCzat.ui.ListaKontaktowUI();
             this.groupBox1.SuspendLayout();
             this.SuspendLayout();
             // 
@@ -103,22 +106,10 @@
             this.label2.TabIndex = 6;
             this.label2.Text = "Kontakty";
             // 
-            // lbKontakty
-            // 
-            this.lbKontakty.DrawMode = System.Windows.Forms.DrawMode.OwnerDrawFixed;
-            this.lbKontakty.FormattingEnabled = true;
-            this.lbKontakty.ItemHeight = 66;
-            this.lbKontakty.Location = new System.Drawing.Point(11, 38);
-            this.lbKontakty.Name = "lbKontakty";
-            this.lbKontakty.Size = new System.Drawing.Size(293, 334);
-            this.lbKontakty.TabIndex = 0;
-            this.lbKontakty.KeyDown += new System.Windows.Forms.KeyEventHandler(this.lbKontatky_KeyDown);
-            this.lbKontakty.MouseDoubleClick += new System.Windows.Forms.MouseEventHandler(this.lbKontatky_MouseDoubleClick);
-            // 
             // label1
             // 
             this.label1.AutoSize = true;
-            this.label1.Location = new System.Drawing.Point(22, 451);
+            this.label1.Location = new System.Drawing.Point(12, 487);
             this.label1.Name = "label1";
             this.label1.Size = new System.Drawing.Size(37, 13);
             this.label1.TabIndex = 4;
@@ -131,17 +122,58 @@
             this.comboStatus.Items.AddRange(new object[] {
             "Dostępny",
             "Niedostępny"});
-            this.comboStatus.Location = new System.Drawing.Point(25, 467);
+            this.comboStatus.Location = new System.Drawing.Point(63, 484);
             this.comboStatus.Name = "comboStatus";
-            this.comboStatus.Size = new System.Drawing.Size(121, 21);
+            this.comboStatus.Size = new System.Drawing.Size(100, 21);
             this.comboStatus.TabIndex = 5;
             this.comboStatus.SelectedValueChanged += new System.EventHandler(this.comboStatus_SelectedValueChanged);
+            // 
+            // btnUstawOpis
+            // 
+            this.btnUstawOpis.Location = new System.Drawing.Point(169, 458);
+            this.btnUstawOpis.Name = "btnUstawOpis";
+            this.btnUstawOpis.Size = new System.Drawing.Size(75, 23);
+            this.btnUstawOpis.TabIndex = 6;
+            this.btnUstawOpis.Text = "Ustaw";
+            this.btnUstawOpis.UseVisualStyleBackColor = true;
+            this.btnUstawOpis.Click += new System.EventHandler(this.btnUstawOpis_Click);
+            // 
+            // tbOpis
+            // 
+            this.tbOpis.Location = new System.Drawing.Point(63, 461);
+            this.tbOpis.Name = "tbOpis";
+            this.tbOpis.Size = new System.Drawing.Size(100, 20);
+            this.tbOpis.TabIndex = 7;
+            // 
+            // label3
+            // 
+            this.label3.AutoSize = true;
+            this.label3.Location = new System.Drawing.Point(12, 460);
+            this.label3.Name = "label3";
+            this.label3.Size = new System.Drawing.Size(31, 13);
+            this.label3.TabIndex = 8;
+            this.label3.Text = "Opis:";
+            // 
+            // lbKontakty
+            // 
+            this.lbKontakty.DrawMode = System.Windows.Forms.DrawMode.OwnerDrawFixed;
+            this.lbKontakty.FormattingEnabled = true;
+            this.lbKontakty.ItemHeight = 66;
+            this.lbKontakty.Location = new System.Drawing.Point(11, 38);
+            this.lbKontakty.Name = "lbKontakty";
+            this.lbKontakty.Size = new System.Drawing.Size(293, 334);
+            this.lbKontakty.TabIndex = 0;
+            this.lbKontakty.KeyDown += new System.Windows.Forms.KeyEventHandler(this.lbKontatky_KeyDown);
+            this.lbKontakty.MouseDoubleClick += new System.Windows.Forms.MouseEventHandler(this.lbKontatky_MouseDoubleClick);
             // 
             // OknoGlowne
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(344, 522);
+            this.Controls.Add(this.label3);
+            this.Controls.Add(this.tbOpis);
+            this.Controls.Add(this.btnUstawOpis);
             this.Controls.Add(this.comboStatus);
             this.Controls.Add(this.label1);
             this.Controls.Add(this.groupBox1);
@@ -169,5 +201,8 @@
         private System.Windows.Forms.Label label1;
         private System.Windows.Forms.ComboBox comboStatus;
         private ListaKontaktowUI lbKontakty;
+        private System.Windows.Forms.Button btnUstawOpis;
+        private System.Windows.Forms.TextBox tbOpis;
+        private System.Windows.Forms.Label label3;
     }
 }

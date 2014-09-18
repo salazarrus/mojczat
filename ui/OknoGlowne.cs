@@ -154,6 +154,7 @@ namespace MojCzat.ui
             // zapisujemy sie jako sluchacz wydarzenia ZmianaStanuPolaczenia
             komunikator.ZmianaStanuPolaczenia += komunikator_ZmianaStanuPolaczenia;
 
+            komunikator.opis = this.tbOpis.Text;
             // nawiaz polaczenia z kontaktami
             polaczSieZKontaktami();            
             
@@ -405,6 +406,13 @@ namespace MojCzat.ui
                 }
                 odswiezListeKontaktow();
             }    
+        }
+
+        private void btnUstawOpis_Click(object sender, EventArgs e)
+        {
+            if (!polaczony) { return; }
+            komunikator.opis = this.tbOpis.Text;
+            komunikator.ZautualizujOpis();
         }       
 
         // obługa zdarzeń interfejsu uzytkownika - koniec

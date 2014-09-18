@@ -66,7 +66,7 @@ namespace MojCzat.komunikacja
         Dictionary<string, Boolean> wysylaKomunikaty = new Dictionary<string,Boolean>();
         Dictionary<string, object> zamkiWysylania = new Dictionary<string, object>();
 
-        String opis = "whatever";
+        public String opis = "";
 
         const byte koniecPolaczenia = 0;
         const byte zwyklaWiadomosc = 1;
@@ -226,6 +226,10 @@ namespace MojCzat.komunikacja
             centrala.Rozlacz();
         }
 
+        public void ZautualizujOpis() {
+            ID_IP.Keys.ToList().ForEach(s => wyslijOpis(s));
+        }
+
         IPAddress dajIp(string idUzytkownika) {
             return ID_IP[idUzytkownika];
         }
@@ -294,6 +298,7 @@ namespace MojCzat.komunikacja
             centrala[dajIp(id)].BeginRead(dajBufor(id), 0,
                 rozmiarBufora, new AsyncCallback(obsluzWiadomosc), new IDRW(){id= id, rodzaj= rodzaj} );
         }
+
 
         void wyslijOpis(string id) { 
             var bajty = Encoding.UTF8.GetBytes(Encoding.UTF8.GetString(new byte[]{ otoMojOpis})  + opis);
