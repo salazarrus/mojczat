@@ -11,6 +11,7 @@ using System.Net.Security;
 using System.IO;
 using System.Security.Authentication;
 using MojCzat.model;
+using System.Windows.Forms;
 
 namespace MojCzat.komunikacja
 {    
@@ -25,13 +26,13 @@ namespace MojCzat.komunikacja
     // delegata definiujaca funkcje obslugujace zdarzenie ZmianaStanuPolaczenia
     public delegate void ZmianaStanuPolaczenia(string idUzytkownika, bool polaczenieOtwarte);
 
+    public delegate void done(string id);
+
     /// <summary>
     /// Obiekt odpowiedzialny za odbieranie i przesylanie wiadomosci
     /// </summary>
     public class Komunikator
-    {
-     
-        
+    {       
         /// <summary>
         /// Na jakim porcie nasluchujemy wiadomosci
         /// </summary>
@@ -54,13 +55,12 @@ namespace MojCzat.komunikacja
         /// </summary>
         Centrala centrala;
 
-        Dictionary<string, Queue<byte[]>> komunikatyWychodzace = new Dictionary<string, Queue<byte[]>>();
-        Dictionary<string, Boolean> wysylanieWToku = new Dictionary<string,Boolean>();
-        Dictionary<string, object> zamkiWysylania = new Dictionary<string, object>();
 
         public String opis = "";
 
         Buforownia buforownia = new Buforownia();
+
+        Wiadomosciownia wiadomosciownia;
 
         /// <summary>
         /// Konstruktor komunikatora
@@ -74,39 +74,58 @@ namespace MojCzat.komunikacja
 
             //inicjalizacja i wypelnianie mapowan pochodnych
             this.ID_IP = mapa_ID_PunktKontaktu;
-                        
-            // generuj mape mapa_IP_ID
             this.IP_ID = new Dictionary<IPAddress, string>();
-            foreach (var i in mapa_ID_PunktKontaktu) { 
+            foreach (var i in mapa_ID_PunktKontaktu)
+            {
                 IP_ID.Add(i.Value, i.Key);
-                wysylanieWToku.Add(i.Key, false);
-                zamkiWysylania.Add(i.Key, new object());
             }
-                
 
             if(ustawienia.SSLWlaczone)
             {
-                centrala = new CentralaSSL(ustawienia.Certyfikat) ;
                 port = portSSL;
+                centrala = new CentralaSSL(ID_IP, IP_ID , port ,ustawienia.Certyfikat) ;
             }
             else
             {
-                centrala = new Centrala();
                 port = portBezSSL; 
+                centrala = new Centrala(ID_IP, IP_ID, port);
+            }
+
+            centrala.NawiazalismyPolaczenie += centrala_NawiazalismyPolaczenie;
+            wiadomosciownia = new Wiadomosciownia(buforownia, centrala, new done(czekajNaZapytanie));
+            // generuj mape mapa_IP_ID
+            this.IP_ID = new Dictionary<IPAddress, string>();
+            foreach (var i in mapa_ID_PunktKontaktu)
+            {
+                IP_ID.Add(i.Value, i.Key);
+                wiadomosciownia.DodajUzytkownika(i.Key);
+            }           
+        }
+
+        void centrala_NawiazalismyPolaczenie(string idUzytkownika, bool polaczenieOtwarte)
+        {
+            czekajNaZapytanie(idUzytkownika);
+        }
+        
+        public event NowaWiadomosc NowaWiadomosc{
+            add {
+                wiadomosciownia.NowaWiadomosc += value;
+            }
+            remove {
+                wiadomosciownia.NowaWiadomosc -= value;
             }
         }
 
-        /// <summary>
-        /// Gdy nadeszla nowa wiadomosc, powiadamiamy zainteresowanych 
-        /// przy pomocy tego obiektu
-        /// </summary>
-        public event NowaWiadomosc NowaWiadomosc;
-
-        /// <summary>
-        /// Gdy nowe polaczenie zostalo nawiazane badz stare zostalo zerwane, 
-        /// powiadamy zainteresowanych przy uzyciu tego obiektu
-        /// </summary>
-        public event ZmianaStanuPolaczenia ZmianaStanuPolaczenia;
+        public event ZmianaStanuPolaczenia ZmianaStanuPolaczeniaWydarzenie {
+            add
+            {
+                centrala.ZmianaStanuPolaczenia += value;
+            }
+            remove
+            {
+                centrala.ZmianaStanuPolaczenia -= value;
+            }
+        }
 
         /// <summary>
         /// Nowy uzytkownik na liscie kontaktow
@@ -117,8 +136,7 @@ namespace MojCzat.komunikacja
         {
             IP_ID.Add(punktKontaktu, idUzytkownika);
             ID_IP.Add(idUzytkownika, punktKontaktu);
-            zamkiWysylania.Add(idUzytkownika, new object());
-            wysylanieWToku.Add(idUzytkownika, false);
+            wiadomosciownia.DodajUzytkownika(idUzytkownika);
         }
 
         /// <summary>
@@ -129,8 +147,7 @@ namespace MojCzat.komunikacja
         {
             IP_ID.Remove(ID_IP[idUzytkownika]);
             ID_IP.Remove(idUzytkownika);
-            zamkiWysylania.Remove(idUzytkownika);
-            wysylanieWToku.Remove(idUzytkownika);
+            wiadomosciownia.UsunUzytkownika(idUzytkownika);
             buforownia.Usun(idUzytkownika);
         }
 
@@ -143,14 +160,25 @@ namespace MojCzat.komunikacja
             try
             {
                 // jesli niedostepny rzuci wyjatek
-                dajStrumien(idUzytkownika);
-                wyslijOpis(idUzytkownika);
-                poprosOpis(idUzytkownika);
-                czekajNaZapytanie(idUzytkownika); 
+                var polaczenie = centrala[idUzytkownika];
+                if (polaczenie == null) {
+                    centrala.NawiazPolaczenie(idUzytkownika);
+                }
+                //wiadomosciownia.WyslijWiadomosc(idUzytkownika, Protokol.OtoMojOpis, opis);
+                //poprosOpis(idUzytkownika);
                 return true;
             }
-            catch{
+            catch(Exception ex){
+                MessageBox.Show(ex.ToString());
                 return false;
+            }
+        }
+
+        void centrala_ZmianaStanuPolaczenia(string idUzytkownika, bool polaczenieOtwarte)
+        {
+            if (polaczenieOtwarte) {
+
+                czekajNaZapytanie(idUzytkownika);
             }
         }
 
@@ -170,16 +198,14 @@ namespace MojCzat.komunikacja
         public bool WyslijWiadomosc(String idRozmowcy, String wiadomosc) {
             try
             {
-                Stream strumien = dajStrumien(idRozmowcy);
-                // tranformacja tekstu w bajty
-                
-                Byte[] bajty = stworzKomunikat(Protokol.ZwyklaWiadomosc, wiadomosc);  
-                // wysylanie bajtow polaczeniem TCP 
-                dajKolejkeWiadomosci(idRozmowcy).Enqueue(bajty);
-                wysylajZKolejki(idRozmowcy);
+                wiadomosciownia.WyslijWiadomosc(idRozmowcy, Protokol.ZwyklaWiadomosc , wiadomosc);
                 return true;// TODO zmienic
             }
-            catch { return false; }           
+            catch(Exception ex) 
+            {
+                MessageBox.Show(ex.ToString());
+                return false; 
+            }           
         }
 
         /// <summary>
@@ -196,11 +222,12 @@ namespace MojCzat.komunikacja
                 {
                     // czekaj na przychodzace polaczenia
                     IPAddress adresKlienta = centrala.CzekajNaPolaczenie(serwer);
-                    zajmijSieKlientem(adresKlienta);
+                    if (adresKlienta != null) { zajmijSieKlientem(adresKlienta); }                    
                 }
             }
-            catch
+            catch(Exception ex)
             {
+                MessageBox.Show(ex.ToString());
                 //TODO zdobic cos z tym
             }
             finally { Stop(); }
@@ -216,24 +243,17 @@ namespace MojCzat.komunikacja
         }
 
         public void ZautualizujOpis() {
-            ID_IP.Keys.ToList().ForEach(s => wyslijOpis(s));
+            ID_IP.Keys.ToList().ForEach(s => wiadomosciownia.WyslijWiadomosc(s, Protokol.OtoMojOpis , opis));
         }
 
         public void poprosOpis(string id)
         {
-            var bajty = stworzKomunikat(Protokol.DajMiSwojOpis, "");
-            dajKolejkeWiadomosci(id).Enqueue(bajty);
-            wysylajZKolejki(id);
+            wiadomosciownia.WyslijWiadomosc(id, Protokol.DajMiSwojOpis, "");
         }
 
         IPAddress dajIp(string idUzytkownika) {
             return ID_IP[idUzytkownika];
-        }
-
-        byte[] stworzKomunikat(byte rodzaj , string wiadomosc) {
-            wiadomosc = Encoding.UTF8.GetString(new byte[] { rodzaj }) + wiadomosc;
-            return  Encoding.UTF8.GetBytes(wiadomosc);  
-        }
+        }     
    
         /// <summary>
         /// Czekaj (pasywnie) na wiadomosci
@@ -242,6 +262,7 @@ namespace MojCzat.komunikacja
         /// <param name="idRozmowcy">Identyfikator nadawcy</param>
         void czekajNaZapytanie(string idRozmowcy)
         {
+            //MessageBox.Show("Czekam na zapytanie");
             var wynik = new StatusObsluzZapytanie(){ idNadawcy=idRozmowcy, typ=new byte[1]};
             centrala[dajIp(idRozmowcy)].BeginRead(wynik.typ, 0, 1, obsluzZapytanie, wynik);
 
@@ -255,7 +276,8 @@ namespace MojCzat.komunikacja
             {
                 centrala[dajIp(status.idNadawcy)].EndRead(wynik);
             }
-            catch { // zostalismy rozlaczeni
+            catch(Exception ex) { // zostalismy rozlaczeni
+                MessageBox.Show(ex.ToString());
                 return;
             }
             
@@ -264,69 +286,26 @@ namespace MojCzat.komunikacja
             switch (status.typ[0]) { 
                 case Protokol.KoniecPolaczenia:
                     Rozlacz(status.idNadawcy);
-                    if (ZmianaStanuPolaczenia != null) 
+                    /*if (ZmianaStanuPolaczeniaWydarzenie != null) 
                     {
-                        ZmianaStanuPolaczenia(status.idNadawcy, false); 
-                    }
+                        ZmianaStanuPolaczeniaWydarzenie(status.idNadawcy, false); 
+                    }*/
                     return;
                 case Protokol.ZwyklaWiadomosc://zwykla wiadomosc
-                    czytajWiadomosc(status.idNadawcy, Wiadomosc.Zwykla);
+                    wiadomosciownia.czytajWiadomosc(status.idNadawcy, Wiadomosc.Zwykla);
                     break;
                 case Protokol.DajMiSwojOpis:
-                    wyslijOpis(status.idNadawcy);
-                    czekajNaZapytanie(status.idNadawcy);
+                    wiadomosciownia.WyslijWiadomosc(status.idNadawcy, Protokol.OtoMojOpis, opis);
                     break;
                 case Protokol.OtoMojOpis:
-                    czytajWiadomosc(status.idNadawcy, Wiadomosc.Opis);
+                    wiadomosciownia.czytajWiadomosc(status.idNadawcy, Wiadomosc.Opis);
                     break;
                 default:
                     czekajNaZapytanie(status.idNadawcy);
                     break;
             }          
         }
-
-
-        void czytajWiadomosc(string id, Wiadomosc rodzaj) { 
-            centrala[dajIp(id)].BeginRead(buforownia[id], 0,
-                Buforownia.RozmiarBufora, new AsyncCallback(obsluzWiadomosc), 
-                new CzytajWiadomoscStatus(){id= id, rodzaj= rodzaj} );
-        }
-
-
-        void wyslijOpis(string id) {
-            dajKolejkeWiadomosci(id).Enqueue(stworzKomunikat(Protokol.OtoMojOpis, opis));
-            wysylajZKolejki(id);
-        }
-
-        void wysylajZKolejki(string idUzytkownika) {
-            byte[] doWyslania = null;
-            lock (zamkiWysylania[idUzytkownika]) {
-                if (wysylanieWToku[idUzytkownika]) {
-                    return;
-                }
-
-                if (dajKolejkeWiadomosci(idUzytkownika).Any()) {
-                    doWyslania = dajKolejkeWiadomosci(idUzytkownika).Dequeue();
-                    wysylanieWToku[idUzytkownika] = true;
-                }
-            }
-
-            if (doWyslania != null) {
-                centrala[dajIp(idUzytkownika)].BeginWrite
-                          (doWyslania, 0, doWyslania.Length, new AsyncCallback(komunikatWyslany), idUzytkownika);
-            }
-        }
-
-        void komunikatWyslany(IAsyncResult wynik) {            
-            var id = (string)wynik.AsyncState;
-            centrala[dajIp(id)].EndWrite(wynik);
         
-            lock (zamkiWysylania[id]) {
-                wysylanieWToku[id] = false;    
-            }
-            wysylajZKolejki(id);
-        }                 
-
         /// <summary>
         /// Nadeszlo polaczenie, obslugujemy je
         /// </summary>
@@ -340,84 +319,17 @@ namespace MojCzat.komunikacja
             var nadawca = IP_ID[ipNadawcy];
             
             // powiadom zainteresowanych o nowym polaczeniu
-            if (ZmianaStanuPolaczenia != null)
-            { ZmianaStanuPolaczenia(nadawca, true); }
-
+            /*if (ZmianaStanuPolaczeniaWydarzenie != null)
+            { ZmianaStanuPolaczeniaWydarzenie(nadawca, true); }
+            */
             czekajNaZapytanie(nadawca);// czekaj (pasywnie) na wiadomosc z tego polaczenia
         }
-
-      
-        /// <summary>
-        /// Nadeszla nowa wiadomosc
-        /// </summary>
-        /// <param name="wynik"> obiektu tego uzywamy do zakonczenia jednej 
-        /// operacji asynchronicznej i rozpoczecia nowej </param>
-        void obsluzWiadomosc(IAsyncResult wynik)
-        {   
-            // od kogo przyszla wiadomosc
-            var status = (CzytajWiadomoscStatus)wynik.AsyncState;
-            // zakoncz operacje asynchroniczna
-            var strumien = centrala[dajIp(status.id)];
-            strumien.EndRead(wynik);
-
-            int index = Array.FindIndex(buforownia[status.id], x=> x==0);
-            // dekodujemy wiadomosc
-            // usuwamy \0 z konca lancucha
-            string wiadomosc = index >= 0 ?
-                Encoding.UTF8.GetString(buforownia[status.id], 0, index) :
-                Encoding.UTF8.GetString(buforownia[status.id]);
-
-            // czyscimy bufor
-            Array.Clear(buforownia[status.id], 0, Buforownia.RozmiarBufora); 
-            // jesli sa zainteresowani, informujemy ich o nowej wiadomosci
-            if(NowaWiadomosc != null){
-                // informujemy zainteresowanych
-                NowaWiadomosc(status.id, status.rodzaj , wiadomosc);
-            }
-
-            // rozpocznij nowa operacje asynchroniczna - czekaj na nowa wiadomosc
-            czekajNaZapytanie(status.id); 
-        }
-
-        /// <summary>
-        /// Znajdz otwarte polaczenie lub otworz nowe
-        /// </summary>
-        /// <param name="idUzytkownika">Identyfikator uzytkownika do ktorego chcemy polaczenia</param>
-        /// <returns> polaczenie do uzytkownika</returns>
-        Stream dajStrumien(string idUzytkownika)
-        {
-            IPAddress cel = ID_IP[idUzytkownika];
-
-            // sprawdz, czy to polaczenie nie jest juz otwarte
-            if (centrala[cel] != null) { return centrala[cel]; }
-
-            var polaczenie = centrala.NawiazPolaczenie(new IPEndPoint(cel, port));
-            return polaczenie;
-        }
-
-        Queue<byte[]> dajKolejkeWiadomosci(string id)
-        {
-            if (!komunikatyWychodzace.ContainsKey(id))
-            {
-                komunikatyWychodzace.Add(id, new Queue<byte[]>());
-            }
-            return komunikatyWychodzace[id];
-        }
-        
-        class CzytajWiadomoscStatus
-        {
-            public String id { get; set; }
-            public Wiadomosc rodzaj { get; set; }
-        }
-
 
         class StatusObsluzZapytanie
         {
             public byte[] typ;
             public String idNadawcy;
         }
-
-
 
     }
 }

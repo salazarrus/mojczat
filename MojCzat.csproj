@@ -53,6 +53,7 @@
     <Compile Include="komunikacja\CentralaSSL.cs" />
     <Compile Include="komunikacja\Komunikator.cs" />
     <Compile Include="komunikacja\Protokol.cs" />
+    <Compile Include="komunikacja\Wiadomosciownia.cs" />
     <Compile Include="model\Kontakt.cs" />
     <Compile Include="model\Ustawienia.cs" />
     <Compile Include="Program.cs" />

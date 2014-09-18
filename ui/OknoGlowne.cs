@@ -101,7 +101,7 @@ namespace MojCzat.ui
             base.OnClosing(e);
             if (polaczony) {
                 komunikator.NowaWiadomosc -= komunikator_NowaWiadomosc;
-                komunikator.ZmianaStanuPolaczenia -= komunikator_ZmianaStanuPolaczenia;
+                komunikator.ZmianaStanuPolaczeniaWydarzenie -= komunikator_ZmianaStanuPolaczenia;
                 rozlaczSie(); 
             }
         }
@@ -152,7 +152,7 @@ namespace MojCzat.ui
             // zapisujemy sie jako sluchacz wydarzenia NowaWiadomosc
             komunikator.NowaWiadomosc += komunikator_NowaWiadomosc;
             // zapisujemy sie jako sluchacz wydarzenia ZmianaStanuPolaczenia
-            komunikator.ZmianaStanuPolaczenia += komunikator_ZmianaStanuPolaczenia;
+            komunikator.ZmianaStanuPolaczeniaWydarzenie += komunikator_ZmianaStanuPolaczenia;
 
             komunikator.opis = this.tbOpis.Text;
             // nawiaz polaczenia z kontaktami
@@ -202,8 +202,7 @@ namespace MojCzat.ui
         /// <param name="kontakt"></param>
         void polaczSieZKontaktem(Kontakt kontakt, bool nowy) 
         {
-            kontakt.Status = komunikator.ZainicjujPolaczenie(kontakt.ID) 
-                ? "Dostepny" : "Niedostepny";        
+            komunikator.ZainicjujPolaczenie(kontakt.ID);        
         }
                         
         /// <summary>
