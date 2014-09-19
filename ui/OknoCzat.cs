@@ -1,4 +1,6 @@
-﻿using MojCzat.komunikacja;
+﻿#define TRACE
+
+using MojCzat.komunikacja;
 using MojCzat.model;
 using System;
 using System.Configuration;
@@ -100,7 +102,7 @@ namespace MojCzat.ui
             // nie chcemy wysylac pustych wiadomosci
             if (wiadomosc == String.Empty) { return; }
 
-            //TODO: sprawdz czy wiadomosc zostala wyslana (async)
+            //TODO: sprawdz czy dostepny
              
             // wysylamy wiadomosc
             komunikator.WyslijWiadomosc(rozmowca.ID, wiadomosc);

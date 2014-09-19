@@ -1,5 +1,8 @@
-﻿using System;
+﻿#define TRACE
+
+using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Net;
@@ -48,13 +51,17 @@ namespace MojCzat.komunikacja
                 if (string.IsNullOrEmpty(wiadomosc)) { return;  }
                 Stream strumien = centrala[idRozmowcy];
                 // tranformacja tekstu w bajty
+                Trace.TraceInformation(String.Format("Wysylamy wiadomosc rodzaj {0}: {1} ",rodzaj, wiadomosc));
 
                 Byte[] bajty = stworzKomunikat(rodzaj, wiadomosc);
                 // wysylanie bajtow polaczeniem TCP 
                 dajKolejkeWiadomosci(idRozmowcy).Enqueue(bajty);
                 wysylajZKolejki(idRozmowcy);
             }
-            catch { }
+            catch(Exception ex) 
+            {
+                Trace.TraceInformation("[WyslijWiadomosc]" + ex.ToString());
+            }
         }
 
         public void DodajUzytkownika(string id)
@@ -127,9 +134,13 @@ namespace MojCzat.komunikacja
             var status = (CzytajWiadomoscStatus)wynik.AsyncState;
             // zakoncz operacje asynchroniczna
             var strumien = centrala[status.id];
-
-            strumien.EndRead(wynik);
-            
+            try
+            {
+                strumien.EndRead(wynik);
+            }
+            catch (Exception ex) {
+                Trace.TraceInformation(ex.ToString());
+            }
             int index = Array.FindIndex(buforownia[status.id], x => x == 0);
             // dekodujemy wiadomosc
             // usuwamy \0 z konca lancucha

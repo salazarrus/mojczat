@@ -1,6 +1,9 @@
-﻿using System;
+﻿#define TRACE
+
+using System;
 using System.Collections.Generic;
 using System.Configuration;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Net;
@@ -58,17 +61,25 @@ namespace MojCzat.komunikacja
         public void NawiazPolaczenie(String id)
         {
             // tworzymy nowe polaczenie 
+            Trace.TraceInformation("nawiazujemy polaczenie");
             var klient = new TcpClient();
             var wynik = klient.BeginConnect(ID_IP[id], port, new AsyncCallback(nawiazPolaczenieWynik), 
                 new NawiazPolaczenieStatus() { idUzytkownika = id, polaczenie = klient });
 
-            wynik.AsyncWaitHandle.WaitOne(POLOCZENIE_TIMEOUT, true);
+            if (!wynik.AsyncWaitHandle.WaitOne(POLOCZENIE_TIMEOUT, true)) {
+                Trace.TraceInformation("timeout nawiaz polaczenie");
+            }
         }
 
         public IPAddress CzekajNaPolaczenie(TcpListener serwer) {
             TcpClient polaczenie = serwer.AcceptTcpClient();
+            Trace.TraceInformation("przyszlo nowe polaczenie)");
             var punktKontaktu = (IPEndPoint)polaczenie.Client.RemoteEndPoint;
-            if (this[punktKontaktu.Address] != null) { return punktKontaktu.Address; }
+            if (this[punktKontaktu.Address] != null) {
+                Trace.TraceInformation("mamy juz takie polaczenie");
+                polaczenie.Close();
+                return null; 
+            }
             
             var strumien = dajStrumienJakoSerwer(polaczenie);// otworz strumien dla wiadomosci
             zachowajPolaczenie(punktKontaktu.Address, polaczenie, strumien, false); // zatrzymujemy referencje  
@@ -140,12 +151,13 @@ namespace MojCzat.komunikacja
             }
             catch (Exception ex)
             {
-                MessageBox.Show(ex.ToString());
+                Trace.TraceInformation("[nawiazPolaczenieWynik] " + ex.ToString());
             }
         }
 
         void zachowajPolaczenie(IPAddress ipUzytkownika, TcpClient polaczenie, Stream strumien, bool nawiaz)
         {
+            Trace.TraceInformation("Zachowujemy polaczenie");
             otwartePolaczenia.Add(ipUzytkownika, polaczenie);
             otwarteStrumienie.Add(ipUzytkownika, strumien);
         }

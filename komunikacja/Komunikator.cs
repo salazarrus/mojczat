@@ -1,4 +1,6 @@
-﻿using System;
+﻿#define TRACE
+
+using System;
 using System.Collections.Generic;
 using System.Configuration;
 using System.Net;
@@ -12,6 +14,7 @@ using System.IO;
 using System.Security.Authentication;
 using MojCzat.model;
 using System.Windows.Forms;
+using System.Diagnostics;
 
 namespace MojCzat.komunikacja
 {    
@@ -25,6 +28,7 @@ namespace MojCzat.komunikacja
 
     public delegate void CzytanieSkonczone(string idUzytkownika);
 
+    public delegate void PolaczenieZakonczone(string idUzytkownika);
     /// <summary>
     /// Obiekt odpowiedzialny za odbieranie i przesylanie wiadomosci
     /// </summary>
@@ -90,7 +94,8 @@ namespace MojCzat.komunikacja
             foreach (var i in mapa_ID_PunktKontaktu){ wiadomosciownia.DodajUzytkownika(i.Key); }           
         }
 
-        
+        public event PolaczenieZakonczone PolaczenieZakonczone;
+ 
         public event NowaWiadomosc NowaWiadomosc{
             add {
                 wiadomosciownia.NowaWiadomosc += value;
@@ -181,7 +186,7 @@ namespace MojCzat.komunikacja
                     if (adresKlienta != null) { zajmijSieKlientem(adresKlienta); }                    
                 }
             }
-            catch(Exception ex){ } // program zostal zamkniety
+            catch (Exception ex) { Trace.TraceInformation("[Start]" + ex.ToString()); } // program zostal zamkniety
             finally { Stop(); }
         }
 
@@ -219,24 +224,36 @@ namespace MojCzat.komunikacja
         /// <param name="idRozmowcy">Identyfikator nadawcy</param>
         void czekajNaZapytanie(string idRozmowcy)
         {
+            Trace.TraceInformation("Czekamy na zapytanie");
             var wynik = new StatusObsluzZapytanie(){ idNadawcy=idRozmowcy, typ=new byte[1]};
+            if (centrala[dajIp(idRozmowcy)] == null) {
+                Trace.TraceInformation("[czekajNaZapytanie] brak polaczenia");
+                return;
+            }
             centrala[dajIp(idRozmowcy)].BeginRead(wynik.typ, 0, 1, obsluzZapytanie, wynik);
         }
 
         void obsluzZapytanie(IAsyncResult wynik){
             var status = (StatusObsluzZapytanie)wynik.AsyncState;
             if (centrala[dajIp(status.idNadawcy)] == null) { return; }
-
+            Trace.TraceInformation("Przyszlo nowe zapytanie: " + status.typ[0].ToString());
             try
             {
                 centrala[dajIp(status.idNadawcy)].EndRead(wynik);
             }
-            catch { return; } // zostalismy rozlaczeni
+            catch(Exception ex) 
+            {
+                Trace.TraceInformation("[obsluzZapytanie] " + ex.ToString());    
+                return; 
+            } // zostalismy rozlaczeni
             
             var rodzaj = Encoding.UTF8.GetString(status.typ);
 
             switch (status.typ[0]) { 
                 case Protokol.KoniecPolaczenia:
+                    if (PolaczenieZakonczone != null) {
+                        PolaczenieZakonczone(status.idNadawcy);
+                    }
                     Rozlacz(status.idNadawcy);
                     return;
                 case Protokol.ZwyklaWiadomosc://zwykla wiadomosc
