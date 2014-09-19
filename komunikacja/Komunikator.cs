@@ -98,7 +98,7 @@ namespace MojCzat.komunikacja
             centrala.NowePolaczenieDoNas += centrala_NowePolaczenieDoNas;
             centrala.ZamknietoPolaczenie += centrala_ZamknietoPolaczenie;
 
-            protokol = new Protokol(centrala, buforownia , ID_IP, IP_ID);
+            protokol = new Protokol(centrala, buforownia , ID_IP, IP_ID, ustawienia);
                  
         }
 

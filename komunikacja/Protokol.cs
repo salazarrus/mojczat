@@ -1,4 +1,5 @@
-﻿using System;
+﻿using MojCzat.model;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
@@ -20,14 +21,16 @@ namespace MojCzat.komunikacja
         Dictionary<IPAddress, string> IP_ID;
         Wiadomosciownia wiadomosciownia;
         Centrala centrala;
+        Ustawienia ustawienia;
 
         public Protokol(Centrala centrala, Buforownia buforownia , Dictionary<string, IPAddress> ID_IP,
-            Dictionary<IPAddress, string> IP_ID) {
+            Dictionary<IPAddress, string> IP_ID, Ustawienia ustawienia) {
             this.wiadomosciownia = new Wiadomosciownia(buforownia, centrala,
                 new CzytanieSkonczone(czekajNaZapytanie)); ;
 
-            foreach (var i in ID_IP) { wiadomosciownia.DodajUzytkownika(i.Key); }    
+            foreach (var i in ID_IP) { wiadomosciownia.DodajUzytkownika(i.Key); }
 
+            this.ustawienia = ustawienia;
             this.centrala = centrala;
             this.ID_IP = ID_IP;
             this.IP_ID = IP_ID;
@@ -95,7 +98,7 @@ namespace MojCzat.komunikacja
                     break;
                 case Protokol.DajMiSwojOpis: // prosza nas o nasz opis
                     czekajNaZapytanie(status.idNadawcy);
-                    wiadomosciownia.WyslijWiadomosc(status.idNadawcy, Protokol.OtoMojOpis, "nie ma");
+                    wiadomosciownia.WyslijWiadomosc(status.idNadawcy, Protokol.OtoMojOpis, ustawienia.Opis);
                     break;
                 case Protokol.OtoMojOpis: // my prosimy o opis
                     wiadomosciownia.czytajWiadomosc(status.idNadawcy, TypWiadomosci.Opis);
