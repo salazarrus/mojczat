@@ -43,8 +43,9 @@ namespace MojCzat.komunikacja
         /// </summary>
         Dictionary<string, IPAddress> ID_IP;
 
-        Dictionary<IPAddress, string> IP_ID; 
+        Dictionary<IPAddress, string> IP_ID;
 
+        Dictionary<string, bool> dostepny;
         /// <summary>
         /// obiekt nasluchujacy nadchodzacych polaczen
         /// </summary>
@@ -72,7 +73,12 @@ namespace MojCzat.komunikacja
             //inicjalizacja i wypelnianie mapowan pochodnych
             this.ID_IP = mapa_ID_PunktKontaktu;
             this.IP_ID = new Dictionary<IPAddress, string>();
-            foreach (var i in mapa_ID_PunktKontaktu){ IP_ID.Add(i.Value, i.Key); }
+            dostepny = new Dictionary<string,bool>();
+            foreach (var i in mapa_ID_PunktKontaktu)
+            {
+                dostepny.Add(i.Key, false);
+                IP_ID.Add(i.Value, i.Key); 
+            }
 
             if(ustawienia.SSLWlaczone)
             {
@@ -88,23 +94,10 @@ namespace MojCzat.komunikacja
             centrala.NowePolaczenieOdNas += centrala_NowePolaczenieOdNas;
             centrala.NowePolaczenieDoNas += centrala_NowePolaczenieDoNas;
             wiadomosciownia = new Wiadomosciownia(buforownia, centrala, new CzytanieSkonczone(czekajNaZapytanie));
-            // generuj mape mapa_IP_ID
+
             foreach (var i in mapa_ID_PunktKontaktu){ wiadomosciownia.DodajUzytkownika(i.Key); }           
         }
-
-        void centrala_NowePolaczenieDoNas(string idUzytkownika)
-        {
-            if (ZmianaStanuPolaczenia != null)
-            { ZmianaStanuPolaczenia(idUzytkownika, true); }
-        }
-
-        void centrala_NowePolaczenieOdNas(string idUzytkownika)
-        {
-            if (ZmianaStanuPolaczenia != null)
-            { ZmianaStanuPolaczenia(idUzytkownika, true); }
-            czekajNaZapytanie(idUzytkownika);
-        }
-
+        
         public event NowaWiadomosc NowaWiadomosc{
             add {
                 wiadomosciownia.NowaWiadomosc += value;
@@ -126,6 +119,7 @@ namespace MojCzat.komunikacja
             IP_ID.Add(punktKontaktu, idUzytkownika);
             ID_IP.Add(idUzytkownika, punktKontaktu);
             wiadomosciownia.DodajUzytkownika(idUzytkownika);
+            dostepny.Add(idUzytkownika, false);
         }
 
         /// <summary>
@@ -138,6 +132,7 @@ namespace MojCzat.komunikacja
             ID_IP.Remove(idUzytkownika);
             wiadomosciownia.UsunUzytkownika(idUzytkownika);
             buforownia.Usun(idUzytkownika);
+            dostepny.Remove(idUzytkownika);
         }
 
         /// <summary>
@@ -212,9 +207,22 @@ namespace MojCzat.komunikacja
             return ID_IP[idUzytkownika];
         }
 
-        void centrala_NawiazalismyPolaczenie(string idUzytkownika)
+        void centrala_NowePolaczenieDoNas(string idUzytkownika)
         {
-            
+            obsluzZmianaStanuPolaczenia(idUzytkownika, true);
+        }
+
+        void centrala_NowePolaczenieOdNas(string idUzytkownika)
+        {
+            obsluzZmianaStanuPolaczenia(idUzytkownika, true);
+            czekajNaZapytanie(idUzytkownika);
+        }
+
+        void obsluzZmianaStanuPolaczenia(string idUzytkownika, bool nowyStan) 
+        {
+            dostepny[idUzytkownika] = nowyStan;
+            if (ZmianaStanuPolaczenia != null)
+            { ZmianaStanuPolaczenia(idUzytkownika, nowyStan); }
         }
         
         /// <summary>
@@ -243,7 +251,7 @@ namespace MojCzat.komunikacja
             }
             catch(Exception ex) 
             {
-                if (ZmianaStanuPolaczenia != null) { ZmianaStanuPolaczenia(status.idNadawcy, false); }    
+                obsluzZmianaStanuPolaczenia(status.idNadawcy, false);
                 return; 
             } // zostalismy rozlaczeni
             
@@ -251,9 +259,7 @@ namespace MojCzat.komunikacja
 
             switch (status.typ[0]) { 
                 case Protokol.KoniecPolaczenia:
-                    if (ZmianaStanuPolaczenia != null) {
-                        ZmianaStanuPolaczenia(status.idNadawcy, false);
-                    }
+                    obsluzZmianaStanuPolaczenia(status.idNadawcy, false);
                     Rozlacz(status.idNadawcy);
                     return;
                 case Protokol.ZwyklaWiadomosc://zwykla wiadomosc
