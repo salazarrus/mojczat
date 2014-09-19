@@ -28,7 +28,6 @@ namespace MojCzat.komunikacja
 
     public delegate void CzytanieSkonczone(string idUzytkownika);
 
-    public delegate void PolaczenieZakonczone(string idUzytkownika);
     /// <summary>
     /// Obiekt odpowiedzialny za odbieranie i przesylanie wiadomosci
     /// </summary>
@@ -94,8 +93,6 @@ namespace MojCzat.komunikacja
             foreach (var i in mapa_ID_PunktKontaktu){ wiadomosciownia.DodajUzytkownika(i.Key); }           
         }
 
-        public event PolaczenieZakonczone PolaczenieZakonczone;
- 
         public event NowaWiadomosc NowaWiadomosc{
             add {
                 wiadomosciownia.NowaWiadomosc += value;
@@ -105,16 +102,7 @@ namespace MojCzat.komunikacja
             }
         }
 
-        public event ZmianaStanuPolaczenia ZmianaStanuPolaczeniaWydarzenie {
-            add
-            {
-                centrala.ZmianaStanuPolaczenia += value;
-            }
-            remove
-            {
-                centrala.ZmianaStanuPolaczenia -= value;
-            }
-        }
+        public event ZmianaStanuPolaczenia ZmianaStanuPolaczenia;
 
         /// <summary>
         /// Nowy uzytkownik na liscie kontaktow
@@ -214,6 +202,9 @@ namespace MojCzat.komunikacja
 
         void centrala_NawiazalismyPolaczenie(string idUzytkownika)
         {
+            if (ZmianaStanuPolaczenia != null) {
+                ZmianaStanuPolaczenia(idUzytkownika, true);
+            }
             czekajNaZapytanie(idUzytkownika);
         }
         
@@ -251,8 +242,8 @@ namespace MojCzat.komunikacja
 
             switch (status.typ[0]) { 
                 case Protokol.KoniecPolaczenia:
-                    if (PolaczenieZakonczone != null) {
-                        PolaczenieZakonczone(status.idNadawcy);
+                    if (ZmianaStanuPolaczenia != null) {
+                        ZmianaStanuPolaczenia(status.idNadawcy, false);
                     }
                     Rozlacz(status.idNadawcy);
                     return;

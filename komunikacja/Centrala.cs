@@ -18,9 +18,7 @@ namespace MojCzat.komunikacja
 
     class Centrala
     {
-        public event ZmianaStanuPolaczenia ZmianaStanuPolaczenia;
-
-        public event NowePolaczenie NowePolaczenie;
+       
         /// <summary>
         /// Polaczenia TCP ktore zostaly otwarte
         /// </summary>
@@ -57,6 +55,8 @@ namespace MojCzat.komunikacja
             this.IP_ID = IP_ID;
             this.port = port;
         }
+
+        public event NowePolaczenie NowePolaczenie;
                 
         public void NawiazPolaczenie(String id)
         {
@@ -83,9 +83,9 @@ namespace MojCzat.komunikacja
             
             var strumien = dajStrumienJakoSerwer(polaczenie);// otworz strumien dla wiadomosci
             zachowajPolaczenie(punktKontaktu.Address, polaczenie, strumien, false); // zatrzymujemy referencje  
-            if (ZmianaStanuPolaczenia != null)
+            if (NowePolaczenie != null)
             {
-                ZmianaStanuPolaczenia(IP_ID[punktKontaktu.Address], true);
+                NowePolaczenie(IP_ID[punktKontaktu.Address]);
             }
             return punktKontaktu.Address;
         }
@@ -143,11 +143,6 @@ namespace MojCzat.komunikacja
                     dajStrumienJakoKlient(status.polaczenie), true);
                 
                 if (NowePolaczenie != null){ NowePolaczenie(status.idUzytkownika); }
-
-                if (ZmianaStanuPolaczenia != null)
-                {
-                    ZmianaStanuPolaczenia(status.idUzytkownika, true);
-                }
             }
             catch (Exception ex)
             {

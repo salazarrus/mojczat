@@ -101,7 +101,7 @@ namespace MojCzat.ui
             base.OnClosing(e);
             if (polaczony) {
                 komunikator.NowaWiadomosc -= komunikator_NowaWiadomosc;
-                komunikator.ZmianaStanuPolaczeniaWydarzenie -= komunikator_ZmianaStanuPolaczenia;
+                komunikator.ZmianaStanuPolaczenia -= komunikator_ZmianaStanuPolaczenia;
                 rozlaczSie(); 
             }
         }
@@ -152,7 +152,7 @@ namespace MojCzat.ui
             // zapisujemy sie jako sluchacz wydarzenia NowaWiadomosc
             komunikator.NowaWiadomosc += komunikator_NowaWiadomosc;
             // zapisujemy sie jako sluchacz wydarzenia ZmianaStanuPolaczenia
-            komunikator.ZmianaStanuPolaczeniaWydarzenie += komunikator_ZmianaStanuPolaczenia;
+            komunikator.ZmianaStanuPolaczenia += komunikator_ZmianaStanuPolaczenia;
 
             komunikator.Opis = this.tbOpis.Text;
             // nawiaz polaczenia z kontaktami
