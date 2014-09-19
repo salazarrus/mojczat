@@ -65,7 +65,7 @@ namespace MojCzat.komunikacja
             }
         }
                 
-        public void NawiazPolaczenie(String id)
+        public void Polacz(String id)
         {
             // tworzymy nowe polaczenie 
             Trace.TraceInformation("nawiazujemy polaczenie");

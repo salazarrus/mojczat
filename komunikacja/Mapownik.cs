@@ -21,23 +21,9 @@ namespace MojCzat.komunikacja
         public IPAddress this[string id] { get { return ID_IP[id]; } }
         public string this[IPAddress ip] { get { return IP_ID[ip]; } }
 
-
-
-        public List<IPAddress> wszystkieIP
-        {
-            get
-            {
-                return IP_ID.Keys.ToList();
-            }
-        }
+        public List<IPAddress> wszystkieIP { get { return IP_ID.Keys.ToList(); } }
         
-        public List<string> WszystkieId
-        {
-            get
-            {
-                return ID_IP.Keys.ToList();
-            }
-        }
+        public List<string> WszystkieId { get { return ID_IP.Keys.ToList(); } }
         
         public Mapownik(Dictionary<string, IPAddress> mapa_ID_PunktKontaktu){
             this.ID_IP = mapa_ID_PunktKontaktu;

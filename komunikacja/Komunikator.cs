@@ -35,16 +35,10 @@ namespace MojCzat.komunikacja
     {
         public String Opis { get; set; }
         
-        
+        // Dostepnosc uzytkownika
+        Dictionary<string, bool> dostepny = new Dictionary<string,bool>();
 
-        /// <summary>
-        /// Dostepnosc uzytkownika
-        /// </summary>
-        Dictionary<string, bool> dostepny;
-
-        /// <summary>
-        /// Obiekt odpowiedzialny za laczenie się z innymi uzytkownikami
-        /// </summary>
+        // Obiekt odpowiedzialny za laczenie się z innymi uzytkownikami
         Centrala centrala;
                 
         Buforownia buforownia = new Buforownia();
@@ -66,12 +60,10 @@ namespace MojCzat.komunikacja
         {
             //inicjalizacja i wypelnianie mapowan pochodnych
             mapownik = new Mapownik(mapa_ID_PunktKontaktu);
-            
-            dostepny = new Dictionary<string,bool>();
+
             foreach (var i in mapa_ID_PunktKontaktu)
-            {
-                dostepny.Add(i.Key, false);
-            }
+            { dostepny.Add(i.Key, false); }
+
             int port;
             if(ustawienia.SSLWlaczone)
             {
@@ -95,24 +87,69 @@ namespace MojCzat.komunikacja
         }
 
         void centrala_ZamknietoPolaczenie(string idUzytkownika)
-        {
-            obsluzZmianaStanuPolaczenia(idUzytkownika, false);
-        }
+        { obsluzZmianaStanuPolaczenia(idUzytkownika, false); }
         
         public event NowaWiadomosc NowaWiadomosc{
-            add {
-                protokol.NowaWiadomosc += value;
-            }
-            remove {
-                protokol.NowaWiadomosc -= value;
-            }
+            add { protokol.NowaWiadomosc += value; }
+            remove { protokol.NowaWiadomosc -= value; }
         }
 
         public event ZmianaStanuPolaczenia ZmianaStanuPolaczenia;
 
-        public bool CzyDostepny(string idUzytkownika) {
-            return dostepny[idUzytkownika];
+        /// <summary>
+        /// Oczekuj nadchodzacych polaczen
+        /// </summary>
+        public void Start()
+        {
+            nasluchiwacz.NowyKlient += nasluchiwacz_NowyKlient;
+            nasluchiwacz.Start();
         }
+
+        /// <summary>
+        /// zatrzymaj serwer
+        /// </summary>
+        public void Stop()
+        {
+            nasluchiwacz.Stop();
+            centrala.RozlaczWszystkich();
+        }
+
+        /// <summary>
+        /// Wyslij wiadomosc tekstowa do innego uzytkownika
+        /// </summary>
+        /// <param name="idRozmowcy">Identyfikator rozmowcy</param>
+        /// <param name="wiadomosc">Nowa wiadomosc</param>
+        public void WyslijWiadomosc(String idRozmowcy, String wiadomosc)
+        { protokol.WyslijWiadomosc(idRozmowcy, Protokol.ZwyklaWiadomosc, wiadomosc); }
+
+        public void OglosOpis()
+        {
+            mapownik.WszystkieId.ForEach(s => protokol.WyslijWiadomosc(s, Protokol.OtoMojOpis, Opis));
+        }
+
+        public void PoprosOpis(string id)
+        { protokol.WyslijWiadomosc(id, Protokol.DajMiSwojOpis, ""); }
+
+
+        public bool CzyDostepny(string idUzytkownika) 
+        { return dostepny[idUzytkownika]; }
+        
+        /// <summary>
+        /// Polacz sie z uzytkownikiem
+        /// </summary>
+        /// <param name="idUzytkownika"></param>
+        /// <returns></returns>
+        public void ZainicjujPolaczenie(string idUzytkownika) {            
+            var polaczenie = centrala[idUzytkownika];
+            if (polaczenie == null) { centrala.Polacz(idUzytkownika); }            
+        }
+
+        /// <summary>
+        /// Rozlacz sie z uzytkownikiem
+        /// </summary>
+        /// <param name="idUzytkownika"></param>
+        public void Rozlacz(string idUzytkownika) 
+        { centrala.ZamknijPolaczenie(mapownik[idUzytkownika]); }
 
         /// <summary>
         /// Nowy uzytkownik na liscie kontaktow
@@ -139,66 +176,26 @@ namespace MojCzat.komunikacja
         }
 
         /// <summary>
-        /// Polacz sie z uzytkownikiem
+        /// Nadeszlo polaczenie, obslugujemy je
         /// </summary>
-        /// <param name="idUzytkownika"></param>
-        /// <returns></returns>
-        public void ZainicjujPolaczenie(string idUzytkownika) {            
-            var polaczenie = centrala[idUzytkownika];
-            if (polaczenie == null) {
-                centrala.NawiazPolaczenie(idUzytkownika);
-            }            
-        }
-
-        /// <summary>
-        /// Rozlacz sie z uzytkownikiem
-        /// </summary>
-        /// <param name="idUzytkownika"></param>
-        public void Rozlacz(string idUzytkownika) {
-            centrala.ZamknijPolaczenie(mapownik[idUzytkownika]);
-        }
-
-        /// <summary>
-        /// Wyslij wiadomosc tekstowa do innego uzytkownika
-        /// </summary>
-        /// <param name="idRozmowcy">Identyfikator rozmowcy</param>
-        /// <param name="wiadomosc">Nowa wiadomosc</param>
-        public void WyslijWiadomosc(String idRozmowcy, String wiadomosc) {
-            protokol.WyslijWiadomosc(idRozmowcy, Protokol.ZwyklaWiadomosc , wiadomosc);
-        }
-
-        /// <summary>
-        /// Oczekuj nadchodzacych polaczen
-        /// </summary>
-        public void Start() 
+        /// <param name="polaczenie"></param>
+        void zajmijSieNadawca(IPAddress ipNadawcy)
         {
-            nasluchiwacz.NowyKlient += nasluchiwacz_NowyKlient;
-            nasluchiwacz.Start();
-        }
+            // Nieznajomy? Do widzenia.
+            if (!mapownik.CzyZnasz(ipNadawcy))
+            {
+                centrala.ZamknijPolaczenie(ipNadawcy);
+                return;
+            }
+            var nadawca = mapownik[ipNadawcy];
+            protokol.czekajNaZapytanie(nadawca);// czekaj (pasywnie) na wiadomosc z tego polaczenia
+        } 
 
         void nasluchiwacz_NowyKlient(TcpClient polaczenie)
         {
             var adresKlienta = centrala.ZajmijSiePolaczeniem(polaczenie);
-            zajmijSieKlientem(adresKlienta);
+            zajmijSieNadawca(adresKlienta);
         }
-
-        /// <summary>
-        /// zatrzymaj serwer
-        /// </summary>
-        public void Stop() {
-            nasluchiwacz.Stop();
-            centrala.RozlaczWszystkich();
-        }
-
-        public void OglosOpis() {
-            mapownik.WszystkieId.ForEach(s => protokol.WyslijWiadomosc(s, Protokol.OtoMojOpis , Opis));
-        }
-
-        public void PoprosOpis(string id)
-        {
-            protokol.WyslijWiadomosc(id, Protokol.DajMiSwojOpis, "");
-        }
-
 
         void centrala_NowePolaczenieDoNas(string idUzytkownika)
         {
@@ -216,20 +213,6 @@ namespace MojCzat.komunikacja
             dostepny[idUzytkownika] = nowyStan;
             if (ZmianaStanuPolaczenia != null)
             { ZmianaStanuPolaczenia(idUzytkownika); }
-        }        
-        
-        /// <summary>
-        /// Nadeszlo polaczenie, obslugujemy je
-        /// </summary>
-        /// <param name="polaczenie"></param>
-        void zajmijSieKlientem(IPAddress ipNadawcy) {            
-            // Nieznajomy? Do widzenia.
-            if (!mapownik.CzyZnasz(ipNadawcy)){
-                centrala.ZamknijPolaczenie(ipNadawcy);
-                return; 
-            }
-            var nadawca = mapownik[ipNadawcy];
-            protokol.czekajNaZapytanie(nadawca);// czekaj (pasywnie) na wiadomosc z tego polaczenia
-        } 
+        }               
     }
 }
