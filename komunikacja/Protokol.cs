@@ -15,25 +15,20 @@ namespace MojCzat.komunikacja
         public const byte DajMiSwojOpis = 2;
         public const byte OtoMojOpis = 3;
 
-        Dictionary<string, IPAddress> ID_IP;
-
- 
-        Dictionary<IPAddress, string> IP_ID;
         Wiadomosciownia wiadomosciownia;
         Centrala centrala;
         Ustawienia ustawienia;
+        Mapownik mapownik;
 
-        public Protokol(Centrala centrala, Buforownia buforownia , Dictionary<string, IPAddress> ID_IP,
-            Dictionary<IPAddress, string> IP_ID, Ustawienia ustawienia) {
+        public Protokol(Centrala centrala, Buforownia buforownia , Mapownik mapownik, Ustawienia ustawienia) {
             this.wiadomosciownia = new Wiadomosciownia(buforownia, centrala,
                 new CzytanieSkonczone(czekajNaZapytanie)); ;
 
-            foreach (var i in ID_IP) { wiadomosciownia.DodajUzytkownika(i.Key); }
+            foreach (var i in mapownik.WszystkieId) { wiadomosciownia.DodajUzytkownika(i); }
 
             this.ustawienia = ustawienia;
             this.centrala = centrala;
-            this.ID_IP = ID_IP;
-            this.IP_ID = IP_ID;
+            this.mapownik = mapownik;
         }
 
         public event NowaWiadomosc NowaWiadomosc {
@@ -111,7 +106,7 @@ namespace MojCzat.komunikacja
         }
         IPAddress dajIp(string idUzytkownika)
         {
-            return ID_IP[idUzytkownika];
+            return mapownik[idUzytkownika];
         }
 
         class StatusObsluzZapytanie

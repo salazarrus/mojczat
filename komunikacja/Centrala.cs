@@ -30,16 +30,13 @@ namespace MojCzat.komunikacja
         /// </summary>
         Dictionary<IPAddress, Stream> otwarteStrumienie = new Dictionary<IPAddress, Stream>();
         
-        Dictionary<string, IPAddress> ID_IP;
-        Dictionary<IPAddress, String> IP_ID;
-        
         int port;
-
+        Mapownik mapownik;
         const int POLOCZENIE_TIMEOUT = 1000;
 
         public Stream this[String idUzytkownika]
         {
-            get { return this[ID_IP[idUzytkownika]]; }
+            get { return this[mapownik[idUzytkownika]]; }
         }
 
         public Stream this[IPAddress idUzytkownika]
@@ -51,9 +48,8 @@ namespace MojCzat.komunikacja
             }
         }
 
-        public Centrala(Dictionary<string, IPAddress> ID_IP, Dictionary<IPAddress, String> IP_ID, int port) {
-            this.ID_IP = ID_IP;
-            this.IP_ID = IP_ID;
+        public Centrala(Mapownik mapownik, int port) {
+            this.mapownik = mapownik;
             this.port = port;
         }
 
@@ -74,7 +70,7 @@ namespace MojCzat.komunikacja
             // tworzymy nowe polaczenie 
             Trace.TraceInformation("nawiazujemy polaczenie");
             var klient = new TcpClient();
-            var wynik = klient.BeginConnect(ID_IP[id], port, new AsyncCallback(nawiazPolaczenieWynik), 
+            var wynik = klient.BeginConnect(mapownik[id], port, new AsyncCallback(nawiazPolaczenieWynik), 
                 new NawiazPolaczenieStatus() { idUzytkownika = id, polaczenie = klient });
 
             if (!wynik.AsyncWaitHandle.WaitOne(POLOCZENIE_TIMEOUT, true)) {
@@ -96,7 +92,7 @@ namespace MojCzat.komunikacja
             zachowajPolaczenie(punktKontaktu.Address, polaczenie, strumien, false); // zatrzymujemy referencje  
             if (NowePolaczenieDoNas != null)
             {
-                NowePolaczenieDoNas(IP_ID[punktKontaktu.Address]);
+                NowePolaczenieDoNas(mapownik[punktKontaktu.Address]);
             }
             return punktKontaktu.Address;
         }
@@ -150,7 +146,7 @@ namespace MojCzat.komunikacja
                     return;
                 }
 
-                zachowajPolaczenie(ID_IP[status.idUzytkownika], status.polaczenie, 
+                zachowajPolaczenie(mapownik[status.idUzytkownika], status.polaczenie, 
                     dajStrumienJakoKlient(status.polaczenie), true);
                 
                 if (NowePolaczenieOdNas != null){ NowePolaczenieOdNas(status.idUzytkownika); }

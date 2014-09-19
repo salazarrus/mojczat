@@ -35,15 +35,7 @@ namespace MojCzat.komunikacja
     {
         public String Opis { get; set; }
         
-        /// <summary>
-        /// Mapowanie Identyfikatora rozmowcy do punktu kontatku (adres IP,Port)
-        /// </summary>
-        Dictionary<string, IPAddress> ID_IP;
-
-        /// <summary>
-        /// Odwrotnosc mapy ID_IP
-        /// </summary>
-        Dictionary<IPAddress, string> IP_ID;
+        
 
         /// <summary>
         /// Dostepnosc uzytkownika
@@ -61,6 +53,7 @@ namespace MojCzat.komunikacja
 
         Protokol protokol;
 
+        Mapownik mapownik;
         const int portBezSSL = 5080;
         const int portSSL = 5443;
 
@@ -72,24 +65,23 @@ namespace MojCzat.komunikacja
         public Komunikator(Dictionary<string, IPAddress> mapa_ID_PunktKontaktu, Ustawienia ustawienia)
         {
             //inicjalizacja i wypelnianie mapowan pochodnych
-            this.ID_IP = mapa_ID_PunktKontaktu;
-            this.IP_ID = new Dictionary<IPAddress, string>();
+            mapownik = new Mapownik(mapa_ID_PunktKontaktu);
+            
             dostepny = new Dictionary<string,bool>();
             foreach (var i in mapa_ID_PunktKontaktu)
             {
                 dostepny.Add(i.Key, false);
-                IP_ID.Add(i.Value, i.Key); 
             }
             int port;
             if(ustawienia.SSLWlaczone)
             {
                 port = portSSL;
-                centrala = new CentralaSSL(ID_IP, IP_ID , port ,ustawienia.Certyfikat) ;
+                centrala = new CentralaSSL(mapownik , port ,ustawienia.Certyfikat) ;
             }
             else
             {
                 port = portBezSSL; 
-                centrala = new Centrala(ID_IP, IP_ID, port);
+                centrala = new Centrala(mapownik, port);
             }
 
             nasluchiwacz = new Nasluchiwacz(port);
@@ -98,7 +90,7 @@ namespace MojCzat.komunikacja
             centrala.NowePolaczenieDoNas += centrala_NowePolaczenieDoNas;
             centrala.ZamknietoPolaczenie += centrala_ZamknietoPolaczenie;
 
-            protokol = new Protokol(centrala, buforownia , ID_IP, IP_ID, ustawienia);
+            protokol = new Protokol(centrala, buforownia , mapownik, ustawienia);
                  
         }
 
@@ -129,8 +121,7 @@ namespace MojCzat.komunikacja
         /// <param name="punktKontaktu"></param>
         public void DodajKontakt(string idUzytkownika, IPAddress punktKontaktu)
         {
-            IP_ID.Add(punktKontaktu, idUzytkownika);
-            ID_IP.Add(idUzytkownika, punktKontaktu);
+            mapownik.Dodaj(idUzytkownika, punktKontaktu);
             protokol.DodajUzytkownika(idUzytkownika);
             dostepny.Add(idUzytkownika, false);
         }
@@ -141,8 +132,7 @@ namespace MojCzat.komunikacja
         /// <param name="idUzytkownika"></param>
         public void UsunKontakt(string idUzytkownika)
         {
-            IP_ID.Remove(ID_IP[idUzytkownika]);
-            ID_IP.Remove(idUzytkownika);
+            mapownik.Usun(idUzytkownika);
             protokol.UsunUzytkownika(idUzytkownika);
             buforownia.Usun(idUzytkownika);
             dostepny.Remove(idUzytkownika);
@@ -165,7 +155,7 @@ namespace MojCzat.komunikacja
         /// </summary>
         /// <param name="idUzytkownika"></param>
         public void Rozlacz(string idUzytkownika) {
-            centrala.ZamknijPolaczenie(dajIp(idUzytkownika));
+            centrala.ZamknijPolaczenie(mapownik[idUzytkownika]);
         }
 
         /// <summary>
@@ -201,7 +191,7 @@ namespace MojCzat.komunikacja
         }
 
         public void OglosOpis() {
-            ID_IP.Keys.ToList().ForEach(s => protokol.WyslijWiadomosc(s, Protokol.OtoMojOpis , Opis));
+            mapownik.WszystkieId.ForEach(s => protokol.WyslijWiadomosc(s, Protokol.OtoMojOpis , Opis));
         }
 
         public void PoprosOpis(string id)
@@ -209,9 +199,6 @@ namespace MojCzat.komunikacja
             protokol.WyslijWiadomosc(id, Protokol.DajMiSwojOpis, "");
         }
 
-        IPAddress dajIp(string idUzytkownika) {
-            return ID_IP[idUzytkownika];
-        }
 
         void centrala_NowePolaczenieDoNas(string idUzytkownika)
         {
@@ -237,13 +224,12 @@ namespace MojCzat.komunikacja
         /// <param name="polaczenie"></param>
         void zajmijSieKlientem(IPAddress ipNadawcy) {            
             // Nieznajomy? Do widzenia.
-            if (!IP_ID.ContainsKey(ipNadawcy)){
+            if (!mapownik.CzyZnasz(ipNadawcy)){
                 centrala.ZamknijPolaczenie(ipNadawcy);
                 return; 
             }
-            var nadawca = IP_ID[ipNadawcy];
+            var nadawca = mapownik[ipNadawcy];
             protokol.czekajNaZapytanie(nadawca);// czekaj (pasywnie) na wiadomosc z tego polaczenia
         } 
-
     }
 }
