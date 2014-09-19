@@ -15,6 +15,7 @@ using System.Windows.Forms;
 namespace MojCzat.komunikacja
 {
     public delegate void NowePolaczenie(string idUzytkownika);
+    public delegate void ZamknietoPoloczenie(string idUzytkownika);
 
     class Centrala
     {
@@ -60,6 +61,13 @@ namespace MojCzat.komunikacja
 
         public event NowePolaczenie NowePolaczenieOdNas;
 
+        public event ZamknietoPoloczenie ZamknietoPolaczenie;
+
+        public void ToNieDziala(string idUzytkownika) {
+            if (ZamknietoPolaczenie != null) {
+                ZamknietoPolaczenie(idUzytkownika);
+            }
+        }
                 
         public void NawiazPolaczenie(String id)
         {

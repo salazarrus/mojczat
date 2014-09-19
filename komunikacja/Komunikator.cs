@@ -36,11 +36,6 @@ namespace MojCzat.komunikacja
         public String Opis { get; set; }
         
         /// <summary>
-        /// Na jakim porcie nasluchujemy wiadomosci
-        /// </summary>
-        int port;
-            
-        /// <summary>
         /// Mapowanie Identyfikatora rozmowcy do punktu kontatku (adres IP,Port)
         /// </summary>
         Dictionary<string, IPAddress> ID_IP;
@@ -54,11 +49,6 @@ namespace MojCzat.komunikacja
         /// Dostepnosc uzytkownika
         /// </summary>
         Dictionary<string, bool> dostepny;
-                
-        /// <summary>
-        /// obiekt nasluchujacy nadchodzacych polaczen
-        /// </summary>
-        TcpListener serwer;
 
         /// <summary>
         /// Obiekt odpowiedzialny za laczenie się z innymi uzytkownikami
@@ -67,9 +57,12 @@ namespace MojCzat.komunikacja
                 
         Buforownia buforownia = new Buforownia();
 
-        Wiadomosciownia wiadomosciownia;
-
         Nasluchiwacz nasluchiwacz;
+
+        Protokol protokol;
+
+        const int portBezSSL = 5080;
+        const int portSSL = 5443;
 
         /// <summary>
         /// Konstruktor komunikatora
@@ -78,9 +71,6 @@ namespace MojCzat.komunikacja
         /// Identyfikatora rozmowcy wszystkich kontaktow uzytkownika</param>
         public Komunikator(Dictionary<string, IPAddress> mapa_ID_PunktKontaktu, Ustawienia ustawienia)
         {
-            const int portBezSSL = 5080;
-            const int portSSL = 5443;
-
             //inicjalizacja i wypelnianie mapowan pochodnych
             this.ID_IP = mapa_ID_PunktKontaktu;
             this.IP_ID = new Dictionary<IPAddress, string>();
@@ -90,7 +80,7 @@ namespace MojCzat.komunikacja
                 dostepny.Add(i.Key, false);
                 IP_ID.Add(i.Value, i.Key); 
             }
-
+            int port;
             if(ustawienia.SSLWlaczone)
             {
                 port = portSSL;
@@ -103,20 +93,26 @@ namespace MojCzat.komunikacja
             }
 
             nasluchiwacz = new Nasluchiwacz(port);
-
+           
             centrala.NowePolaczenieOdNas += centrala_NowePolaczenieOdNas;
             centrala.NowePolaczenieDoNas += centrala_NowePolaczenieDoNas;
-            wiadomosciownia = new Wiadomosciownia(buforownia, centrala, new CzytanieSkonczone(czekajNaZapytanie));
+            centrala.ZamknietoPolaczenie += centrala_ZamknietoPolaczenie;
 
-            foreach (var i in mapa_ID_PunktKontaktu){ wiadomosciownia.DodajUzytkownika(i.Key); }           
+            protokol = new Protokol(centrala, buforownia , ID_IP, IP_ID);
+                 
+        }
+
+        void centrala_ZamknietoPolaczenie(string idUzytkownika)
+        {
+            obsluzZmianaStanuPolaczenia(idUzytkownika, false);
         }
         
         public event NowaWiadomosc NowaWiadomosc{
             add {
-                wiadomosciownia.NowaWiadomosc += value;
+                protokol.NowaWiadomosc += value;
             }
             remove {
-                wiadomosciownia.NowaWiadomosc -= value;
+                protokol.NowaWiadomosc -= value;
             }
         }
 
@@ -135,7 +131,7 @@ namespace MojCzat.komunikacja
         {
             IP_ID.Add(punktKontaktu, idUzytkownika);
             ID_IP.Add(idUzytkownika, punktKontaktu);
-            wiadomosciownia.DodajUzytkownika(idUzytkownika);
+            protokol.DodajUzytkownika(idUzytkownika);
             dostepny.Add(idUzytkownika, false);
         }
 
@@ -147,7 +143,7 @@ namespace MojCzat.komunikacja
         {
             IP_ID.Remove(ID_IP[idUzytkownika]);
             ID_IP.Remove(idUzytkownika);
-            wiadomosciownia.UsunUzytkownika(idUzytkownika);
+            protokol.UsunUzytkownika(idUzytkownika);
             buforownia.Usun(idUzytkownika);
             dostepny.Remove(idUzytkownika);
         }
@@ -178,7 +174,7 @@ namespace MojCzat.komunikacja
         /// <param name="idRozmowcy">Identyfikator rozmowcy</param>
         /// <param name="wiadomosc">Nowa wiadomosc</param>
         public void WyslijWiadomosc(String idRozmowcy, String wiadomosc) {
-            wiadomosciownia.WyslijWiadomosc(idRozmowcy, Protokol.ZwyklaWiadomosc , wiadomosc);
+            protokol.WyslijWiadomosc(idRozmowcy, Protokol.ZwyklaWiadomosc , wiadomosc);
         }
 
         /// <summary>
@@ -205,12 +201,12 @@ namespace MojCzat.komunikacja
         }
 
         public void OglosOpis() {
-            ID_IP.Keys.ToList().ForEach(s => wiadomosciownia.WyslijWiadomosc(s, Protokol.OtoMojOpis , Opis));
+            ID_IP.Keys.ToList().ForEach(s => protokol.WyslijWiadomosc(s, Protokol.OtoMojOpis , Opis));
         }
 
         public void PoprosOpis(string id)
         {
-            wiadomosciownia.WyslijWiadomosc(id, Protokol.DajMiSwojOpis, "");
+            protokol.WyslijWiadomosc(id, Protokol.DajMiSwojOpis, "");
         }
 
         IPAddress dajIp(string idUzytkownika) {
@@ -225,7 +221,7 @@ namespace MojCzat.komunikacja
         void centrala_NowePolaczenieOdNas(string idUzytkownika)
         {
             obsluzZmianaStanuPolaczenia(idUzytkownika, true);
-            czekajNaZapytanie(idUzytkownika);
+            protokol.czekajNaZapytanie(idUzytkownika);
         }
 
         void obsluzZmianaStanuPolaczenia(string idUzytkownika, bool nowyStan) 
@@ -233,55 +229,7 @@ namespace MojCzat.komunikacja
             dostepny[idUzytkownika] = nowyStan;
             if (ZmianaStanuPolaczenia != null)
             { ZmianaStanuPolaczenia(idUzytkownika); }
-        }
-        
-        /// <summary>
-        /// Czekaj (pasywnie) na wiadomosci
-        /// </summary>
-        /// <param name="idNadawcy">Identyfikator nadawcy</param>
-        void czekajNaZapytanie(string idNadawcy)
-        {
-            Trace.TraceInformation("Czekamy na zapytanie ");
-            var wynik = new StatusObsluzZapytanie(){ idNadawcy=idNadawcy, rodzaj=new byte[1]};
-            if (centrala[dajIp(idNadawcy)] == null) {
-                Trace.TraceInformation("[czekajNaZapytanie] brak polaczenia");
-                return;
-            }
-            centrala[dajIp(idNadawcy)].BeginRead(wynik.rodzaj, 0, 1, obsluzZapytanie, wynik);
-        }
-
-        void obsluzZapytanie(IAsyncResult wynik){
-            var status = (StatusObsluzZapytanie)wynik.AsyncState;
-            if (centrala[dajIp(status.idNadawcy)] == null) { return; }
-            Trace.TraceInformation("Przyszlo nowe zapytanie: " + status.rodzaj[0].ToString());
-            
-            try {  centrala[dajIp(status.idNadawcy)].EndRead(wynik); }
-            catch(Exception ex)
-            {   // zostalismy rozlaczeni
-                obsluzZmianaStanuPolaczenia(status.idNadawcy, false);
-                return; 
-            } 
-
-            switch (status.rodzaj[0]) { 
-                case Protokol.KoniecPolaczenia:
-                    obsluzZmianaStanuPolaczenia(status.idNadawcy, false);
-                    Rozlacz(status.idNadawcy);
-                    return;
-                case Protokol.ZwyklaWiadomosc://zwykla wiadomosc
-                    wiadomosciownia.czytajWiadomosc(status.idNadawcy, TypWiadomosci.Zwykla);
-                    break;
-                case Protokol.DajMiSwojOpis: // prosza nas o nasz opis
-                    czekajNaZapytanie(status.idNadawcy);
-                    wiadomosciownia.WyslijWiadomosc(status.idNadawcy, Protokol.OtoMojOpis, Opis);
-                    break;
-                case Protokol.OtoMojOpis: // my prosimy o opis
-                    wiadomosciownia.czytajWiadomosc(status.idNadawcy, TypWiadomosci.Opis);
-                    break;
-                default: // blad, czekaj na kolejne zapytanie
-                    czekajNaZapytanie(status.idNadawcy);
-                    break;
-            }          
-        }
+        }        
         
         /// <summary>
         /// Nadeszlo polaczenie, obslugujemy je
@@ -294,14 +242,8 @@ namespace MojCzat.komunikacja
                 return; 
             }
             var nadawca = IP_ID[ipNadawcy];
-            czekajNaZapytanie(nadawca);// czekaj (pasywnie) na wiadomosc z tego polaczenia
-        }
-
-        class StatusObsluzZapytanie
-        {
-            public byte[] rodzaj;
-            public String idNadawcy;
-        }
+            protokol.czekajNaZapytanie(nadawca);// czekaj (pasywnie) na wiadomosc z tego polaczenia
+        } 
 
     }
 }
