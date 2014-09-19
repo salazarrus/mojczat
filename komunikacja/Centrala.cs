@@ -74,8 +74,8 @@ namespace MojCzat.komunikacja
             }
         }
 
-        public IPAddress CzekajNaPolaczenie(TcpListener serwer) {
-            TcpClient polaczenie = serwer.AcceptTcpClient();
+        public IPAddress ZajmijSiePolaczeniem(TcpClient polaczenie) 
+        {            
             Trace.TraceInformation("przyszlo nowe polaczenie)");
             var punktKontaktu = (IPEndPoint)polaczenie.Client.RemoteEndPoint;
             if (this[punktKontaktu.Address] != null) {

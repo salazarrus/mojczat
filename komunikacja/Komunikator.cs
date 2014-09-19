@@ -26,6 +26,8 @@ namespace MojCzat.komunikacja
 
     public delegate void CzytanieSkonczone(string idUzytkownika);
 
+    public delegate void NowyKlient(TcpClient polaczenie);
+
     /// <summary>
     /// Obiekt odpowiedzialny za odbieranie i przesylanie wiadomosci
     /// </summary>
@@ -67,6 +69,8 @@ namespace MojCzat.komunikacja
 
         Wiadomosciownia wiadomosciownia;
 
+        Nasluchiwacz nasluchiwacz;
+
         /// <summary>
         /// Konstruktor komunikatora
         /// </summary>
@@ -97,6 +101,8 @@ namespace MojCzat.komunikacja
                 port = portBezSSL; 
                 centrala = new Centrala(ID_IP, IP_ID, port);
             }
+
+            nasluchiwacz = new Nasluchiwacz(port);
 
             centrala.NowePolaczenieOdNas += centrala_NowePolaczenieOdNas;
             centrala.NowePolaczenieDoNas += centrala_NowePolaczenieDoNas;
@@ -179,29 +185,22 @@ namespace MojCzat.komunikacja
         /// Oczekuj nadchodzacych polaczen
         /// </summary>
         public void Start() 
-        {           
-            try
-            {
-                serwer = new TcpListener(IPAddress.Any, port); // stworz serwer
-                serwer.Start(); //uruchom serwer
+        {
+            nasluchiwacz.NowyKlient += nasluchiwacz_NowyKlient;
+            nasluchiwacz.Start();
+        }
 
-                while (true) // zapetlamy
-                {
-                    // czekaj na przychodzace polaczenia
-                    IPAddress adresKlienta = centrala.CzekajNaPolaczenie(serwer);
-                    if (adresKlienta != null) { zajmijSieKlientem(adresKlienta); }                    
-                }
-            }
-            catch (Exception ex) { Trace.TraceInformation("[Start]" + ex.ToString()); } // program zostal zamkniety
-            finally { Stop(); }
+        void nasluchiwacz_NowyKlient(TcpClient polaczenie)
+        {
+            var adresKlienta = centrala.ZajmijSiePolaczeniem(polaczenie);
+            zajmijSieKlientem(adresKlienta);
         }
 
         /// <summary>
         /// zatrzymaj serwer
         /// </summary>
         public void Stop() {
-            // zatrzymaj nasluch
-            if (serwer != null) { serwer.Stop(); }
+            nasluchiwacz.Stop();
             centrala.RozlaczWszystkich();
         }
 
