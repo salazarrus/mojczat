@@ -28,9 +28,7 @@ namespace MojCzat.komunikacja
 
     public delegate void NowyKlient(TcpClient polaczenie);
 
-    /// <summary>
-    /// Obiekt odpowiedzialny za odbieranie i przesylanie wiadomosci
-    /// </summary>
+    // Obiekt odpowiedzialny za odbieranie i przesylanie wiadomosci
     public class Komunikator
     {
         public String Opis { get; set; }
@@ -96,18 +94,14 @@ namespace MojCzat.komunikacja
 
         public event ZmianaStanuPolaczenia ZmianaStanuPolaczenia;
 
-        /// <summary>
-        /// Oczekuj nadchodzacych polaczen
-        /// </summary>
+        // Oczekuj nadchodzacych polaczen
         public void Start()
         {
             nasluchiwacz.NowyKlient += nasluchiwacz_NowyKlient;
             nasluchiwacz.Start();
         }
 
-        /// <summary>
-        /// zatrzymaj serwer
-        /// </summary>
+        // zatrzymaj serwer
         public void Stop()
         {
             nasluchiwacz.Stop();

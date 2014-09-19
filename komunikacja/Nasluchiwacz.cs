@@ -14,26 +14,17 @@ namespace MojCzat.komunikacja
 {
     class Nasluchiwacz
     {
-
-        /// <summary>
-        /// Na jakim porcie nasluchujemy wiadomosci
-        /// </summary>
+        // Na jakim porcie nasluchujemy wiadomosci
         int port;
 
-        /// <summary>
-        /// obiekt nasluchujacy nadchodzacych polaczen
-        /// </summary>
+        // obiekt nasluchujacy nadchodzacych polaczen
         TcpListener serwer;
 
-        public Nasluchiwacz(int port) {
-            this.port = port;
-        }
+        public Nasluchiwacz(int port) { this.port = port; }
 
         public event NowyKlient NowyKlient;
 
-        /// <summary>
-        /// Oczekuj nadchodzacych polaczen
-        /// </summary>
+        // Oczekuj nadchodzacych polaczen
         public void Start()
         {
             try
@@ -52,10 +43,7 @@ namespace MojCzat.komunikacja
             finally { Stop(); }
         }
 
-        public void Stop()
-        {
-            // zatrzymaj nasluch
-            if (serwer != null) { serwer.Stop(); }
-        }
+        // zatrzymaj nasluch
+        public void Stop() { if (serwer != null) { serwer.Stop(); } }
     }
 }

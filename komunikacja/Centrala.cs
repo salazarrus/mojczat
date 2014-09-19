@@ -18,8 +18,7 @@ namespace MojCzat.komunikacja
     public delegate void ZamknietoPoloczenie(string idUzytkownika);
 
     class Centrala
-    {
-       
+    {       
         /// <summary>
         /// Polaczenia TCP ktore zostaly otwarte
         /// </summary>
@@ -119,19 +118,14 @@ namespace MojCzat.komunikacja
         /// <summary>
         /// Rozlacz wszystkie polaczenia
         /// </summary>
-        public void RozlaczWszystkich() {
-            otwartePolaczenia.Keys.ToList().ForEach(i => ZamknijPolaczenie(i));
-        }
+        public void RozlaczWszystkich() 
+        { otwartePolaczenia.Keys.ToList().ForEach(i => ZamknijPolaczenie(i)); }
         
         protected virtual Stream dajStrumienJakoKlient(TcpClient polaczenie)
-        {
-            return polaczenie.GetStream();
-        }
+        { return polaczenie.GetStream(); }
 
         protected virtual Stream dajStrumienJakoSerwer(TcpClient polaczenie)
-        {
-            return polaczenie.GetStream();
-        }
+        { return polaczenie.GetStream(); }
 
         void nawiazPolaczenieWynik(IAsyncResult wynik)
         {
@@ -152,9 +146,7 @@ namespace MojCzat.komunikacja
                 if (NowePolaczenieOdNas != null){ NowePolaczenieOdNas(status.idUzytkownika); }
             }
             catch (Exception ex)
-            {
-                Trace.TraceInformation("[nawiazPolaczenieWynik] " + ex.ToString());
-            }
+            { Trace.TraceInformation("[nawiazPolaczenieWynik] " + ex.ToString()); }
         }
 
         void zachowajPolaczenie(IPAddress ipUzytkownika, TcpClient polaczenie, Stream strumien, bool nawiaz)

@@ -62,21 +62,21 @@ namespace MojCzat.komunikacja
         {
             Trace.TraceInformation("Czekamy na zapytanie ");
             var wynik = new StatusObsluzZapytanie() { idNadawcy = idNadawcy, rodzaj = new byte[1] };
-            if (centrala[dajIp(idNadawcy)] == null)
+            if (centrala[mapownik[idNadawcy]] == null)
             {
                 Trace.TraceInformation("[czekajNaZapytanie] brak polaczenia");
                 return;
             }
-            centrala[dajIp(idNadawcy)].BeginRead(wynik.rodzaj, 0, 1, obsluzZapytanie, wynik);
+            centrala[mapownik[idNadawcy]].BeginRead(wynik.rodzaj, 0, 1, obsluzZapytanie, wynik);
         }
 
         void obsluzZapytanie(IAsyncResult wynik)
         {
             var status = (StatusObsluzZapytanie)wynik.AsyncState;
-            if (centrala[dajIp(status.idNadawcy)] == null) { return; }
+            if (centrala[mapownik[status.idNadawcy]] == null) { return; }
             Trace.TraceInformation("Przyszlo nowe zapytanie: " + status.rodzaj[0].ToString());
 
-            try { centrala[dajIp(status.idNadawcy)].EndRead(wynik); }
+            try { centrala[mapownik[status.idNadawcy]].EndRead(wynik); }
             catch (Exception ex)
             {   // zostalismy rozlaczeni
                 centrala.ToNieDziala(status.idNadawcy);
@@ -102,11 +102,6 @@ namespace MojCzat.komunikacja
                     czekajNaZapytanie(status.idNadawcy);
                     break;
             }
-
-        }
-        IPAddress dajIp(string idUzytkownika)
-        {
-            return mapownik[idUzytkownika];
         }
 
         class StatusObsluzZapytanie
@@ -114,6 +109,5 @@ namespace MojCzat.komunikacja
             public byte[] rodzaj;
             public String idNadawcy;
         }
-
     }
 }

@@ -65,8 +65,6 @@ namespace MojCzat.komunikacja
             }
         }
 
-
-
         public void DodajUzytkownika(string id)
         {
             wysylanieWToku.Add(id, false);
