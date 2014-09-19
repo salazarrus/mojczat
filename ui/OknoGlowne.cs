@@ -72,7 +72,7 @@ namespace MojCzat.ui
             CenterToScreen();
             
             // ustalamy naglowek okna
-            this.Text = "Mój Czat";
+            ustawNaglowek();
                                  
             // zaladuj elementy obiektu "kontakty" do interfejsu uzytkownika
             listaZrodlo.DataSource = this.kontakty;
@@ -154,7 +154,7 @@ namespace MojCzat.ui
             // zapisujemy sie jako sluchacz wydarzenia ZmianaStanuPolaczenia
             komunikator.ZmianaStanuPolaczenia += komunikator_ZmianaStanuPolaczenia;
 
-            komunikator.Opis = this.tbOpis.Text;
+            komunikator.Opis = ustawienia.Opis;
             // nawiaz polaczenia z kontaktami
             polaczSieZKontaktami();            
             
@@ -180,11 +180,11 @@ namespace MojCzat.ui
         /// <summary>
         /// Ktos sie z nami polaczyl lub rozlaczyl, odswiezmy liste kontaktow
         /// </summary>
-        void komunikator_ZmianaStanuPolaczenia(string rozmowca, bool polaczenieOtwarte)
+        void komunikator_ZmianaStanuPolaczenia(string rozmowca)
         {
-            //if (polaczenieOtwarte) { komunikator.PoprosOpis(rozmowca); }
+            if (komunikator.CzyDostepny(rozmowca)) { komunikator.PoprosOpis(rozmowca); }
                 
-            odswiezStatusKontaktu(rozmowca, polaczenieOtwarte);
+            odswiezStatusKontaktu(rozmowca);
             Invoke(odswiezOknoDelegata);
         }
 
@@ -229,10 +229,10 @@ namespace MojCzat.ui
         /// <summary>
         /// Polaczenie zmienilo status, reagujemy
         /// </summary>
-        void odswiezStatusKontaktu(string idRozmowcy, bool polaczenieOtwarte){
+        void odswiezStatusKontaktu(string idRozmowcy){
             var kontakt = kontakty.Where(k => k.ID == idRozmowcy).SingleOrDefault();
             if (kontakt == null) { return; }
-            kontakt.Polaczony = polaczenieOtwarte;
+            kontakt.Polaczony = komunikator.CzyDostepny(idRozmowcy);
             
             // sortowanie - najpierw dostepni, potem kolejosc alfabetyczna
             this.kontakty = kontakty.OrderByDescending(k=>k.StatusTekst).ThenBy(k=>k.Nazwa).ToList();
@@ -312,9 +312,14 @@ namespace MojCzat.ui
             Kontakt.ZapiszListeKontaktow(kontakty, "kontakty.xml");
         }
 
-        // obługa zdarzeń interfejsu uzytkownika - poczatek
+        void ustawNaglowek() {
+            this.Text = "Mój Czat";
+            if (!String.IsNullOrWhiteSpace(ustawienia.Opis)) { this.Text += String.Format(" ({0})", ustawienia.Opis); }
+        }
 
-        private void btnDodaj_Click(object sender, EventArgs e)
+        // obługa zdarzeń interfejsu uzytkownika - poczatek
+        
+        void btnDodaj_Click(object sender, EventArgs e)
         {
             var okno = new OknoDodajKontakt();
             var wynik = okno.ShowDialog(this);
@@ -414,9 +419,16 @@ namespace MojCzat.ui
 
         private void btnUstawOpis_Click(object sender, EventArgs e)
         {
-            if (!polaczony) { return; }
-            komunikator.Opis = this.tbOpis.Text;
-            komunikator.ZautualizujOpis();
+            if (String.IsNullOrWhiteSpace(tbOpis.Text)) { return; }
+            var nowyOpis = this.tbOpis.Text.Trim();
+            ustawienia.Opis = nowyOpis;
+            ustawienia.Zapisz("ustawienia.xml");
+            ustawNaglowek();
+
+            if (polaczony) {
+                komunikator.Opis = nowyOpis;
+                komunikator.ZautualizujOpis(); 
+            }
         }       
 
         // obługa zdarzeń interfejsu uzytkownika - koniec

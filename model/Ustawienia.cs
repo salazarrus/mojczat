@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Security.Cryptography.X509Certificates;
 using System.Text;
@@ -13,13 +14,14 @@ namespace MojCzat.model
         public bool SSLWlaczone { get; set; }
         public string SSLCertyfikatSciezka { get; set; }
         public X509Certificate2 Certyfikat { get; set; }
-
+        public string Opis { get; set; }
 
         public Ustawienia Kopiuj() {
             return new Ustawienia()
             {
                 SSLCertyfikatSciezka = this.SSLCertyfikatSciezka,
-                SSLWlaczone = this.SSLWlaczone
+                SSLWlaczone = this.SSLWlaczone,
+                Opis = this.Opis
             }; 
         }
 
@@ -31,19 +33,24 @@ namespace MojCzat.model
         public static Ustawienia Wczytaj(string sciezkaPliku)
         {
             Ustawienia ustawienia = new Ustawienia();
+
+            if (sciezkaPliku == null || !File.Exists(sciezkaPliku)) { return ustawienia; }
+
             XmlDocument plikXML = new XmlDocument();
             try
             {
                 plikXML.Load(sciezkaPliku);
 
-                foreach (XmlNode node in plikXML.DocumentElement.ChildNodes)
+                foreach (XmlNode wezel in plikXML.DocumentElement.ChildNodes)
                 {
-                    switch (node.Name.ToLower())
+                    switch (wezel.Name.ToLower())
                     {
+                        case "ogolne":
+                            ustawienia.Opis = dajAtrybut(wezel, "opis");
+                            break;
                         case "ssl":
-                            ustawienia.SSLWlaczone =
-                                (node.Attributes["wlaczone"].InnerText.ToLower() == "true");
-                            ustawienia.SSLCertyfikatSciezka = node.Attributes["certyfikat"].InnerText;
+                            ustawienia.SSLWlaczone = (dajAtrybut(wezel, "wlaczone").ToLower() == "true");
+                            ustawienia.SSLCertyfikatSciezka = dajAtrybut(wezel, "certyfikat");
                             break;
                     }
                 }
@@ -58,17 +65,16 @@ namespace MojCzat.model
 
             var elementGlowny = plikXML.CreateElement("ustawienia");
             var elementSSL = plikXML.CreateElement("ssl");
-            
-            var atrybutSslWlaczone = plikXML.CreateAttribute("wlaczone");
-            atrybutSslWlaczone.InnerText = SSLWlaczone.ToString();
-            elementSSL.Attributes.Append(atrybutSslWlaczone);
 
-            var atrybutSslSciezka = plikXML.CreateAttribute("certyfikat");
-            atrybutSslSciezka.InnerText = SSLCertyfikatSciezka;
-            elementSSL.Attributes.Append(atrybutSslSciezka);
+            dodajAtrybut(plikXML, elementSSL, "wlaczone", SSLWlaczone.ToString());
+            dodajAtrybut(plikXML, elementSSL,"certyfikat",SSLCertyfikatSciezka);
+
+            var elementOgolne = plikXML.CreateElement("ogolne");
+            dodajAtrybut(plikXML, elementOgolne, "opis", Opis);
 
             plikXML.AppendChild(elementGlowny);
             elementGlowny.AppendChild(elementSSL);
+            elementGlowny.AppendChild(elementOgolne);
             plikXML.Save(sciezkaPliku);
         }
 
@@ -84,6 +90,22 @@ namespace MojCzat.model
             return base.Equals(obj);
         }
 
+        public override int GetHashCode()
+        {
+            return base.GetHashCode();
+        }
 
+        static string dajAtrybut(XmlNode wezel, string atrybut) {
+            if (wezel == null || atrybut == null || wezel.Attributes[atrybut] == null) 
+            { return string.Empty; }
+
+            return wezel.Attributes[atrybut].InnerText;
+        }
+
+        static void dodajAtrybut(XmlDocument dokument ,XmlElement element, string atrybut, string wartosc) {
+            var nowyAtrybut = dokument.CreateAttribute(atrybut);
+            nowyAtrybut.InnerText = wartosc;
+            element.Attributes.Append(nowyAtrybut);
+        }
     }
 }

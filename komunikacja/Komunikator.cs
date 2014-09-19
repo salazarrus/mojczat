@@ -22,7 +22,7 @@ namespace MojCzat.komunikacja
     public delegate void NowaWiadomosc(String id, TypWiadomosci rodzaj , String wiadomosc);
 
     // delegata definiujaca funkcje obslugujace zdarzenie ZmianaStanuPolaczenia
-    public delegate void ZmianaStanuPolaczenia(string idUzytkownika, bool polaczenieOtwarte);
+    public delegate void ZmianaStanuPolaczenia(string idUzytkownika);
 
     public delegate void CzytanieSkonczone(string idUzytkownika);
 
@@ -43,9 +43,16 @@ namespace MojCzat.komunikacja
         /// </summary>
         Dictionary<string, IPAddress> ID_IP;
 
+        /// <summary>
+        /// Odwrotnosc mapy ID_IP
+        /// </summary>
         Dictionary<IPAddress, string> IP_ID;
 
+        /// <summary>
+        /// Dostepnosc uzytkownika
+        /// </summary>
         Dictionary<string, bool> dostepny;
+                
         /// <summary>
         /// obiekt nasluchujacy nadchodzacych polaczen
         /// </summary>
@@ -108,6 +115,10 @@ namespace MojCzat.komunikacja
         }
 
         public event ZmianaStanuPolaczenia ZmianaStanuPolaczenia;
+
+        public bool CzyDostepny(string idUzytkownika) {
+            return dostepny[idUzytkownika];
+        }
 
         /// <summary>
         /// Nowy uzytkownik na liscie kontaktow
@@ -222,23 +233,22 @@ namespace MojCzat.komunikacja
         {
             dostepny[idUzytkownika] = nowyStan;
             if (ZmianaStanuPolaczenia != null)
-            { ZmianaStanuPolaczenia(idUzytkownika, nowyStan); }
+            { ZmianaStanuPolaczenia(idUzytkownika); }
         }
         
         /// <summary>
         /// Czekaj (pasywnie) na wiadomosci
         /// </summary>
-        /// <param name="polaczenie">kanal, ktorym przychodzi wiadomosc</param>
-        /// <param name="idRozmowcy">Identyfikator nadawcy</param>
-        void czekajNaZapytanie(string idRozmowcy)
+        /// <param name="idNadawcy">Identyfikator nadawcy</param>
+        void czekajNaZapytanie(string idNadawcy)
         {
             Trace.TraceInformation("Czekamy na zapytanie ");
-            var wynik = new StatusObsluzZapytanie(){ idNadawcy=idRozmowcy, typ=new byte[1]};
-            if (centrala[dajIp(idRozmowcy)] == null) {
+            var wynik = new StatusObsluzZapytanie(){ idNadawcy=idNadawcy, typ=new byte[1]};
+            if (centrala[dajIp(idNadawcy)] == null) {
                 Trace.TraceInformation("[czekajNaZapytanie] brak polaczenia");
                 return;
             }
-            centrala[dajIp(idRozmowcy)].BeginRead(wynik.typ, 0, 1, obsluzZapytanie, wynik);
+            centrala[dajIp(idNadawcy)].BeginRead(wynik.typ, 0, 1, obsluzZapytanie, wynik);
         }
 
         void obsluzZapytanie(IAsyncResult wynik){
@@ -266,6 +276,7 @@ namespace MojCzat.komunikacja
                     wiadomosciownia.czytajWiadomosc(status.idNadawcy, TypWiadomosci.Zwykla);
                     break;
                 case Protokol.DajMiSwojOpis: // prosza nas o nasz opis
+                    czekajNaZapytanie(status.idNadawcy);
                     wiadomosciownia.WyslijWiadomosc(status.idNadawcy, Protokol.OtoMojOpis, Opis);
                     break;
                 case Protokol.OtoMojOpis: // my prosimy o opis

@@ -48,7 +48,8 @@ namespace MojCzat.komunikacja
         {
             try
             {
-                if (string.IsNullOrEmpty(wiadomosc)) { return;  }
+                Trace.TraceInformation(String.Format("Probojemy wyslac wiadomosc rodzaj {0}: {1} ", rodzaj, wiadomosc));
+                if (string.IsNullOrEmpty(wiadomosc) && rodzaj != Protokol.DajMiSwojOpis) { return;  }
                 Stream strumien = centrala[idRozmowcy];
                 // tranformacja tekstu w bajty
                 Trace.TraceInformation(String.Format("Wysylamy wiadomosc rodzaj {0}: {1} ",rodzaj, wiadomosc));

@@ -90,10 +90,16 @@ namespace MojCzat.ui
         /// </summary>
         void wyslijWpisanaWiadomosc() {
             if (komunikator == null) 
-            { 
-                MessageBox.Show("Nie możesz przesyłać wiadości, gdy jestes niedostępny.");
+            {
+                MessageBox.Show("Nie wysłano wiadomości. Jestes niedostępny.");
                 return;
             }
+
+            if (!komunikator.CzyDostepny(rozmowca.ID)) {
+                MessageBox.Show("Nie wysłano wiadomości. Twój rozmówca jest niedostępny.");
+                return;           
+            }
+
             
             String wiadomosc = tbWiadomosc.Text;
 
