@@ -135,22 +135,19 @@ namespace MojCzat.komunikacja
             var status = (CzytajWiadomoscStatus)wynik.AsyncState;
             // zakoncz operacje asynchroniczna
             var strumien = centrala[status.id];
+            int bajtyWczytane = 0;
             try
             {
-                strumien.EndRead(wynik);
+                bajtyWczytane = strumien.EndRead(wynik);
             }
             catch (Exception ex) {
                 Trace.TraceInformation(ex.ToString());
             }
-            int index = Array.FindIndex(buforownia[status.id], x => x == 0);
             // dekodujemy wiadomosc
-            // usuwamy \0 z konca lancucha
-            string wiadomosc = index >= 0 ?
-                Encoding.UTF8.GetString(buforownia[status.id], 0, index) :
-                Encoding.UTF8.GetString(buforownia[status.id]);
+            string wiadomosc = Encoding.UTF8.GetString(buforownia[status.id], 0, bajtyWczytane);
 
             // czyscimy bufor
-            Array.Clear(buforownia[status.id], 0, Buforownia.RozmiarBufora);
+            Array.Clear(buforownia[status.id], 0, bajtyWczytane);
             // jesli sa zainteresowani, informujemy ich o nowej wiadomosci
             if (NowaWiadomosc != null)
             {

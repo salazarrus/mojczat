@@ -427,7 +427,7 @@ namespace MojCzat.ui
 
             if (polaczony) {
                 komunikator.Opis = nowyOpis;
-                komunikator.ZautualizujOpis(); 
+                komunikator.OglosOpis(); 
             }
         }       
 

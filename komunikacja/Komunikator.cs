@@ -205,7 +205,7 @@ namespace MojCzat.komunikacja
             centrala.RozlaczWszystkich();
         }
 
-        public void ZautualizujOpis() {
+        public void OglosOpis() {
             ID_IP.Keys.ToList().ForEach(s => wiadomosciownia.WyslijWiadomosc(s, Protokol.OtoMojOpis , Opis));
         }
 
@@ -243,31 +243,27 @@ namespace MojCzat.komunikacja
         void czekajNaZapytanie(string idNadawcy)
         {
             Trace.TraceInformation("Czekamy na zapytanie ");
-            var wynik = new StatusObsluzZapytanie(){ idNadawcy=idNadawcy, typ=new byte[1]};
+            var wynik = new StatusObsluzZapytanie(){ idNadawcy=idNadawcy, rodzaj=new byte[1]};
             if (centrala[dajIp(idNadawcy)] == null) {
                 Trace.TraceInformation("[czekajNaZapytanie] brak polaczenia");
                 return;
             }
-            centrala[dajIp(idNadawcy)].BeginRead(wynik.typ, 0, 1, obsluzZapytanie, wynik);
+            centrala[dajIp(idNadawcy)].BeginRead(wynik.rodzaj, 0, 1, obsluzZapytanie, wynik);
         }
 
         void obsluzZapytanie(IAsyncResult wynik){
             var status = (StatusObsluzZapytanie)wynik.AsyncState;
             if (centrala[dajIp(status.idNadawcy)] == null) { return; }
-            Trace.TraceInformation("Przyszlo nowe zapytanie: " + status.typ[0].ToString());
-            try
-            {
-                centrala[dajIp(status.idNadawcy)].EndRead(wynik);
-            }
-            catch(Exception ex) 
-            {
+            Trace.TraceInformation("Przyszlo nowe zapytanie: " + status.rodzaj[0].ToString());
+            
+            try {  centrala[dajIp(status.idNadawcy)].EndRead(wynik); }
+            catch(Exception ex)
+            {   // zostalismy rozlaczeni
                 obsluzZmianaStanuPolaczenia(status.idNadawcy, false);
                 return; 
-            } // zostalismy rozlaczeni
-            
-            var rodzaj = Encoding.UTF8.GetString(status.typ);
+            } 
 
-            switch (status.typ[0]) { 
+            switch (status.rodzaj[0]) { 
                 case Protokol.KoniecPolaczenia:
                     obsluzZmianaStanuPolaczenia(status.idNadawcy, false);
                     Rozlacz(status.idNadawcy);
@@ -304,7 +300,7 @@ namespace MojCzat.komunikacja
 
         class StatusObsluzZapytanie
         {
-            public byte[] typ;
+            public byte[] rodzaj;
             public String idNadawcy;
         }
 
