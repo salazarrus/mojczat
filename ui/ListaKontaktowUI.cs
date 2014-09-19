@@ -86,7 +86,7 @@ namespace MojCzat.ui
 
             // rysuj tekst
             e.Graphics.DrawString(kontakt.Nazwa, czcionkaTytul, Brushes.Black, ramyTytul, format);
-            e.Graphics.DrawString(kontakt.Status + (kontakt.Opis!= null?" (" + kontakt.Opis + ")":""), czcionkaDetal, Brushes.DarkGray, ramyDetal, format);
+            e.Graphics.DrawString(kontakt.StatusTekst + (kontakt.Opis!= null?" (" + kontakt.Opis + ")":""), czcionkaDetal, Brushes.DarkGray, ramyDetal, format);
 
             e.DrawFocusRectangle();
         }

@@ -18,8 +18,6 @@ using System.Diagnostics;
 
 namespace MojCzat.komunikacja
 {    
-    
-
     // delegata definiujaca funkcje obslugujace zdarzenie NowaWiadomosc
     public delegate void NowaWiadomosc(String id, TypWiadomosci rodzaj , String wiadomosc);
 
@@ -87,10 +85,24 @@ namespace MojCzat.komunikacja
                 centrala = new Centrala(ID_IP, IP_ID, port);
             }
 
-            centrala.NowePolaczenie += centrala_NawiazalismyPolaczenie;
+            centrala.NowePolaczenieOdNas += centrala_NowePolaczenieOdNas;
+            centrala.NowePolaczenieDoNas += centrala_NowePolaczenieDoNas;
             wiadomosciownia = new Wiadomosciownia(buforownia, centrala, new CzytanieSkonczone(czekajNaZapytanie));
             // generuj mape mapa_IP_ID
             foreach (var i in mapa_ID_PunktKontaktu){ wiadomosciownia.DodajUzytkownika(i.Key); }           
+        }
+
+        void centrala_NowePolaczenieDoNas(string idUzytkownika)
+        {
+            if (ZmianaStanuPolaczenia != null)
+            { ZmianaStanuPolaczenia(idUzytkownika, true); }
+        }
+
+        void centrala_NowePolaczenieOdNas(string idUzytkownika)
+        {
+            if (ZmianaStanuPolaczenia != null)
+            { ZmianaStanuPolaczenia(idUzytkownika, true); }
+            czekajNaZapytanie(idUzytkownika);
         }
 
         public event NowaWiadomosc NowaWiadomosc{
@@ -202,10 +214,7 @@ namespace MojCzat.komunikacja
 
         void centrala_NawiazalismyPolaczenie(string idUzytkownika)
         {
-            if (ZmianaStanuPolaczenia != null) {
-                ZmianaStanuPolaczenia(idUzytkownika, true);
-            }
-            czekajNaZapytanie(idUzytkownika);
+            
         }
         
         /// <summary>
@@ -215,7 +224,7 @@ namespace MojCzat.komunikacja
         /// <param name="idRozmowcy">Identyfikator nadawcy</param>
         void czekajNaZapytanie(string idRozmowcy)
         {
-            Trace.TraceInformation("Czekamy na zapytanie");
+            Trace.TraceInformation("Czekamy na zapytanie ");
             var wynik = new StatusObsluzZapytanie(){ idNadawcy=idRozmowcy, typ=new byte[1]};
             if (centrala[dajIp(idRozmowcy)] == null) {
                 Trace.TraceInformation("[czekajNaZapytanie] brak polaczenia");
@@ -234,7 +243,7 @@ namespace MojCzat.komunikacja
             }
             catch(Exception ex) 
             {
-                Trace.TraceInformation("[obsluzZapytanie] " + ex.ToString());    
+                if (ZmianaStanuPolaczenia != null) { ZmianaStanuPolaczenia(status.idNadawcy, false); }    
                 return; 
             } // zostalismy rozlaczeni
             

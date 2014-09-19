@@ -24,8 +24,13 @@ namespace MojCzat.model
         /// <summary>
         /// Dostepnosc czatu z tym uzytkownikiem
         /// </summary>
-        public string Status { get; set; }
+        public bool Polaczony { get; set; }
 
+        public String StatusTekst { 
+            get {
+                return Polaczony ? "Dostępny" : "Niedostępny";
+            }        
+        }
 
         /// <summary>
         /// Nazwa wyswietlana
@@ -52,7 +57,7 @@ namespace MojCzat.model
                     string ip = node.Attributes["ip"].InnerText;
                     string id = ip;
                     string nazwa = node.Attributes["nazwa"].InnerText;
-                    listaWynikowa.Add(new Kontakt() { ID = id, IP = IPAddress.Parse(ip), Nazwa = nazwa ,Status="Niedostepny" });
+                    listaWynikowa.Add(new Kontakt() { ID = id, IP = IPAddress.Parse(ip), Nazwa = nazwa ,Polaczony=false });
                 }
             } catch { return listaWynikowa; }
 

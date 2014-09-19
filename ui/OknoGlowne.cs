@@ -182,6 +182,8 @@ namespace MojCzat.ui
         /// </summary>
         void komunikator_ZmianaStanuPolaczenia(string rozmowca, bool polaczenieOtwarte)
         {
+            //if (polaczenieOtwarte) { komunikator.PoprosOpis(rozmowca); }
+                
             odswiezStatusKontaktu(rozmowca, polaczenieOtwarte);
             Invoke(odswiezOknoDelegata);
         }
@@ -230,10 +232,10 @@ namespace MojCzat.ui
         void odswiezStatusKontaktu(string idRozmowcy, bool polaczenieOtwarte){
             var kontakt = kontakty.Where(k => k.ID == idRozmowcy).SingleOrDefault();
             if (kontakt == null) { return; }
-            kontakt.Status = polaczenieOtwarte ? "Dostepny" : "Niedostepny";
+            kontakt.Polaczony = polaczenieOtwarte;
             
             // sortowanie - najpierw dostepni, potem kolejosc alfabetyczna
-            this.kontakty = kontakty.OrderByDescending(k=>k.Status).ThenBy(k=>k.Nazwa).ToList();
+            this.kontakty = kontakty.OrderByDescending(k=>k.StatusTekst).ThenBy(k=>k.Nazwa).ToList();
         }
 
         void obsluzWiadomosc(Kontakt rozmowca, TypWiadomosci rodzaj , string wiadomosc) {
@@ -296,12 +298,15 @@ namespace MojCzat.ui
                 return;
             }
             kontakty.Add(kontakt);
+
+            kontakt.Polaczony = polaczony;
+
             if (polaczony)
             {
                 komunikator.DodajKontakt(kontakt.ID, kontakt.IP);
                 polaczSieZKontaktem(kontakt, true);
             }
-            else { kontakt.Status = "Niedostepny"; }
+            
             
             odswiezListeKontaktow();
             Kontakt.ZapiszListeKontaktow(kontakty, "kontakty.xml");
@@ -401,7 +406,7 @@ namespace MojCzat.ui
                 rozlaczSie();
                 
                 foreach (var kontakt in kontakty) {
-                    kontakt.Status = "Niedostepny";
+                    kontakt.Polaczony = false;
                 }
                 odswiezListeKontaktow();
             }    

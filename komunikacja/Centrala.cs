@@ -56,7 +56,10 @@ namespace MojCzat.komunikacja
             this.port = port;
         }
 
-        public event NowePolaczenie NowePolaczenie;
+        public event NowePolaczenie NowePolaczenieDoNas;
+
+        public event NowePolaczenie NowePolaczenieOdNas;
+
                 
         public void NawiazPolaczenie(String id)
         {
@@ -83,9 +86,9 @@ namespace MojCzat.komunikacja
             
             var strumien = dajStrumienJakoSerwer(polaczenie);// otworz strumien dla wiadomosci
             zachowajPolaczenie(punktKontaktu.Address, polaczenie, strumien, false); // zatrzymujemy referencje  
-            if (NowePolaczenie != null)
+            if (NowePolaczenieDoNas != null)
             {
-                NowePolaczenie(IP_ID[punktKontaktu.Address]);
+                NowePolaczenieDoNas(IP_ID[punktKontaktu.Address]);
             }
             return punktKontaktu.Address;
         }
@@ -142,7 +145,7 @@ namespace MojCzat.komunikacja
                 zachowajPolaczenie(ID_IP[status.idUzytkownika], status.polaczenie, 
                     dajStrumienJakoKlient(status.polaczenie), true);
                 
-                if (NowePolaczenie != null){ NowePolaczenie(status.idUzytkownika); }
+                if (NowePolaczenieOdNas != null){ NowePolaczenieOdNas(status.idUzytkownika); }
             }
             catch (Exception ex)
             {

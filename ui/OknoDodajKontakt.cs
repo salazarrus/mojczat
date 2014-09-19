@@ -48,7 +48,7 @@ namespace MojCzat.ui
             kontakt.Nazwa = nazwa;
             kontakt.IP = adres;
             kontakt.ID = adres.ToString();
-            kontakt.Status = "Niedostepny";
+            kontakt.Polaczony = false;
 
             NowyKontakt = kontakt;
             this.DialogResult = System.Windows.Forms.DialogResult.OK;
