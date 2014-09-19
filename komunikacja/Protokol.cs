@@ -91,14 +91,14 @@ namespace MojCzat.komunikacja
                     centrala.ToNieDziala(status.idNadawcy);
                     return;
                 case Protokol.ZwyklaWiadomosc://zwykla wiadomosc
-                    wiadomosciownia.czytajZawartosc(status.idNadawcy, TypWiadomosci.Zwykla, dlugoscWiadomosci);
+                    wiadomosciownia.CzytajZawartosc(status.idNadawcy, TypWiadomosci.Zwykla, dlugoscWiadomosci);
                     break;
                 case Protokol.DajMiSwojOpis: // prosza nas o nasz opis
                     czekajNaZapytanie(status.idNadawcy);
                     wiadomosciownia.WyslijWiadomosc(status.idNadawcy, Protokol.OtoMojOpis, ustawienia.Opis);
                     break;
                 case Protokol.OtoMojOpis: // my prosimy o opis
-                    wiadomosciownia.czytajZawartosc(status.idNadawcy, TypWiadomosci.Opis, dlugoscWiadomosci);
+                    wiadomosciownia.CzytajZawartosc(status.idNadawcy, TypWiadomosci.Opis, dlugoscWiadomosci);
                     break;
                 default: // blad, czekaj na kolejne zapytanie
                     czekajNaZapytanie(status.idNadawcy); // TODO zamknij to polaczenie

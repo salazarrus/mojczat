@@ -32,14 +32,13 @@ namespace MojCzat.komunikacja
 
         public event NowaWiadomosc NowaWiadomosc;
 
-        public void czytajZawartosc(string id, TypWiadomosci rodzaj, int dlugoscWiadomosci)
+        public void CzytajZawartosc(string id, TypWiadomosci rodzaj, int dlugoscWiadomosci)
         {
             if (dlugoscWiadomosci == 0) { czytanieSkonczone(id); }
-            centrala[id].BeginRead(buforownia[id], 0,
-                dlugoscWiadomosci, new AsyncCallback(zawartoscWczytana),
-                new CzytajWiadomoscStatus() { id = id, rodzaj = rodzaj });
+            czytajZawartosc(id, rodzaj, dlugoscWiadomosci, 0);    
         }
 
+        
         
         /// <summary>
         /// Wyslij wiadomosc tekstowa do innego uzytkownika
@@ -132,7 +131,16 @@ namespace MojCzat.komunikacja
             { wysylanieWToku[idUzytkownika] = false; }
             wysylajZKolejki(idUzytkownika);
         }
-        
+
+
+        void czytajZawartosc(string id, TypWiadomosci rodzaj, int dlugoscWiadomosci, int wczytano)
+        {
+            centrala[id].BeginRead(buforownia[id], wczytano,
+                dlugoscWiadomosci, new AsyncCallback(zawartoscWczytana),
+                new CzytajWiadomoscStatus() { IdNadawcy = id, Rodzaj = rodzaj, 
+                    DlugoscWiadomosci = dlugoscWiadomosci, Wczytano = wczytano });
+        }
+
         /// <summary>
         /// Nadeszla nowa wiadomosc
         /// </summary>
@@ -143,34 +151,38 @@ namespace MojCzat.komunikacja
             // od kogo przyszla wiadomosc
             var status = (CzytajWiadomoscStatus)wynik.AsyncState;
             // zakoncz operacje asynchroniczna
-            var strumien = centrala[status.id];
-            int bajtyWczytane = 0;
+            var strumien = centrala[status.IdNadawcy];
+            
             try
             {
-                bajtyWczytane = strumien.EndRead(wynik);
+                int bajtyWczytane = strumien.EndRead(wynik);
+                if (status.DlugoscWiadomosci > status.Wczytano + bajtyWczytane)
+                { 
+                    czytajZawartosc(status.IdNadawcy, status.Rodzaj, 
+                        status.DlugoscWiadomosci, status.Wczytano + bajtyWczytane); 
+                }
             }
             catch (Exception ex) {
                 Trace.TraceInformation(ex.ToString());
             }
             // dekodujemy wiadomosc
-            string wiadomosc = Encoding.UTF8.GetString(buforownia[status.id], 0, bajtyWczytane);
+            string wiadomosc = Encoding.UTF8.GetString(buforownia[status.IdNadawcy], 0, status.DlugoscWiadomosci);
 
             // czyscimy bufor
-            Array.Clear(buforownia[status.id], 0, bajtyWczytane);
+            Array.Clear(buforownia[status.IdNadawcy], 0, status.DlugoscWiadomosci);
             // jesli sa zainteresowani, informujemy ich o nowej wiadomosci
-            if (NowaWiadomosc != null)
-            {
-                // informujemy zainteresowanych
-                NowaWiadomosc(status.id, status.rodzaj, wiadomosc);
-            }
+            if (NowaWiadomosc != null) // informujemy zainteresowanych
+            { NowaWiadomosc(status.IdNadawcy, status.Rodzaj, wiadomosc); }
 
-            czytanieSkonczone(status.id);
+            czytanieSkonczone(status.IdNadawcy);
         }
 
         class CzytajWiadomoscStatus
         {
-            public String id { get; set; }
-            public TypWiadomosci rodzaj { get; set; }
+            public String IdNadawcy { get; set; }
+            public TypWiadomosci Rodzaj { get; set; }
+            public int DlugoscWiadomosci { get; set; }
+            public int Wczytano { get; set; }
         }
 
     }
