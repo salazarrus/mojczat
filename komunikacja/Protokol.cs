@@ -19,6 +19,7 @@ namespace MojCzat.komunikacja
         Centrala centrala;
         Ustawienia ustawienia;
         Mapownik mapownik;
+        const int DlugoscNaglowka = 5; // 1 bajt na rodzaj komunikatu, 4 na dlugosc
 
         public Protokol(Centrala centrala, Buforownia buforownia , Mapownik mapownik, Ustawienia ustawienia) {
             this.wiadomosciownia = new Wiadomosciownia(buforownia, centrala,
@@ -61,20 +62,21 @@ namespace MojCzat.komunikacja
         public void czekajNaZapytanie(string idNadawcy)
         {
             Trace.TraceInformation("Czekamy na zapytanie ");
-            var wynik = new StatusObsluzZapytanie() { idNadawcy = idNadawcy, rodzaj = new byte[1] };
+            var wynik = new StatusObsluzZapytanie() { idNadawcy = idNadawcy, Naglowek = new byte[DlugoscNaglowka] };
             if (centrala[mapownik[idNadawcy]] == null)
             {
                 Trace.TraceInformation("[czekajNaZapytanie] brak polaczenia");
                 return;
             }
-            centrala[mapownik[idNadawcy]].BeginRead(wynik.rodzaj, 0, 1, obsluzZapytanie, wynik);
+            centrala[mapownik[idNadawcy]].BeginRead(wynik.Naglowek, 0, DlugoscNaglowka, obsluzZapytanie, wynik);
         }
 
         void obsluzZapytanie(IAsyncResult wynik)
         {
             var status = (StatusObsluzZapytanie)wynik.AsyncState;
             if (centrala[mapownik[status.idNadawcy]] == null) { return; }
-            Trace.TraceInformation("Przyszlo nowe zapytanie: " + status.rodzaj[0].ToString());
+            Trace.TraceInformation("Przyszlo nowe zapytanie: " + status.Naglowek[0].ToString());
+            int dlugoscWiadomosci = BitConverter.ToInt32(status.Naglowek, 1);
 
             try { centrala[mapownik[status.idNadawcy]].EndRead(wynik); }
             catch (Exception ex)
@@ -83,30 +85,30 @@ namespace MojCzat.komunikacja
                 return;
             }
 
-            switch (status.rodzaj[0])
+            switch (status.Naglowek[0])
             {
                 case Protokol.KoniecPolaczenia:
                     centrala.ToNieDziala(status.idNadawcy);
                     return;
                 case Protokol.ZwyklaWiadomosc://zwykla wiadomosc
-                    wiadomosciownia.czytajWiadomosc(status.idNadawcy, TypWiadomosci.Zwykla);
+                    wiadomosciownia.czytajZawartosc(status.idNadawcy, TypWiadomosci.Zwykla, dlugoscWiadomosci);
                     break;
                 case Protokol.DajMiSwojOpis: // prosza nas o nasz opis
                     czekajNaZapytanie(status.idNadawcy);
                     wiadomosciownia.WyslijWiadomosc(status.idNadawcy, Protokol.OtoMojOpis, ustawienia.Opis);
                     break;
                 case Protokol.OtoMojOpis: // my prosimy o opis
-                    wiadomosciownia.czytajWiadomosc(status.idNadawcy, TypWiadomosci.Opis);
+                    wiadomosciownia.czytajZawartosc(status.idNadawcy, TypWiadomosci.Opis, dlugoscWiadomosci);
                     break;
                 default: // blad, czekaj na kolejne zapytanie
-                    czekajNaZapytanie(status.idNadawcy);
+                    czekajNaZapytanie(status.idNadawcy); // TODO zamknij to polaczenie
                     break;
             }
         }
 
         class StatusObsluzZapytanie
         {
-            public byte[] rodzaj;
+            public byte[] Naglowek;
             public String idNadawcy;
         }
     }

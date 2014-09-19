@@ -21,6 +21,7 @@ namespace MojCzat.komunikacja
         Centrala centrala;
         Buforownia buforownia;
         CzytanieSkonczone czytanieSkonczone;
+        const int DlugoscNaglowka = 5; 
 
         public Wiadomosciownia(Buforownia buforownia, Centrala centrala, CzytanieSkonczone czytanieSkonczone)
         {
@@ -31,10 +32,11 @@ namespace MojCzat.komunikacja
 
         public event NowaWiadomosc NowaWiadomosc;
 
-        public void czytajWiadomosc(string id, TypWiadomosci rodzaj)
+        public void czytajZawartosc(string id, TypWiadomosci rodzaj, int dlugoscWiadomosci)
         {
+            if (dlugoscWiadomosci == 0) { czytanieSkonczone(id); }
             centrala[id].BeginRead(buforownia[id], 0,
-                Buforownia.RozmiarBufora, new AsyncCallback(obsluzWiadomosc),
+                dlugoscWiadomosci, new AsyncCallback(zawartoscWczytana),
                 new CzytajWiadomoscStatus() { id = id, rodzaj = rodzaj });
         }
 
@@ -80,8 +82,15 @@ namespace MojCzat.komunikacja
 
         byte[] stworzKomunikat(byte rodzaj, string wiadomosc)
         {
-            wiadomosc = Encoding.UTF8.GetString(new byte[] { rodzaj }) + wiadomosc;
-            return Encoding.UTF8.GetBytes(wiadomosc);
+            var dlugoscZawartosci = Encoding.UTF8.GetByteCount(wiadomosc);
+            var bajtyZawartosc = Encoding.UTF8.GetBytes(wiadomosc);
+            var bajty = new byte[dlugoscZawartosci + DlugoscNaglowka];
+            var dlugoscZawartosciNaglowek = BitConverter.GetBytes(dlugoscZawartosci);
+            if (BitConverter.IsLittleEndian) { dlugoscZawartosciNaglowek.Reverse(); }
+            bajty[0] = rodzaj;
+            Array.Copy(dlugoscZawartosciNaglowek, 0, bajty, 1, dlugoscZawartosciNaglowek.Length);
+            Array.Copy(bajtyZawartosc, 0, bajty, DlugoscNaglowka, bajtyZawartosc.Length);
+            return bajty;
         }
 
         Queue<byte[]> dajKolejkeWiadomosci(string id)
@@ -129,7 +138,7 @@ namespace MojCzat.komunikacja
         /// </summary>
         /// <param name="wynik"> obiektu tego uzywamy do zakonczenia jednej 
         /// operacji asynchronicznej i rozpoczecia nowej </param>
-        void obsluzWiadomosc(IAsyncResult wynik)
+        void zawartoscWczytana(IAsyncResult wynik)
         {
             // od kogo przyszla wiadomosc
             var status = (CzytajWiadomoscStatus)wynik.AsyncState;
@@ -155,7 +164,6 @@ namespace MojCzat.komunikacja
                 NowaWiadomosc(status.id, status.rodzaj, wiadomosc);
             }
 
-            // rozpocznij nowa operacje asynchroniczna - czekaj na nowa wiadomosc
             czytanieSkonczone(status.id);
         }
 
