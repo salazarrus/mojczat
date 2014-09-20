@@ -15,12 +15,19 @@ namespace MojCzat.ui
     public partial class OknoDodajKontakt : Form
     {
         public Kontakt NowyKontakt { get; private set; }
-
-
+        
         public OknoDodajKontakt()
         {
             InitializeComponent();
             CenterToParent();
+            NowyKontakt = new Kontakt();
+        }
+
+        public OknoDodajKontakt(Kontakt kontakt):this() 
+        {
+            tbIP.Text = kontakt.IP.ToString();
+            tbNazwa.Text = kontakt.Nazwa;
+            NowyKontakt = kontakt;
         }
 
         protected override void OnShown(EventArgs e)
@@ -44,13 +51,10 @@ namespace MojCzat.ui
                 return;
             }
 
-            var kontakt = new Kontakt();
-            kontakt.Nazwa = nazwa;
-            kontakt.IP = adres;
-            kontakt.ID = adres.ToString();
-            kontakt.Polaczony = false;
+            NowyKontakt.Nazwa = nazwa;
+            NowyKontakt.IP = adres;
+            NowyKontakt.ID = adres.ToString();
 
-            NowyKontakt = kontakt;
             this.DialogResult = System.Windows.Forms.DialogResult.OK;
             Close();
 

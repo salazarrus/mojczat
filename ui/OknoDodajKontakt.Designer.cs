@@ -43,7 +43,7 @@
             this.btnDodaj.Name = "btnDodaj";
             this.btnDodaj.Size = new System.Drawing.Size(75, 23);
             this.btnDodaj.TabIndex = 0;
-            this.btnDodaj.Text = "Dodaj";
+            this.btnDodaj.Text = "Zapisz";
             this.btnDodaj.UseVisualStyleBackColor = true;
             this.btnDodaj.Click += new System.EventHandler(this.btnDodaj_Click);
             // 
@@ -105,7 +105,7 @@
             this.MaximizeBox = false;
             this.MinimizeBox = false;
             this.Name = "OknoDodajKontakt";
-            this.Text = "Dodaj Kontakt";
+            this.Text = "Dodaj/Edytuj Kontakt";
             this.KeyDown += new System.Windows.Forms.KeyEventHandler(this.OknoDodajKontakt_KeyDown);
             this.ResumeLayout(false);
             this.PerformLayout();

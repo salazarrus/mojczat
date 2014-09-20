@@ -40,6 +40,7 @@
             this.btnUstawOpis = new System.Windows.Forms.Button();
             this.tbOpis = new System.Windows.Forms.TextBox();
             this.label3 = new System.Windows.Forms.Label();
+            this.btnZmien = new System.Windows.Forms.Button();
             this.lbKontakty = new MojCzat.ui.ListaKontaktowUI();
             this.groupBox1.SuspendLayout();
             this.SuspendLayout();
@@ -47,21 +48,21 @@
             // btnDodaj
             // 
             this.btnDodaj.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.btnDodaj.Location = new System.Drawing.Point(74, 378);
+            this.btnDodaj.Location = new System.Drawing.Point(49, 378);
             this.btnDodaj.Name = "btnDodaj";
-            this.btnDodaj.Size = new System.Drawing.Size(75, 23);
+            this.btnDodaj.Size = new System.Drawing.Size(64, 23);
             this.btnDodaj.TabIndex = 4;
-            this.btnDodaj.Text = "+";
+            this.btnDodaj.Text = "Dodaj";
             this.btnDodaj.UseVisualStyleBackColor = true;
             this.btnDodaj.Click += new System.EventHandler(this.btnDodaj_Click);
             // 
             // btnUsun
             // 
-            this.btnUsun.Location = new System.Drawing.Point(155, 378);
+            this.btnUsun.Location = new System.Drawing.Point(189, 378);
             this.btnUsun.Name = "btnUsun";
-            this.btnUsun.Size = new System.Drawing.Size(75, 23);
+            this.btnUsun.Size = new System.Drawing.Size(64, 23);
             this.btnUsun.TabIndex = 5;
-            this.btnUsun.Text = "----";
+            this.btnUsun.Text = "Usuń";
             this.btnUsun.UseVisualStyleBackColor = true;
             this.btnUsun.Click += new System.EventHandler(this.btnUsun_Click);
             // 
@@ -87,6 +88,7 @@
             // 
             // groupBox1
             // 
+            this.groupBox1.Controls.Add(this.btnZmien);
             this.groupBox1.Controls.Add(this.label2);
             this.groupBox1.Controls.Add(this.lbKontakty);
             this.groupBox1.Controls.Add(this.btnDodaj);
@@ -154,6 +156,17 @@
             this.label3.TabIndex = 8;
             this.label3.Text = "Opis:";
             // 
+            // btnZmien
+            // 
+            this.btnZmien.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.btnZmien.Location = new System.Drawing.Point(119, 378);
+            this.btnZmien.Name = "btnZmien";
+            this.btnZmien.Size = new System.Drawing.Size(64, 23);
+            this.btnZmien.TabIndex = 7;
+            this.btnZmien.Text = "Zmień";
+            this.btnZmien.UseVisualStyleBackColor = true;
+            this.btnZmien.Click += new System.EventHandler(this.btnZmien_Click);
+            // 
             // lbKontakty
             // 
             this.lbKontakty.DrawMode = System.Windows.Forms.DrawMode.OwnerDrawFixed;
@@ -204,5 +217,6 @@
         private System.Windows.Forms.Button btnUstawOpis;
         private System.Windows.Forms.TextBox tbOpis;
         private System.Windows.Forms.Label label3;
+        private System.Windows.Forms.Button btnZmien;
     }
 }

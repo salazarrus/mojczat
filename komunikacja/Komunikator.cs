@@ -151,6 +151,7 @@ namespace MojCzat.komunikacja
         /// <param name="punktKontaktu"></param>
         public void DodajKontakt(string idUzytkownika, IPAddress punktKontaktu)
         {
+            if (mapownik.CzyZnasz(punktKontaktu)) { return; }
             mapownik.Dodaj(idUzytkownika, punktKontaktu);
             protokol.DodajUzytkownika(idUzytkownika);
             dostepnosc.Add(idUzytkownika, false);

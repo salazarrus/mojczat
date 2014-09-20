@@ -274,12 +274,10 @@ namespace MojCzat.ui
         void dodajNowyKontakt(Kontakt kontakt) {
             if (kontakty.Any(k => k.ID == kontakt.ID)) 
             {
-                // juz cos takiego mamy
+                MessageBox.Show("Masz już taki kontakt.");
                 return;
-            }
+            } 
             kontakty.Add(kontakt);
-
-            kontakt.Polaczony = false;
 
             if (polaczony)
             { komunikator.DodajKontakt(kontakt.ID, kontakt.IP); }
@@ -405,6 +403,21 @@ namespace MojCzat.ui
             if (polaczony) {
                 komunikator.Opis = nowyOpis;
                 komunikator.OglosOpis(); 
+            }
+        }
+
+        private void btnZmien_Click(object sender, EventArgs e)
+        {
+            if (lbKontakty.SelectedItem == null){ return; }
+
+            var elementWybrany = (Kontakt)lbKontakty.SelectedItem;
+
+            var okno = new OknoDodajKontakt(elementWybrany);
+            var wynik = okno.ShowDialog(this);
+            if (wynik == System.Windows.Forms.DialogResult.OK)
+            {
+                kontakty.RemoveAll(k => k.ID == elementWybrany.ID);
+                dodajNowyKontakt(okno.NowyKontakt); 
             }
         }       
 
