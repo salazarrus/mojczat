@@ -73,7 +73,7 @@ namespace MojCzat.komunikacja
             int.TryParse(ConfigurationManager.AppSettings["portJego"], out portJego);
             var wynik = klient.BeginConnect(mapownik[id], portJego, new AsyncCallback(nawiazPolaczenieWynik), 
                 new NawiazPolaczenieStatus() { idUzytkownika = id, polaczenie = klient });
-
+            
             if (!wynik.AsyncWaitHandle.WaitOne(POLOCZENIE_TIMEOUT, true)) {
                 Trace.TraceInformation("timeout nawiaz polaczenie");
             }

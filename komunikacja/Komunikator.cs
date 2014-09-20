@@ -15,6 +15,7 @@ using System.Security.Authentication;
 using MojCzat.model;
 using System.Windows.Forms;
 using System.Diagnostics;
+using System.Threading;
 
 namespace MojCzat.komunikacja
 {    
@@ -42,6 +43,8 @@ namespace MojCzat.komunikacja
         Mapownik mapownik;
         const int portBezSSL = 5080;
         const int portSSL = 5443;
+
+        Thread watekKomunikator;
 
         /// <summary>
         /// Konstruktor komunikatora
@@ -87,9 +90,15 @@ namespace MojCzat.komunikacja
         }
 
         public event ZmianaStanuPolaczenia ZmianaStanuPolaczenia;
-
+        
         // Oczekuj nadchodzacych polaczen
         public void Start()
+        {
+            watekKomunikator = new Thread(start);
+            watekKomunikator.Start();
+        }
+
+        void start() 
         {
             nasluchiwacz.NowyKlient += nasluchiwacz_NowyKlient;
             nasluchiwacz.Start();
@@ -100,6 +109,7 @@ namespace MojCzat.komunikacja
         {
             nasluchiwacz.Stop();
             centrala.RozlaczWszystkich();
+            watekKomunikator.Join();
         }
 
         /// <summary>
@@ -168,18 +178,15 @@ namespace MojCzat.komunikacja
         /// <param name="polaczenie"></param>
         void zajmijSieNadawca(IPAddress ipNadawcy)
         {
-            // Nieznajomy? Do widzenia.
-            if (!mapownik.CzyZnasz(ipNadawcy))
-            {
-                centrala.ZamknijPolaczenie(ipNadawcy);
-                return;
-            }
             var nadawca = mapownik[ipNadawcy];
             protokol.czekajNaZapytanie(nadawca);// czekaj (pasywnie) na wiadomosc z tego polaczenia
         } 
 
         void nasluchiwacz_NowyKlient(TcpClient polaczenie)
         {
+            var ipKlienta = ((IPEndPoint)polaczenie.Client.RemoteEndPoint).Address;
+            if (!mapownik.CzyZnasz(ipKlienta)) { DodajKontakt(ipKlienta.ToString(), ipKlienta); }
+
             var adresKlienta = centrala.ZajmijSiePolaczeniem(polaczenie);
             zajmijSieNadawca(adresKlienta);
         }

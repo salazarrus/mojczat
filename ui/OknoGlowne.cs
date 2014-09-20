@@ -46,8 +46,6 @@ namespace MojCzat.ui
 
         BindingSource listaZrodlo = new BindingSource();
 
-        Thread watekKomunikator;
-
         bool polaczony;
 
         Ustawienia ustawienia;
@@ -156,11 +154,10 @@ namespace MojCzat.ui
 
             komunikator.Opis = ustawienia.Opis;
             // nawiaz polaczenia z kontaktami
+            komunikator.Start();
+
             polaczSieZKontaktami();            
-            
-            watekKomunikator = new Thread(komunikator.Start);
-            watekKomunikator.Name = "komunikator";
-            watekKomunikator.Start();
+           
             oknaCzatu.Values.ToList().ForEach(o => o.Komunikator = komunikator);
         }
 
@@ -170,10 +167,9 @@ namespace MojCzat.ui
             komunikator.Stop();
             polaczony = false;
             // zakoncz watek obiektu odpowiedzialnego za komunikacje
-            watekKomunikator.Join();
+            
             // zaktualizuj obiekt w oknach czat
             oknaCzatu.Values.ToList().ForEach(o => o.Komunikator = null);            
-            watekKomunikator = null;
             komunikator = null;
         }
 
@@ -223,7 +219,12 @@ namespace MojCzat.ui
         {
             // otworz okno przez delegate poniewaz jestesmy w innym watku
             var kontakt = kontakty.Where(k => k.ID == id).SingleOrDefault();
-            Invoke(obsluzNowaWiadomoscUI, kontakt, rodzaj , wiadomosc); 
+            if (kontakt == null) 
+            {// nieznany 
+                kontakt = new Kontakt() { ID = id, IP = IPAddress.Parse(id), Nazwa = id, Polaczony = true };
+                kontakty.Add(kontakt);
+            }
+             Invoke(obsluzNowaWiadomoscUI, kontakt, rodzaj , wiadomosc); 
         }
         
         /// <summary>
@@ -299,7 +300,7 @@ namespace MojCzat.ui
             }
             kontakty.Add(kontakt);
 
-            kontakt.Polaczony = polaczony;
+            kontakt.Polaczony = false;
 
             if (polaczony)
             {
@@ -402,7 +403,7 @@ namespace MojCzat.ui
         private void comboStatus_SelectedValueChanged(object sender, EventArgs e)
         {
             if (comboStatus.SelectedIndex == 0 &&
-                komunikator == null && watekKomunikator == null) 
+                komunikator == null) 
             {
                 polaczSie();
                 odswiezListeKontaktow();
