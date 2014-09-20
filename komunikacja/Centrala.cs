@@ -69,7 +69,9 @@ namespace MojCzat.komunikacja
             // tworzymy nowe polaczenie 
             Trace.TraceInformation("nawiazujemy polaczenie");
             var klient = new TcpClient();
-            var wynik = klient.BeginConnect(mapownik[id], port, new AsyncCallback(nawiazPolaczenieWynik), 
+            int portJego;
+            int.TryParse(ConfigurationManager.AppSettings["portJego"], out portJego);
+            var wynik = klient.BeginConnect(mapownik[id], portJego, new AsyncCallback(nawiazPolaczenieWynik), 
                 new NawiazPolaczenieStatus() { idUzytkownika = id, polaczenie = klient });
 
             if (!wynik.AsyncWaitHandle.WaitOne(POLOCZENIE_TIMEOUT, true)) {

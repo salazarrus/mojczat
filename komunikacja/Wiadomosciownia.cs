@@ -35,9 +35,7 @@ namespace MojCzat.komunikacja
         {
             if (dlugoscWiadomosci == 0) { czytanieSkonczone(id); }
             czytajZawartosc(id, rodzaj, dlugoscWiadomosci, 0);    
-        }
-
-        
+        }           
         
         /// <summary>
         /// Wyslij wiadomosc tekstowa do innego uzytkownika

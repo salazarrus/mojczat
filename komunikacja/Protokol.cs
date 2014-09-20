@@ -8,6 +8,9 @@ using System.Text;
 
 namespace MojCzat.komunikacja
 {
+
+    public delegate void CzytanieSkonczone(string idUzytkownika);
+
     class Protokol
     {
         public const byte KoniecPolaczenia = 0;

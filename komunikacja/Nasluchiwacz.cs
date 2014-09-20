@@ -4,6 +4,7 @@
 using MojCzat.model;
 using System;
 using System.Collections.Generic;
+using System.Configuration;
 using System.Diagnostics;
 using System.Linq;
 using System.Net;
@@ -12,6 +13,8 @@ using System.Text;
 
 namespace MojCzat.komunikacja
 {
+    public delegate void NowyKlient(TcpClient polaczenie);
+
     class Nasluchiwacz
     {
         // Na jakim porcie nasluchujemy wiadomosci
@@ -29,7 +32,9 @@ namespace MojCzat.komunikacja
         {
             try
             {
-                serwer = new TcpListener(IPAddress.Any, port); // stworz serwer
+                int portMoj; 
+                int.TryParse(ConfigurationManager.AppSettings["portMoj"], out portMoj);
+                serwer = new TcpListener(IPAddress.Any, portMoj); // stworz serwer
                 serwer.Start(); //uruchom serwer
 
                 while (true) // zapetlamy
