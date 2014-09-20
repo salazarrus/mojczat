@@ -59,9 +59,7 @@ namespace MojCzat.komunikacja
         public event ZamknietoPoloczenie ZamknietoPolaczenie;
 
         public void ToNieDziala(string idUzytkownika) {
-            if (ZamknietoPolaczenie != null) {
-                ZamknietoPolaczenie(idUzytkownika);
-            }
+            ZamknijPolaczenie(mapownik[idUzytkownika]);
         }
                 
         public void Polacz(String id)
@@ -106,14 +104,18 @@ namespace MojCzat.komunikacja
         {
             if (otwartePolaczenia.ContainsKey(ipUzytkownika))
             {
-                otwartePolaczenia[ipUzytkownika].Close();
+                try { otwartePolaczenia[ipUzytkownika].Close(); } catch { }
                 otwartePolaczenia.Remove(ipUzytkownika);
             }
 
             if (otwarteStrumienie.ContainsKey(ipUzytkownika))
             {
-                otwarteStrumienie[ipUzytkownika].Close();
+                try { otwarteStrumienie[ipUzytkownika].Close(); } catch { }
                 otwarteStrumienie.Remove(ipUzytkownika);
+            }
+            if (ZamknietoPolaczenie != null)
+            {
+                ZamknietoPolaczenie(mapownik[ipUzytkownika]);
             }
         }
 

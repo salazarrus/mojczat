@@ -31,12 +31,14 @@ namespace MojCzat.komunikacja
         public String Opis { get; set; }
         
         // Dostepnosc uzytkownika
-        Dictionary<string, bool> dostepny = new Dictionary<string,bool>();
+        Dictionary<string, bool> dostepnosc = new Dictionary<string,bool>();
 
         // Obiekt odpowiedzialny za laczenie się z innymi uzytkownikami
         Centrala centrala;
 
         Nasluchiwacz nasluchiwacz;
+
+        Pingacz pingacz;
 
         Protokol protokol;
 
@@ -57,7 +59,7 @@ namespace MojCzat.komunikacja
             mapownik = new Mapownik(mapa_ID_PunktKontaktu);
 
             foreach (var i in mapa_ID_PunktKontaktu)
-            { dostepny.Add(i.Key, false); }
+            { dostepnosc.Add(i.Key, false); }
 
             int port;
             if(ustawienia.SSLWlaczone)
@@ -70,6 +72,7 @@ namespace MojCzat.komunikacja
                 port = portBezSSL; 
                 centrala = new Centrala(mapownik, port);
             }
+            pingacz = new Pingacz(centrala, dostepnosc);
 
             nasluchiwacz = new Nasluchiwacz(port);
            
@@ -101,12 +104,14 @@ namespace MojCzat.komunikacja
         void start() 
         {
             nasluchiwacz.NowyKlient += nasluchiwacz_NowyKlient;
+            pingacz.Start();
             nasluchiwacz.Start();
         }
 
         // zatrzymaj serwer
         public void Stop()
         {
+            pingacz.Stop();
             nasluchiwacz.Stop();
             centrala.RozlaczWszystkich();
             watekKomunikator.Join();
@@ -130,18 +135,8 @@ namespace MojCzat.komunikacja
 
 
         public bool CzyDostepny(string idUzytkownika) 
-        { return dostepny[idUzytkownika]; }
+        { return dostepnosc[idUzytkownika]; }
         
-        /// <summary>
-        /// Polacz sie z uzytkownikiem
-        /// </summary>
-        /// <param name="idUzytkownika"></param>
-        /// <returns></returns>
-        public void ZainicjujPolaczenie(string idUzytkownika) {            
-            var polaczenie = centrala[idUzytkownika];
-            if (polaczenie == null) { centrala.Polacz(idUzytkownika); }            
-        }
-
         /// <summary>
         /// Rozlacz sie z uzytkownikiem
         /// </summary>
@@ -158,7 +153,7 @@ namespace MojCzat.komunikacja
         {
             mapownik.Dodaj(idUzytkownika, punktKontaktu);
             protokol.DodajUzytkownika(idUzytkownika);
-            dostepny.Add(idUzytkownika, false);
+            dostepnosc.Add(idUzytkownika, false);
         }
 
         /// <summary>
@@ -169,7 +164,7 @@ namespace MojCzat.komunikacja
         {
             mapownik.Usun(idUzytkownika);
             protokol.UsunUzytkownika(idUzytkownika);
-            dostepny.Remove(idUzytkownika);
+            dostepnosc.Remove(idUzytkownika);
         }
 
         /// <summary>
@@ -204,7 +199,7 @@ namespace MojCzat.komunikacja
 
         void obsluzZmianaStanuPolaczenia(string idUzytkownika, bool nowyStan) 
         {
-            dostepny[idUzytkownika] = nowyStan;
+            dostepnosc[idUzytkownika] = nowyStan;
             if (ZmianaStanuPolaczenia != null)
             { ZmianaStanuPolaczenia(idUzytkownika); }
         }               

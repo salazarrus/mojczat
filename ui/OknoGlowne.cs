@@ -155,8 +155,6 @@ namespace MojCzat.ui
             komunikator.Opis = ustawienia.Opis;
             // nawiaz polaczenia z kontaktami
             komunikator.Start();
-
-            polaczSieZKontaktami();            
            
             oknaCzatu.Values.ToList().ForEach(o => o.Komunikator = komunikator);
         }
@@ -183,26 +181,7 @@ namespace MojCzat.ui
             odswiezStatusKontaktu(rozmowca);
             Invoke(odswiezOknoDelegata);
         }
-
-        /// <summary>
-        /// Inicjacja polaczen z uzytkownikami z listy kontaktow
-        /// </summary>
-        void polaczSieZKontaktami() 
-        {
-            foreach (var kontakt in kontakty) {
-                polaczSieZKontaktem(kontakt, false);
-            }
-        }
-
-        /// <summary>
-        /// Inicjowanie polaczenia z uzytkownikem
-        /// </summary>
-        /// <param name="kontakt"></param>
-        void polaczSieZKontaktem(Kontakt kontakt, bool nowy) 
-        {
-            komunikator.ZainicjujPolaczenie(kontakt.ID);        
-        }
-                        
+                   
         /// <summary>
         /// Odswiez liste kontaktow
         /// </summary>
@@ -303,10 +282,7 @@ namespace MojCzat.ui
             kontakt.Polaczony = false;
 
             if (polaczony)
-            {
-                komunikator.DodajKontakt(kontakt.ID, kontakt.IP);
-                polaczSieZKontaktem(kontakt, true);
-            }
+            { komunikator.DodajKontakt(kontakt.ID, kontakt.IP); }
             
             
             odswiezListeKontaktow();
