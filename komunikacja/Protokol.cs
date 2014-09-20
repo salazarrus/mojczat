@@ -1,4 +1,6 @@
-﻿using MojCzat.model;
+﻿#define TRACE
+
+using MojCzat.model;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -38,10 +40,14 @@ namespace MojCzat.komunikacja
 
             foreach (var i in mapownik.WszystkieId) { wiadomosciownia.DodajUzytkownika(i); }
 
+
             this.ustawienia = ustawienia;
             this.mapownik = mapownik;
 
             centrala =  ustawienia.SSLWlaczone ? new CentralaSSL(ustawienia.Certyfikat): new Centrala();
+            
+            centrala.OtwartoPolaczenie += centrala_OtwartoPolaczenie;
+            centrala.ZamknietoPolaczenie += centrala_ZamknietoPolaczenie;
             
         }
 
@@ -67,8 +73,6 @@ namespace MojCzat.komunikacja
 
         public void Start()
         {
-            centrala.OtwartoPolaczenie += centrala_OtwartoPolaczenie;
-            centrala.ZamknietoPolaczenie += centrala_ZamknietoPolaczenie;
             centrala.Start();
         }
         
@@ -122,6 +126,7 @@ namespace MojCzat.komunikacja
 
         void centrala_OtwartoPolaczenie(string guid, Stream strumien, IPAddress ip)
         {
+            Trace.TraceInformation("otwarto polaczenie");
             var mamyZasadnicze = polaczenia.Values.Any(p => p.IdUzytkownika == mapownik[ip]
                 && p.Typ == KanalTyp.ZASADNICZY);
             Kanal kanal = new Kanal()
@@ -148,6 +153,7 @@ namespace MojCzat.komunikacja
             var status = (StatusObsluzZapytanie)wynik.AsyncState;
             Trace.TraceInformation("Przyszlo nowe zapytanie: " + status.Naglowek[0].ToString());
             int dlugoscWiadomosci = BitConverter.ToInt32(status.Naglowek, 1);
+            if (!polaczenia.ContainsKey(status.guidStrumienia)) { return; }
             var kanal = polaczenia[status.guidStrumienia];
 
             try { kanal.strumien.EndRead(wynik); }

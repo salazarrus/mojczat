@@ -143,8 +143,7 @@ namespace MojCzat.komunikacja
                 zachowajNowePolaczenie(polaczenie, strumien);
             }
             catch (Exception ex)
-            { 
-                /*Trace.TraceInformation("[nawiazPolaczenieWynik] " + ex.ToString()); */}
+            { }
         }
 
         void zachowajNowePolaczenie(TcpClient polaczenie, Stream strumien)

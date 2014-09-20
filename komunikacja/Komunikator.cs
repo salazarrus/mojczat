@@ -54,7 +54,7 @@ namespace MojCzat.komunikacja
             foreach (var i in mapa_ID_PunktKontaktu)
             { dostepnosc.Add(i.Key, false); }
 
-            zainicjalicujPingacz();
+            zainicjujPingacz();
 
             protokol = new Protokol(mapownik, ustawienia);                 
         }
@@ -77,8 +77,6 @@ namespace MojCzat.komunikacja
         // zatrzymaj serwer
         public void Stop()
         {
-            //protokol.OtwartoPolaczenieZasadnicze -= protokol_OtwartoPolaczenieZasadnicze;
-            //protokol.ZamknietoPolaczenieZasadnicze -= protokol_ZamknietoPolaczenieZasadnicze;
             protokol.Stop();
             timer.Stop();
             watekKomunikator.Join();
@@ -138,28 +136,29 @@ namespace MojCzat.komunikacja
             dostepnosc.Remove(idUzytkownika);
         }
 
-        void zainicjalicujPingacz()
+        void zainicjujPingacz()
         {
             this.timer = new System.Timers.Timer();
             timer.Elapsed += timer_Elapsed;
-            timer.Interval = 5000;
+            timer.Interval = 60000;
+        }
+
+        void sprobojPolaczyc() 
+        {
+            dostepnosc.Keys.Where(id => !dostepnosc[id]).ToList()
+                .ForEach(id => protokol.Polacz(id));
         }
 
         void timer_Elapsed(object sender, System.Timers.ElapsedEventArgs e)
-        {
-            foreach (var id in dostepnosc.Keys.ToList())
-            {
-                if (!dostepnosc[id]) { protokol.Polacz(id); }
-            }
-        }
+        { sprobojPolaczyc(); }
 
         void start()
         {
             protokol.OtwartoPolaczenieZasadnicze += protokol_OtwartoPolaczenieZasadnicze;
             protokol.ZamknietoPolaczenieZasadnicze += protokol_ZamknietoPolaczenieZasadnicze;
+            sprobojPolaczyc();
             timer.Start();
             protokol.Start();
-            
         }
 
         void protokol_ZamknietoPolaczenieZasadnicze(string idUzytkownika)
