@@ -12,14 +12,13 @@ namespace MojCzat.komunikacja
 {
 
     class Wiadomosciownia
-    {
-        
+    {        
         Dictionary<string, Queue<byte[]>> komunikatyWychodzace = new Dictionary<string, Queue<byte[]>>();
         Dictionary<string, Boolean> wysylanieWToku = new Dictionary<string, Boolean>();
         Dictionary<string, object> zamkiWysylania = new Dictionary<string, object>();
 
         Centrala centrala;
-        Buforownia buforownia = new Buforownia();
+        Buforownia buforownia = new Buforownia(512);
         CzytanieSkonczone czytanieSkonczone;
         const int DlugoscNaglowka = 5; 
 
@@ -31,10 +30,10 @@ namespace MojCzat.komunikacja
 
         public event NowaWiadomosc NowaWiadomosc;
 
-        public void CzytajZawartosc(string id, TypWiadomosci rodzaj, int dlugoscWiadomosci)
+        public void CzytajZawartosc(Stream strumien, string guidStrumienia ,string id, TypWiadomosci rodzaj, int dlugoscWiadomosci)
         {
             if (dlugoscWiadomosci == 0) { czytanieSkonczone(id); }
-            czytajZawartosc(id, rodzaj, dlugoscWiadomosci, 0);    
+            czytajZawartosc(strumien, guidStrumienia , id, rodzaj, dlugoscWiadomosci, 0);    
         }           
         
         /// <summary>
@@ -42,20 +41,19 @@ namespace MojCzat.komunikacja
         /// </summary>
         /// <param name="idRozmowcy">Identyfikator rozmowcy</param>
         /// <param name="wiadomosc">Nowa wiadomosc</param>
-        public void WyslijWiadomosc(String idRozmowcy, byte rodzaj ,String wiadomosc)
+        public void WyslijWiadomosc(Stream strumien, String idRozmowcy, byte rodzaj ,String wiadomosc)
         {
             try
             {
                 Trace.TraceInformation(String.Format("Probojemy wyslac wiadomosc rodzaj {0}: {1} ", rodzaj, wiadomosc));
                 if (string.IsNullOrEmpty(wiadomosc) && rodzaj != Protokol.DajMiSwojOpis) { return;  }
-                Stream strumien = centrala[idRozmowcy];
                 // tranformacja tekstu w bajty
                 Trace.TraceInformation(String.Format("Wysylamy wiadomosc rodzaj {0}: {1} ",rodzaj, wiadomosc));
 
                 Byte[] bajty = stworzKomunikat(rodzaj, wiadomosc);
                 // wysylanie bajtow polaczeniem TCP 
                 dajKolejkeWiadomosci(idRozmowcy).Enqueue(bajty);
-                wysylajZKolejki(idRozmowcy);
+                wysylajZKolejki(strumien, idRozmowcy);
             }
             catch(Exception ex) 
             {
@@ -99,7 +97,7 @@ namespace MojCzat.komunikacja
             return komunikatyWychodzace[id];
         }
         
-        void wysylajZKolejki(string idUzytkownika)
+        void wysylajZKolejki(Stream strumien, string idUzytkownika)
         {
             byte[] doWyslania = null;
             lock (zamkiWysylania[idUzytkownika])
@@ -115,28 +113,29 @@ namespace MojCzat.komunikacja
 
             if (doWyslania != null)
             {
-                centrala[idUzytkownika].BeginWrite(doWyslania, 0, 
-                    doWyslania.Length, new AsyncCallback(komunikatWyslany), idUzytkownika);
+                strumien.BeginWrite(doWyslania, 0, 
+                    doWyslania.Length, new AsyncCallback(komunikatWyslany), new WyslijKomunikatStatus() 
+                    { IdNadawcy = idUzytkownika, Strumien = strumien });
             }
         }
 
         void komunikatWyslany(IAsyncResult wynik)
         {
-            var idUzytkownika = (string)wynik.AsyncState;
-            centrala[idUzytkownika].EndWrite(wynik);
-
-            lock (zamkiWysylania[idUzytkownika])
-            { wysylanieWToku[idUzytkownika] = false; }
-            wysylajZKolejki(idUzytkownika);
+            var status = (WyslijKomunikatStatus)wynik.AsyncState;
+            status.Strumien.EndWrite(wynik);
+            Trace.TraceInformation(String.Format("Komunikat wyslany"));
+            lock (zamkiWysylania[status.IdNadawcy])
+            { wysylanieWToku[status.IdNadawcy] = false; }
+            wysylajZKolejki(status.Strumien, status.IdNadawcy);
         }
 
 
-        void czytajZawartosc(string id, TypWiadomosci rodzaj, int dlugoscWiadomosci, int wczytano)
+        void czytajZawartosc(Stream strumien, string guidStrumienia ,string id, TypWiadomosci rodzaj, int dlugoscWiadomosci, int wczytano)
         {
-            centrala[id].BeginRead(buforownia[id], wczytano,
+            strumien.BeginRead(buforownia[id], wczytano,
                 dlugoscWiadomosci, new AsyncCallback(zawartoscWczytana),
                 new CzytajWiadomoscStatus() { IdNadawcy = id, Rodzaj = rodzaj, 
-                    DlugoscWiadomosci = dlugoscWiadomosci, Wczytano = wczytano });
+                    DlugoscWiadomosci = dlugoscWiadomosci, Wczytano = wczytano, Strumien = strumien, guidStrumienia= guidStrumienia });
         }
 
         /// <summary>
@@ -149,14 +148,14 @@ namespace MojCzat.komunikacja
             // od kogo przyszla wiadomosc
             var status = (CzytajWiadomoscStatus)wynik.AsyncState;
             // zakoncz operacje asynchroniczna
-            var strumien = centrala[status.IdNadawcy];
+            var strumien = status.Strumien;
             
             try
             {
                 int bajtyWczytane = strumien.EndRead(wynik);
                 if (status.DlugoscWiadomosci > status.Wczytano + bajtyWczytane)
                 { 
-                    czytajZawartosc(status.IdNadawcy, status.Rodzaj, 
+                    czytajZawartosc(strumien, status.guidStrumienia, status.IdNadawcy, status.Rodzaj, 
                         status.DlugoscWiadomosci, status.Wczytano + bajtyWczytane); 
                 }
             }
@@ -172,11 +171,18 @@ namespace MojCzat.komunikacja
             if (NowaWiadomosc != null) // informujemy zainteresowanych
             { NowaWiadomosc(status.IdNadawcy, status.Rodzaj, wiadomosc); }
 
-            czytanieSkonczone(status.IdNadawcy);
+            czytanieSkonczone(status.guidStrumienia);
+        }
+        class WyslijKomunikatStatus
+        {
+            public String IdNadawcy { get; set; }
+            public Stream Strumien{ get; set; }
         }
 
         class CzytajWiadomoscStatus
         {
+            public Stream Strumien { get; set; }
+            public String guidStrumienia{ get; set; }
             public String IdNadawcy { get; set; }
             public TypWiadomosci Rodzaj { get; set; }
             public int DlugoscWiadomosci { get; set; }

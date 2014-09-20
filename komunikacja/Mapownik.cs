@@ -42,8 +42,8 @@ namespace MojCzat.komunikacja
             ID_IP.Remove(id);
         }
 
-        public bool CzyZnasz(IPAddress ip) {
-            return IP_ID.ContainsKey(ip);
+        public bool CzyZnasz(String id) {
+            return ID_IP.ContainsKey(id);
         }
     }
 }

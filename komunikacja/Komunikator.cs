@@ -13,14 +13,14 @@ using System.Net.Security;
 using System.IO;
 using System.Security.Authentication;
 using MojCzat.model;
-using System.Windows.Forms;
 using System.Diagnostics;
-using System.Threading;
 
 namespace MojCzat.komunikacja
 {    
     // delegata definiujaca funkcje obslugujace zdarzenie NowaWiadomosc
-    public delegate void NowaWiadomosc(String id, TypWiadomosci rodzaj , String wiadomosc);
+    public delegate void NowaWiadomosc(string id, TypWiadomosci rodzaj , string wiadomosc);
+
+    public delegate void PlikWyslano(string id, string nazwa); 
 
     // delegata definiujaca funkcje obslugujace zdarzenie ZmianaStanuPolaczenia
     public delegate void ZmianaStanuPolaczenia(string idUzytkownika);
@@ -33,20 +33,13 @@ namespace MojCzat.komunikacja
         // Dostepnosc uzytkownika
         Dictionary<string, bool> dostepnosc = new Dictionary<string,bool>();
 
-        // Obiekt odpowiedzialny za laczenie się z innymi uzytkownikami
-        Centrala centrala;
-
-        Nasluchiwacz nasluchiwacz;
-
-        Pingacz pingacz;
+        System.Timers.Timer timer;
 
         Protokol protokol;
 
         Mapownik mapownik;
-        const int portBezSSL = 5080;
-        const int portSSL = 5443;
 
-        Thread watekKomunikator;
+        System.Threading.Thread watekKomunikator;
 
         /// <summary>
         /// Konstruktor komunikatora
@@ -61,31 +54,10 @@ namespace MojCzat.komunikacja
             foreach (var i in mapa_ID_PunktKontaktu)
             { dostepnosc.Add(i.Key, false); }
 
-            int port;
-            if(ustawienia.SSLWlaczone)
-            {
-                port = portSSL;
-                centrala = new CentralaSSL(mapownik , port ,ustawienia.Certyfikat) ;
-            }
-            else
-            {
-                port = portBezSSL; 
-                centrala = new Centrala(mapownik, port);
-            }
-            pingacz = new Pingacz(centrala, dostepnosc);
+            zainicjalicujPingacz();
 
-            nasluchiwacz = new Nasluchiwacz(port);
-           
-            centrala.NowePolaczenieOdNas += centrala_NowePolaczenieOdNas;
-            centrala.NowePolaczenieDoNas += centrala_NowePolaczenieDoNas;
-            centrala.ZamknietoPolaczenie += centrala_ZamknietoPolaczenie;
-
-            protokol = new Protokol(centrala, mapownik, ustawienia);
-                 
+            protokol = new Protokol(mapownik, ustawienia);                 
         }
-
-        void centrala_ZamknietoPolaczenie(string idUzytkownika)
-        { obsluzZmianaStanuPolaczenia(idUzytkownika, false); }
         
         public event NowaWiadomosc NowaWiadomosc{
             add { protokol.NowaWiadomosc += value; }
@@ -97,23 +69,18 @@ namespace MojCzat.komunikacja
         // Oczekuj nadchodzacych polaczen
         public void Start()
         {
-            watekKomunikator = new Thread(start);
+            watekKomunikator = new System.Threading.Thread(start);
             watekKomunikator.Start();
         }
 
-        void start() 
-        {
-            nasluchiwacz.NowyKlient += nasluchiwacz_NowyKlient;
-            pingacz.Start();
-            nasluchiwacz.Start();
-        }
-
+      
         // zatrzymaj serwer
         public void Stop()
         {
-            pingacz.Stop();
-            nasluchiwacz.Stop();
-            centrala.RozlaczWszystkich();
+            //protokol.OtwartoPolaczenieZasadnicze -= protokol_OtwartoPolaczenieZasadnicze;
+            //protokol.ZamknietoPolaczenieZasadnicze -= protokol_ZamknietoPolaczenieZasadnicze;
+            protokol.Stop();
+            timer.Stop();
             watekKomunikator.Join();
         }
 
@@ -124,6 +91,9 @@ namespace MojCzat.komunikacja
         /// <param name="wiadomosc">Nowa wiadomosc</param>
         public void WyslijWiadomosc(String idRozmowcy, String wiadomosc)
         { protokol.WyslijWiadomosc(idRozmowcy, Protokol.ZwyklaWiadomosc, wiadomosc); }
+
+        public void WyslijPlik(String idRozmowcy, String sciezka)
+        { protokol.WyslijPlik(idRozmowcy, sciezka); }
 
         public void OglosOpis()
         {
@@ -142,17 +112,17 @@ namespace MojCzat.komunikacja
         /// </summary>
         /// <param name="idUzytkownika"></param>
         public void Rozlacz(string idUzytkownika) 
-        { centrala.ZamknijPolaczenie(mapownik[idUzytkownika]); }
+        { protokol.Rozlacz(idUzytkownika); }
 
         /// <summary>
         /// Nowy uzytkownik na liscie kontaktow
         /// </summary>
         /// <param name="idUzytkownika"></param>
         /// <param name="punktKontaktu"></param>
-        public void DodajKontakt(string idUzytkownika, IPAddress punktKontaktu)
+        public void DodajKontakt(string idUzytkownika, IPAddress ip)
         {
-            if (mapownik.CzyZnasz(punktKontaktu)) { return; }
-            mapownik.Dodaj(idUzytkownika, punktKontaktu);
+            if (mapownik.CzyZnasz(idUzytkownika)) { return; }
+            mapownik.Dodaj(idUzytkownika, ip);
             protokol.DodajUzytkownika(idUzytkownika);
             dostepnosc.Add(idUzytkownika, false);
         }
@@ -168,41 +138,42 @@ namespace MojCzat.komunikacja
             dostepnosc.Remove(idUzytkownika);
         }
 
-        /// <summary>
-        /// Nadeszlo polaczenie, obslugujemy je
-        /// </summary>
-        /// <param name="polaczenie"></param>
-        void zajmijSieNadawca(IPAddress ipNadawcy)
+        void zainicjalicujPingacz()
         {
-            var nadawca = mapownik[ipNadawcy];
-            protokol.czekajNaZapytanie(nadawca);// czekaj (pasywnie) na wiadomosc z tego polaczenia
-        } 
-
-        void nasluchiwacz_NowyKlient(TcpClient polaczenie)
-        {
-            var ipKlienta = ((IPEndPoint)polaczenie.Client.RemoteEndPoint).Address;
-            if (!mapownik.CzyZnasz(ipKlienta)) { DodajKontakt(ipKlienta.ToString(), ipKlienta); }
-
-            var adresKlienta = centrala.ZajmijSiePolaczeniem(polaczenie);
-            zajmijSieNadawca(adresKlienta);
+            this.timer = new System.Timers.Timer();
+            timer.Elapsed += timer_Elapsed;
+            timer.Interval = 5000;
         }
 
-        void centrala_NowePolaczenieDoNas(string idUzytkownika)
+        void timer_Elapsed(object sender, System.Timers.ElapsedEventArgs e)
         {
-            obsluzZmianaStanuPolaczenia(idUzytkownika, true);
+            foreach (var id in dostepnosc.Keys.ToList())
+            {
+                if (!dostepnosc[id]) { protokol.Polacz(id); }
+            }
         }
 
-        void centrala_NowePolaczenieOdNas(string idUzytkownika)
+        void start()
         {
-            obsluzZmianaStanuPolaczenia(idUzytkownika, true);
-            protokol.czekajNaZapytanie(idUzytkownika);
+            protokol.OtwartoPolaczenieZasadnicze += protokol_OtwartoPolaczenieZasadnicze;
+            protokol.ZamknietoPolaczenieZasadnicze += protokol_ZamknietoPolaczenieZasadnicze;
+            timer.Start();
+            protokol.Start();
+            
         }
 
-        void obsluzZmianaStanuPolaczenia(string idUzytkownika, bool nowyStan) 
+        void protokol_ZamknietoPolaczenieZasadnicze(string idUzytkownika)
         {
-            dostepnosc[idUzytkownika] = nowyStan;
-            if (ZmianaStanuPolaczenia != null)
-            { ZmianaStanuPolaczenia(idUzytkownika); }
-        }               
+            dostepnosc[idUzytkownika] = false;
+            if (ZmianaStanuPolaczenia != null) { ZmianaStanuPolaczenia(idUzytkownika); }
+        }
+
+        void protokol_OtwartoPolaczenieZasadnicze(string idUzytkownika)
+        {
+            // TODO a co jak nieznany?
+            dostepnosc[idUzytkownika] = true;
+            if (ZmianaStanuPolaczenia != null) { ZmianaStanuPolaczenia(idUzytkownika); }
+        }
+
     }
 }

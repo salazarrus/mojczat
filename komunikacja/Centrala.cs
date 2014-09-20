@@ -14,108 +14,103 @@ using System.Windows.Forms;
 
 namespace MojCzat.komunikacja
 {
-    public delegate void NowePolaczenie(string idUzytkownika);
-    public delegate void ZamknietoPoloczenie(string idUzytkownika);
-
+    public delegate void OtwartoPolaczenie(string guid, Stream strumien, IPAddress ip);
+    public delegate void ZamknietoPoloczenie(string guid);
+    
     class Centrala
     {       
         /// <summary>
         /// Polaczenia TCP ktore zostaly otwarte
         /// </summary>
-        Dictionary<IPAddress, TcpClient> otwartePolaczenia = new Dictionary<IPAddress, TcpClient>();
+        Dictionary<string, TcpClient> otwartePolaczenia = new Dictionary<string, TcpClient>();
 
         /// <summary>
         /// Strumienie ktore zostaly otwarte
         /// </summary>
-        Dictionary<IPAddress, Stream> otwarteStrumienie = new Dictionary<IPAddress, Stream>();
-        
-        int port;
+        Dictionary<string, Stream> otwarteStrumienie = new Dictionary<string, Stream>();
+
+        // obiekt nasluchujacy nadchodzacych polaczen
+        TcpListener serwer;
+
         Mapownik mapownik;
+
         const int POLOCZENIE_TIMEOUT = 1000;
 
-        public Stream this[String idUzytkownika]
-        {
-            get { return this[mapownik[idUzytkownika]]; }
-        }
+        protected virtual int Port { get { return 5080; } }
 
-        public Stream this[IPAddress idUzytkownika]
-        {
-            get
-            {
-                if (!otwarteStrumienie.ContainsKey(idUzytkownika)) { return null; }
-                return otwarteStrumienie[idUzytkownika];
-            }
-        }
-
-        public Centrala(Mapownik mapownik, int port) {
-            this.mapownik = mapownik;
-            this.port = port;
-        }
-
-        public event NowePolaczenie NowePolaczenieDoNas;
-
-        public event NowePolaczenie NowePolaczenieOdNas;
+        public event OtwartoPolaczenie OtwartoPolaczenie;
 
         public event ZamknietoPoloczenie ZamknietoPolaczenie;
 
-        public void ToNieDziala(string idUzytkownika) {
-            ZamknijPolaczenie(mapownik[idUzytkownika]);
+        // Oczekuj nadchodzacych polaczen
+        public void Start()
+        {
+            try
+            {
+                int portMoj;
+                int.TryParse(ConfigurationManager.AppSettings["portMoj"], out portMoj);
+                serwer = new TcpListener(IPAddress.Any, portMoj); // stworz serwer
+                serwer.Start(); //uruchom serwer
+
+                while (true) // zapetlamy
+                {
+                    // czekaj na przychodzace polaczenia
+                    TcpClient polaczenie = serwer.AcceptTcpClient();
+                    var strumien = dajStrumienJakoSerwer(polaczenie);
+                    zachowajNowePolaczenie(polaczenie, strumien);
+                }
+            }
+            catch (Exception ex) { Trace.TraceInformation("[Start]" + ex.ToString()); } // program zostal zamkniety
+            finally { Stop(); }
+        }
+
+        // zatrzymaj nasluch
+        public void Stop() 
+        { 
+            if (serwer != null) { 
+                serwer.Stop();
+                RozlaczWszystkich();
+            } 
+        }
+
+        public void ToNieDziala(string guid) {
+            Rozlacz(guid);
         }
                 
-        public void Polacz(String id)
+        public void Polacz(IPAddress ip)
         {
             // tworzymy nowe polaczenie 
             Trace.TraceInformation("nawiazujemy polaczenie");
             var klient = new TcpClient();
             int portJego;
             int.TryParse(ConfigurationManager.AppSettings["portJego"], out portJego);
-            var wynik = klient.BeginConnect(mapownik[id], portJego, new AsyncCallback(nawiazPolaczenieWynik), 
-                new NawiazPolaczenieStatus() { idUzytkownika = id, polaczenie = klient });
+            var wynik = klient.BeginConnect(ip, portJego, new AsyncCallback(nawiazPolaczenieWynik), klient);
             
             if (!wynik.AsyncWaitHandle.WaitOne(POLOCZENIE_TIMEOUT, true)) {
                 Trace.TraceInformation("timeout nawiaz polaczenie");
             }
         }
 
-        public IPAddress ZajmijSiePolaczeniem(TcpClient polaczenie) 
-        {            
-            Trace.TraceInformation("przyszlo nowe polaczenie)");
-            var punktKontaktu = (IPEndPoint)polaczenie.Client.RemoteEndPoint;
-            if (this[punktKontaktu.Address] != null) {
-                Trace.TraceInformation("mamy juz takie polaczenie");
-                polaczenie.Close();
-                return null; 
-            }
-            
-            var strumien = dajStrumienJakoSerwer(polaczenie);// otworz strumien dla wiadomosci
-            zachowajPolaczenie(punktKontaktu.Address, polaczenie, strumien, false); // zatrzymujemy referencje  
-            if (NowePolaczenieDoNas != null)
-            {
-                NowePolaczenieDoNas(mapownik[punktKontaktu.Address]);
-            }
-            return punktKontaktu.Address;
-        }
-
         /// <summary>
         /// Zwalniamy zasoby
         /// </summary>
         /// <param name="idUzytkownika"></param>
-        public void ZamknijPolaczenie(IPAddress ipUzytkownika)
+        public void Rozlacz(string guid)
         {
-            if (otwartePolaczenia.ContainsKey(ipUzytkownika))
+            if (otwartePolaczenia.ContainsKey(guid))
             {
-                try { otwartePolaczenia[ipUzytkownika].Close(); } catch { }
-                otwartePolaczenia.Remove(ipUzytkownika);
+                try { otwartePolaczenia[guid].Close(); } catch { }
+                otwartePolaczenia.Remove(guid);
             }
 
-            if (otwarteStrumienie.ContainsKey(ipUzytkownika))
+            if (otwarteStrumienie.ContainsKey(guid))
             {
-                try { otwarteStrumienie[ipUzytkownika].Close(); } catch { }
-                otwarteStrumienie.Remove(ipUzytkownika);
+                try { otwarteStrumienie[guid].Close(); } catch { }
+                otwarteStrumienie.Remove(guid);
             }
             if (ZamknietoPolaczenie != null)
             {
-                ZamknietoPolaczenie(mapownik[ipUzytkownika]);
+                ZamknietoPolaczenie(guid);
             }
         }
 
@@ -123,7 +118,7 @@ namespace MojCzat.komunikacja
         /// Rozlacz wszystkie polaczenia
         /// </summary>
         public void RozlaczWszystkich() 
-        { otwartePolaczenia.Keys.ToList().ForEach(i => ZamknijPolaczenie(i)); }
+        { otwartePolaczenia.Keys.ToList().ForEach(i => Rozlacz(i)); }
         
         protected virtual Stream dajStrumienJakoKlient(TcpClient polaczenie)
         { return polaczenie.GetStream(); }
@@ -135,34 +130,34 @@ namespace MojCzat.komunikacja
         {
             try
             {
-                NawiazPolaczenieStatus status = (NawiazPolaczenieStatus)wynik.AsyncState;
-                status.polaczenie.EndConnect(wynik);
+                var polaczenie = (TcpClient)wynik.AsyncState;
+                polaczenie.EndConnect(wynik);
                 
-                if (!status.polaczenie.Connected || this[status.idUzytkownika] != null)
+                if (!polaczenie.Connected)
                 {
-                    status.polaczenie.Close();
+                    polaczenie.Close();
                     return;
                 }
 
-                zachowajPolaczenie(mapownik[status.idUzytkownika], status.polaczenie, 
-                    dajStrumienJakoKlient(status.polaczenie), true);
-                
-                if (NowePolaczenieOdNas != null){ NowePolaczenieOdNas(status.idUzytkownika); }
+                var strumien = dajStrumienJakoKlient(polaczenie);
+                zachowajNowePolaczenie(polaczenie, strumien);
             }
             catch (Exception ex)
-            { Trace.TraceInformation("[nawiazPolaczenieWynik] " + ex.ToString()); }
+            { 
+                /*Trace.TraceInformation("[nawiazPolaczenieWynik] " + ex.ToString()); */}
         }
 
-        void zachowajPolaczenie(IPAddress ipUzytkownika, TcpClient polaczenie, Stream strumien, bool nawiaz)
+        void zachowajNowePolaczenie(TcpClient polaczenie, Stream strumien)
         {
             Trace.TraceInformation("Zachowujemy polaczenie");
-            otwartePolaczenia.Add(ipUzytkownika, polaczenie);
-            otwarteStrumienie.Add(ipUzytkownika, strumien);
+
+            var guid = Guid.NewGuid().ToString();
+            otwartePolaczenia.Add(guid, polaczenie);
+            otwarteStrumienie.Add(guid, strumien);
+            var ip = ((IPEndPoint)polaczenie.Client.RemoteEndPoint).Address;
+
+            if (OtwartoPolaczenie != null) { OtwartoPolaczenie(guid, strumien, ip); }
         }
 
-        class NawiazPolaczenieStatus {
-            public TcpClient polaczenie { get; set; }
-            public string idUzytkownika { get; set; }
-        }
     }
 }

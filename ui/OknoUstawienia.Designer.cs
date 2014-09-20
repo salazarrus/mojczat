@@ -37,7 +37,6 @@
             this.btnZapisz = new System.Windows.Forms.Button();
             this.btnAnuluj = new System.Windows.Forms.Button();
             this.ofdCertyfikatPFX = new System.Windows.Forms.OpenFileDialog();
-            this.ofdCertyfikatCER = new System.Windows.Forms.OpenFileDialog();
             this.groupBox1.SuspendLayout();
             this.SuspendLayout();
             // 
@@ -143,6 +142,5 @@
         private System.Windows.Forms.Button btnZapisz;
         private System.Windows.Forms.Button btnAnuluj;
         private System.Windows.Forms.OpenFileDialog ofdCertyfikatPFX;
-        private System.Windows.Forms.OpenFileDialog ofdCertyfikatCER;
     }
 }

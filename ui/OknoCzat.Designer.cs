@@ -33,6 +33,8 @@
             this.tbWiadomosc = new System.Windows.Forms.TextBox();
             this.btnWyslij = new System.Windows.Forms.Button();
             this.cbWyslijEnter = new System.Windows.Forms.CheckBox();
+            this.btnWyslijPlik = new System.Windows.Forms.Button();
+            this.ofdWyslij = new System.Windows.Forms.OpenFileDialog();
             this.SuspendLayout();
             // 
             // tbCzat
@@ -78,11 +80,26 @@
             this.cbWyslijEnter.Text = "Wyślij po wciśnięciu Enter";
             this.cbWyslijEnter.UseVisualStyleBackColor = true;
             // 
+            // btnWyslijPlik
+            // 
+            this.btnWyslijPlik.Location = new System.Drawing.Point(3, 395);
+            this.btnWyslijPlik.Name = "btnWyslijPlik";
+            this.btnWyslijPlik.Size = new System.Drawing.Size(75, 23);
+            this.btnWyslijPlik.TabIndex = 4;
+            this.btnWyslijPlik.Text = "Wyślij plik...";
+            this.btnWyslijPlik.UseVisualStyleBackColor = true;
+            this.btnWyslijPlik.Click += new System.EventHandler(this.btnWyslijPlik_Click);
+            // 
+            // ofdWyslij
+            // 
+            this.ofdWyslij.FileName = "openFileDialog1";
+            // 
             // OknoCzat
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(427, 424);
+            this.Controls.Add(this.btnWyslijPlik);
             this.Controls.Add(this.cbWyslijEnter);
             this.Controls.Add(this.btnWyslij);
             this.Controls.Add(this.tbWiadomosc);
@@ -103,5 +120,7 @@
         private System.Windows.Forms.TextBox tbWiadomosc;
         private System.Windows.Forms.Button btnWyslij;
         private System.Windows.Forms.CheckBox cbWyslijEnter;
+        private System.Windows.Forms.Button btnWyslijPlik;
+        private System.Windows.Forms.OpenFileDialog ofdWyslij;
     }
 }

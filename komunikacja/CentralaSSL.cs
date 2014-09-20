@@ -19,7 +19,9 @@ namespace MojCzat.komunikacja
         /// </summary>
         X509Certificate2 certyfikat;
 
-        public CentralaSSL(Mapownik mapownik, int port ,X509Certificate2 certyfikat):base(mapownik, port)
+        protected override int Port { get { return 5443; } }
+
+        public CentralaSSL(X509Certificate2 certyfikat):base()
         {
             this.certyfikat = certyfikat;
         }

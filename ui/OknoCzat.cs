@@ -85,22 +85,28 @@ namespace MojCzat.ui
             tbWiadomosc.Select(0, 0);               
         }
 
+        bool moznaWysylac() 
+        {
+            if (komunikator == null)
+            {
+                MessageBox.Show("Nie wysłano. Jestes niedostępny.");
+                return false;
+            }
+
+            if (!komunikator.CzyDostepny(rozmowca.ID))
+            {
+                MessageBox.Show("Nie wysłano. Twój rozmówca jest niedostępny.");
+                return false;
+            }
+            return true;
+        }
+
         /// <summary>
         /// wysylamy nowa wiadomosc
         /// </summary>
         void wyslijWpisanaWiadomosc() {
-            if (komunikator == null) 
-            {
-                MessageBox.Show("Nie wysłano wiadomości. Jestes niedostępny.");
-                return;
-            }
-
-            if (!komunikator.CzyDostepny(rozmowca.ID)) {
-                MessageBox.Show("Nie wysłano wiadomości. Twój rozmówca jest niedostępny.");
-                return;           
-            }
-
-            
+            if (!moznaWysylac()) { return; }    
+                
             String wiadomosc = tbWiadomosc.Text;
 
             // usuwamy biale znaki z lewej i prawej strony tekstu
@@ -118,6 +124,12 @@ namespace MojCzat.ui
             // czyscimy pole wpisywania dla nowej wiadomosci
             wyczyscPoleWiadomosci();
             
+        }
+
+        void wyslijPlik(string sciezka) 
+        {
+            if (!moznaWysylac()) { return; }
+            komunikator.WyslijPlik(rozmowca.ID, sciezka);
         }
 
         // obługa zdarzeń interfejsu uzytkownika - poczatek
@@ -141,11 +153,19 @@ namespace MojCzat.ui
             
         }
 
-        private void OknoCzat_KeyDown(object sender, KeyEventArgs e)
+        void OknoCzat_KeyDown(object sender, KeyEventArgs e)
         {
             if (e.KeyCode == Keys.Escape) {
                 Close();
             }
+        }
+
+        void btnWyslijPlik_Click(object sender, EventArgs e)
+        {
+            var wynik = ofdWyslij.ShowDialog(this);
+            if (wynik != DialogResult.OK) { return; }
+
+            wyslijPlik(ofdWyslij.FileName);
         }
 
         // obługa zdarzeń interfejsu uzytkownika - koniec
