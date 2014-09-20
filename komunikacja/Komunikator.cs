@@ -38,8 +38,6 @@ namespace MojCzat.komunikacja
 
         // Obiekt odpowiedzialny za laczenie się z innymi uzytkownikami
         Centrala centrala;
-                
-        Buforownia buforownia = new Buforownia();
 
         Nasluchiwacz nasluchiwacz;
 
@@ -80,7 +78,7 @@ namespace MojCzat.komunikacja
             centrala.NowePolaczenieDoNas += centrala_NowePolaczenieDoNas;
             centrala.ZamknietoPolaczenie += centrala_ZamknietoPolaczenie;
 
-            protokol = new Protokol(centrala, buforownia , mapownik, ustawienia);
+            protokol = new Protokol(centrala, mapownik, ustawienia);
                  
         }
 
@@ -165,7 +163,6 @@ namespace MojCzat.komunikacja
         {
             mapownik.Usun(idUzytkownika);
             protokol.UsunUzytkownika(idUzytkownika);
-            buforownia.Usun(idUzytkownika);
             dostepny.Remove(idUzytkownika);
         }
 

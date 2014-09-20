@@ -21,8 +21,8 @@ namespace MojCzat.komunikacja
         Mapownik mapownik;
         const int DlugoscNaglowka = 5; // 1 bajt na rodzaj komunikatu, 4 na dlugosc
 
-        public Protokol(Centrala centrala, Buforownia buforownia , Mapownik mapownik, Ustawienia ustawienia) {
-            this.wiadomosciownia = new Wiadomosciownia(buforownia, centrala,
+        public Protokol(Centrala centrala, Mapownik mapownik, Ustawienia ustawienia) {
+            this.wiadomosciownia = new Wiadomosciownia(centrala,
                 new CzytanieSkonczone(czekajNaZapytanie)); ;
 
             foreach (var i in mapownik.WszystkieId) { wiadomosciownia.DodajUzytkownika(i); }
@@ -33,27 +33,18 @@ namespace MojCzat.komunikacja
         }
 
         public event NowaWiadomosc NowaWiadomosc {
-            add {
-                wiadomosciownia.NowaWiadomosc += value;
-            }
-            remove {
-                wiadomosciownia.NowaWiadomosc -= value;
-            }
+            add { wiadomosciownia.NowaWiadomosc += value; }
+            remove { wiadomosciownia.NowaWiadomosc -= value; }
         }
 
         public void DodajUzytkownika(string id)
-        {
-            wiadomosciownia.DodajUzytkownika(id);
-        }
+        { wiadomosciownia.DodajUzytkownika(id); }
 
-        public void UsunUzytkownika(string idUzytkownika){
-            wiadomosciownia.UsunUzytkownika(idUzytkownika);
-        }
+        public void UsunUzytkownika(string idUzytkownika)
+        { wiadomosciownia.UsunUzytkownika(idUzytkownika); }
 
         public void WyslijWiadomosc(String idRozmowcy, byte rodzaj, String wiadomosc)
-        {
-            wiadomosciownia.WyslijWiadomosc(idRozmowcy, rodzaj, wiadomosc);
-        }
+        { wiadomosciownia.WyslijWiadomosc(idRozmowcy, rodzaj, wiadomosc); }
 
         /// <summary>
         /// Czekaj (pasywnie) na wiadomosci

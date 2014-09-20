@@ -19,14 +19,13 @@ namespace MojCzat.komunikacja
         Dictionary<string, object> zamkiWysylania = new Dictionary<string, object>();
 
         Centrala centrala;
-        Buforownia buforownia;
+        Buforownia buforownia = new Buforownia();
         CzytanieSkonczone czytanieSkonczone;
         const int DlugoscNaglowka = 5; 
 
-        public Wiadomosciownia(Buforownia buforownia, Centrala centrala, CzytanieSkonczone czytanieSkonczone)
+        public Wiadomosciownia(Centrala centrala, CzytanieSkonczone czytanieSkonczone)
         {
             this.centrala = centrala;
-            this.buforownia = buforownia;
             this.czytanieSkonczone = czytanieSkonczone;
         }
 
@@ -76,6 +75,7 @@ namespace MojCzat.komunikacja
         {
             zamkiWysylania.Remove(idUzytkownika);
             wysylanieWToku.Remove(idUzytkownika);
+            buforownia.Usun(idUzytkownika);
         }
 
 
