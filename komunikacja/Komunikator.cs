@@ -72,7 +72,6 @@ namespace MojCzat.komunikacja
             watekKomunikator = new System.Threading.Thread(start);
             watekKomunikator.Start();
         }
-
       
         // zatrzymaj serwer
         public void Stop()
@@ -94,9 +93,8 @@ namespace MojCzat.komunikacja
         { protokol.WyslijPlik(idRozmowcy, sciezka); }
 
         public void OglosOpis()
-        {
-            mapownik.WszystkieId.ForEach(s => protokol.WyslijWiadomosc(s, Protokol.OtoMojOpis, Opis));
-        }
+        { mapownik.WszystkieId.ForEach(s => 
+            protokol.WyslijWiadomosc(s, Protokol.OtoMojOpis, Opis)); }
 
         public void PoprosOpis(string id)
         { protokol.WyslijWiadomosc(id, Protokol.DajMiSwojOpis, ""); }

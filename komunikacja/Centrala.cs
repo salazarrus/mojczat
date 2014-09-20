@@ -32,8 +32,6 @@ namespace MojCzat.komunikacja
         // obiekt nasluchujacy nadchodzacych polaczen
         TcpListener serwer;
 
-        Mapownik mapownik;
-
         const int POLOCZENIE_TIMEOUT = 1000;
 
         protected virtual int Port { get { return 5080; } }
@@ -108,10 +106,7 @@ namespace MojCzat.komunikacja
                 try { otwarteStrumienie[guid].Close(); } catch { }
                 otwarteStrumienie.Remove(guid);
             }
-            if (ZamknietoPolaczenie != null)
-            {
-                ZamknietoPolaczenie(guid);
-            }
+            if (ZamknietoPolaczenie != null) { ZamknietoPolaczenie(guid); }
         }
 
         /// <summary>
@@ -134,16 +129,13 @@ namespace MojCzat.komunikacja
                 polaczenie.EndConnect(wynik);
                 
                 if (!polaczenie.Connected)
-                {
-                    polaczenie.Close();
-                    return;
-                }
+                {   polaczenie.Close();
+                    return; }
 
                 var strumien = dajStrumienJakoKlient(polaczenie);
                 zachowajNowePolaczenie(polaczenie, strumien);
             }
-            catch (Exception ex)
-            { }
+            catch{ }
         }
 
         void zachowajNowePolaczenie(TcpClient polaczenie, Stream strumien)

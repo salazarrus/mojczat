@@ -13,8 +13,6 @@ namespace MojCzat.komunikacja
 {
     public delegate void OtwartoPolaczenieZasadnicze(string idUzytkownika);
     public delegate void ZamknietoPolaczenieZasadnicze(string idUzytkownika);
-
-    
     public delegate void CzytanieSkonczone(string idUzytkownika);
 
     class Protokol
@@ -40,7 +38,6 @@ namespace MojCzat.komunikacja
 
             foreach (var i in mapownik.WszystkieId) { wiadomosciownia.DodajUzytkownika(i); }
 
-
             this.ustawienia = ustawienia;
             this.mapownik = mapownik;
 
@@ -61,9 +58,7 @@ namespace MojCzat.komunikacja
         public event ZamknietoPolaczenieZasadnicze ZamknietoPolaczenieZasadnicze;
 
         public void Polacz(string id)
-        {
-            centrala.Polacz(mapownik[id]);
-        }
+        { centrala.Polacz(mapownik[id]); }
 
         public void Rozlacz(string id) 
         {
@@ -72,14 +67,12 @@ namespace MojCzat.komunikacja
         }
 
         public void Start()
-        {
-            centrala.Start();
-        }
+        { centrala.Start(); }
         
         public void Stop() 
         {
-            //centrala.OtwartoPolaczenie -= centrala_OtwartoPolaczenie;
-            //centrala.ZamknietoPolaczenie -= centrala_ZamknietoPolaczenie;
+            centrala.OtwartoPolaczenie -= centrala_OtwartoPolaczenie;
+            centrala.ZamknietoPolaczenie -= centrala_ZamknietoPolaczenie;
             centrala.Stop();
         }
 
@@ -99,7 +92,7 @@ namespace MojCzat.komunikacja
         /// Czekaj (pasywnie) na wiadomosci
         /// </summary>
         /// <param name="idNadawcy">Identyfikator nadawcy</param>
-        public void czekajNaZapytanie(string guid)
+        void czekajNaZapytanie(string guid)
         {
             Trace.TraceInformation("Czekamy na zapytanie ");
                         
@@ -129,12 +122,9 @@ namespace MojCzat.komunikacja
             Trace.TraceInformation("otwarto polaczenie");
             var mamyZasadnicze = polaczenia.Values.Any(p => p.IdUzytkownika == mapownik[ip]
                 && p.Typ == KanalTyp.ZASADNICZY);
-            Kanal kanal = new Kanal()
-            {
-                IdUzytkownika = mapownik[ip],
-                strumien = strumien,
-                Typ = mamyZasadnicze ? KanalTyp.DODATKOWY : KanalTyp.ZASADNICZY
-            };
+
+            Kanal kanal = new Kanal() { IdUzytkownika = mapownik[ip], strumien = strumien, 
+                Typ = mamyZasadnicze ? KanalTyp.DODATKOWY : KanalTyp.ZASADNICZY };
 
             polaczenia.Add(guid, kanal);
             czekajNaZapytanie(guid);
@@ -157,11 +147,9 @@ namespace MojCzat.komunikacja
             var kanal = polaczenia[status.guidStrumienia];
 
             try { kanal.strumien.EndRead(wynik); }
-            catch (Exception ex)
-            {   // zostalismy rozlaczeni
-                centrala.ToNieDziala(status.guidStrumienia);
-                return;
-            }
+            catch // zostalismy rozlaczeni
+            {  centrala.ToNieDziala(status.guidStrumienia);
+               return; }
 
             switch (status.Naglowek[0])
             {
