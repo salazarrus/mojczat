@@ -6,6 +6,9 @@ using System.Text;
 
 namespace MojCzat.komunikacja
 {
+    /// <summary>
+    /// Obiekt odpowiedzialny za przesylanie do i odbieranie od innych uzytkownikow plikow
+    /// </summary>
     class Plikownia
     {
         Buforownia buforownia = new Buforownia(4096);

@@ -32,91 +32,117 @@ namespace MojCzat.komunikacja
     {
         public String Opis { get; set; }
         
-        // Dostepnosc uzytkownika
+        // Dostepnosc uzytkownikow
         Dictionary<string, bool> dostepnosc = new Dictionary<string,bool>();
-
-        System.Timers.Timer timer;
+        
+        // obiekt uzywany do regularnego sprawdzania dostepnosci innych uzytkownikow
+        System.Timers.Timer pingacz;
 
         Protokol protokol;
 
         Mapownik mapownik;
 
+        // oddzielny watek dla komunikatora
         System.Threading.Thread watekKomunikator;
 
         /// <summary>
-        /// Konstruktor komunikatora
+        /// Konstruktor
         /// </summary>
-        /// <param name="ipepNaId">Mapowanie punktu kontatku (adres IP,Port) do 
-        /// Identyfikatora rozmowcy wszystkich kontaktow uzytkownika</param>
-        public Komunikator(Dictionary<string, IPAddress> mapa_ID_PunktKontaktu, Ustawienia ustawienia)
+        /// <param name="mapa_ID_IP">mapowanie identyfikatora uzytkownika do jego adresu IP</param>
+        /// <param name="ustawienia">obiekt ustawien programu</param>
+        public Komunikator(Dictionary<string, IPAddress> mapa_ID_IP, Ustawienia ustawienia)
         {
-            //inicjalizacja i wypelnianie mapowan pochodnych
-            mapownik = new Mapownik(mapa_ID_PunktKontaktu);
-
-            foreach (var i in mapa_ID_PunktKontaktu)
-            { dostepnosc.Add(i.Key, false); }
+         
+            foreach (var i in mapa_ID_IP) { dostepnosc.Add(i.Key, false); }
 
             zainicjujPingacz();
-
+    
+            mapownik = new Mapownik(mapa_ID_IP);
             protokol = new Protokol(mapownik, ustawienia);                 
         }
         
+        /// <summary>
+        /// Otwrzymalismy nowa wiadomosc
+        /// </summary>
         public event NowaWiadomosc NowaWiadomosc{
             add { protokol.NowaWiadomosc += value; }
             remove { protokol.NowaWiadomosc -= value; }
         }
 
+        /// <summary>
+        /// Polaczenie z uzytkownikiem zostalo zamkniete badz otwarte
+        /// </summary>
         public event ZmianaStanuPolaczenia ZmianaStanuPolaczenia;
         
-        // Oczekuj nadchodzacych polaczen
+        /// <summary>
+        /// Rozpocznij dzialanie komunikatora
+        /// </summary>
         public void Start()
         {
             watekKomunikator = new System.Threading.Thread(start);
             watekKomunikator.Start();
         }
       
-        // zatrzymaj serwer
+        /// <summary>
+        /// Zatrzymaj dzialanie komunikatora
+        /// </summary>
         public void Stop()
         {
             protokol.Stop();
-            timer.Stop();
+            pingacz.Stop();
             watekKomunikator.Join();
         }
 
         /// <summary>
         /// Wyslij wiadomosc tekstowa do innego uzytkownika
         /// </summary>
-        /// <param name="idRozmowcy">Identyfikator rozmowcy</param>
-        /// <param name="wiadomosc">Nowa wiadomosc</param>
-        public void WyslijWiadomosc(String idRozmowcy, String wiadomosc)
-        { protokol.WyslijWiadomosc(idRozmowcy, Protokol.ZwyklaWiadomosc, wiadomosc); }
+        /// <param name="idUzytkownika">Identyfikator uzytkownika</param>
+        /// <param name="wiadomosc">tresc wiadomosci</param>
+        public void WyslijWiadomosc(String idUzytkownika, String wiadomosc)
+        { protokol.WyslijWiadomosc(idUzytkownika, wiadomosc); }
 
-        public void WyslijPlik(String idRozmowcy, String sciezka)
-        { protokol.WyslijPlik(idRozmowcy, sciezka); }
+        /// <summary>
+        /// Wyslij plik do innego uzytkownkika
+        /// </summary>
+        /// <param name="idUzytkownika">Identyfikator uzytkownika</param>
+        /// <param name="sciezka">sciezka do pliku</param>
+        public void WyslijPlik(String idUzytkownika, String sciezka)
+        { protokol.WyslijPlik(idUzytkownika, sciezka); }
 
+        /// <summary>
+        /// Wyslij swoj opis do uzytkownikow z listy kontaktow
+        /// </summary>
         public void OglosOpis()
         { mapownik.WszystkieId.ForEach(s => 
-            protokol.WyslijWiadomosc(s, Protokol.WezOpis, Opis)); }
+            protokol.WyslijOpis(s, Opis)); }
 
-        public void PoprosOpis(string id)
-        { protokol.WyslijWiadomosc(id, Protokol.DajOpis, ""); }
+        /// <summary>
+        /// Popros o opis uzytkownika
+        /// </summary>
+        /// <param name="idUzytkownika">Identyfikator uzytkownika</param>
+        public void PoprosOpis(string idUzytkownika)
+        { protokol.PoprosOpis(idUzytkownika); }
 
-
+        /// <summary>
+        /// Sprawdz czy uzytkownik jest dostepny
+        /// </summary>
+        /// <param name="idUzytkownika">Identyfikator uzytkownika</param>
+        /// <returns></returns>
         public bool CzyDostepny(string idUzytkownika) 
         { return dostepnosc.ContainsKey(idUzytkownika) && dostepnosc[idUzytkownika]; }
         
         /// <summary>
         /// Rozlacz sie z uzytkownikiem
         /// </summary>
-        /// <param name="idUzytkownika"></param>
+        /// <param name="idUzytkownika">Identyfikator uzytkownika</param>
         public void Rozlacz(string idUzytkownika) 
         { protokol.Rozlacz(idUzytkownika); }
 
         /// <summary>
         /// Nowy uzytkownik na liscie kontaktow
         /// </summary>
-        /// <param name="idUzytkownika"></param>
-        /// <param name="punktKontaktu"></param>
+        /// <param name="idUzytkownika">Identyfikator uzytkownika</param>
+        /// <param name="ip">adres IP</param>
         public void DodajKontakt(string idUzytkownika, IPAddress ip)
         {
             dodajKontakt(idUzytkownika, ip, false);
@@ -125,7 +151,7 @@ namespace MojCzat.komunikacja
         /// <summary>
         /// Usunieto uzytkownika z list kontaktow
         /// </summary>
-        /// <param name="idUzytkownika"></param>
+        /// <param name="idUzytkownika">Identyfikator uzytkownika</param>
         public void UsunKontakt(string idUzytkownika)
         {           
             protokol.UsunUzytkownika(idUzytkownika);
@@ -133,7 +159,7 @@ namespace MojCzat.komunikacja
             mapownik.Usun(idUzytkownika);
         }
 
-
+        // obluguj nowego uzytkownika
         void dodajKontakt(string idUzytkownika, IPAddress ip, bool dostepny)
         {
             if (mapownik.CzyZnasz(idUzytkownika)) { return; }
@@ -142,37 +168,42 @@ namespace MojCzat.komunikacja
             dostepnosc.Add(idUzytkownika, dostepny);
         }
         
+        // zainicjuj obiekt sprawdzajacy dostepnosc innych uzytkownikow
         void zainicjujPingacz()
         {
-            this.timer = new System.Timers.Timer();
-            timer.Elapsed += timer_Elapsed;
-            timer.Interval = 6000;
+            this.pingacz = new System.Timers.Timer();
+            pingacz.Elapsed += pingacz_Elapsed;
+            pingacz.Interval = 6000;
         }
 
+        // sproboj polaczyc sie z niedostepnymi uzytkownikami
         void sprobojPolaczyc() 
         {
             dostepnosc.Keys.Where(id => !dostepnosc[id]).ToList()
                 .ForEach(id => protokol.Polacz(id));
         }
 
-        void timer_Elapsed(object sender, System.Timers.ElapsedEventArgs e)
+        void pingacz_Elapsed(object sender, System.Timers.ElapsedEventArgs e)
         { sprobojPolaczyc(); }
 
+        // start komunikatora
         void start()
         {
             protokol.OtwartoPolaczenieZasadnicze += protokol_OtwartoPolaczenieZasadnicze;
             protokol.ZamknietoPolaczenieZasadnicze += protokol_ZamknietoPolaczenieZasadnicze;
             sprobojPolaczyc();
-            timer.Start();
+            pingacz.Start();
             protokol.Start();
         }
 
+        // polaczenie do uzytkownika zostalo zamkniete
         void protokol_ZamknietoPolaczenieZasadnicze(string idUzytkownika)
         {
             dostepnosc[idUzytkownika] = false; 
             if (ZmianaStanuPolaczenia != null) { ZmianaStanuPolaczenia(idUzytkownika); }
         }
 
+        // polaczenie do uzytkownika zostalo otwarte
         void protokol_OtwartoPolaczenieZasadnicze(string idUzytkownika)
         {
             if (!mapownik.CzyZnasz(idUzytkownika)) { 

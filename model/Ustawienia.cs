@@ -10,6 +10,9 @@ using System.Xml;
 
 namespace MojCzat.model
 {
+    /// <summary>
+    /// Obiekt przechowujacy dlugo- oraz krotkotrwale ustawienia komunikatora
+    /// </summary>
     public class Ustawienia
     {
         /// <summary>

@@ -11,6 +11,9 @@ namespace MojCzat.komunikacja
 {
     public delegate void GotowyDoOdbioru(string guid);
 
+    /// <summary>
+    /// Obiekt odpowiedzialny za zarzadzanie strumieniami do innych uzytkownikow
+    /// </summary>
     class Strumieniownia
     {
         Mapownik mapownik;

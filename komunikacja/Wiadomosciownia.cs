@@ -10,7 +10,9 @@ using System.Text;
 
 namespace MojCzat.komunikacja
 {
-
+    /// <summary>
+    /// Obiekt odpowiedziany za przesylanie i odbior komunikatow tekstowych
+    /// </summary>
     class Wiadomosciownia
     {        
         // dla kazdego uzytkownika kolejka wiadomosci do wyslania
