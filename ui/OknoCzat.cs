@@ -15,24 +15,15 @@ namespace MojCzat.ui
     /// </summary>
     public partial class OknoCzat : Form
     {
-        /// <summary>
-        /// Drugi uczestnik czatu
-        /// </summary>
+        // Drugi uczestnik czatu
         Kontakt rozmowca;
 
-        /// <summary>
-        /// Obiekt odpowiedzialny za przesylanie i odbieranie wiadomosci
-        /// </summary>
-        Komunikator komunikator;
-
-
-        public Komunikator Komunikator { set { komunikator = value; } }
+        public Komunikator Komunikator { set; private get; }
 
         /// <summary>
-        /// Konstruktor okna czatu
+        /// Konstruktor
         /// </summary>
-        /// <param name="idRozmowcy">Identyfikator drugiego uczestnika czatu</param>
-        /// <param name="komunikator">Obiekt odpowiedzialny za przesylanie i odbieranie wiadomosci</param>
+        /// <param name="rozmowca">drugi uczestnik czatu</param>
         public OknoCzat(Kontakt rozmowca)
         {           
             // inicjalizacja elementow graficznych okna
@@ -40,8 +31,8 @@ namespace MojCzat.ui
             // ustalanie naglowka okna
             this.Text = String.Format("Mój Czat z {0}", rozmowca.Nazwa);
 
-            // zapisywanie referencji
             this.rozmowca = rozmowca;
+            tbCzat.MaxLength = int.MaxValue;
         }
         
         /// <summary>
@@ -53,29 +44,21 @@ namespace MojCzat.ui
             tbCzat.AppendText(String.Format("[{0}] {1}\n", rozmowca.Nazwa, wiadomosc));
         }
 
-        /// <summary>
-        /// Centralne pozycjonowanie okna wzgledem OknaGlownego
-        /// </summary>
-        /// <param name="e"></param>
+        // Centralne pozycjonowanie okna wzgledem OknaGlownego
         protected override void OnShown(EventArgs e)
         {
             base.OnShown(e);            
             CenterToParent();
         }
 
-        /// <summary>
-        /// Nie zamykaj okna, tylko je ukryj
-        /// </summary>
-        /// <param name="e"></param>
+        // Nie zamykaj okna, tylko je ukryj
         protected override void OnClosing(System.ComponentModel.CancelEventArgs e)
         {
             e.Cancel = true;
             this.Visible = false;
         }
 
-        /// <summary>
-        /// Wiadomosc zostala wyslana, czyscimy wiec pole wpisywania wiadomosci
-        /// </summary>
+        // Wiadomosc zostala wyslana, czyscimy wiec pole wpisywania wiadomosci
         void wyczyscPoleWiadomosci(){
             // wyczysc pole z tekstu
             tbWiadomosc.Text = String.Empty;
@@ -85,15 +68,16 @@ namespace MojCzat.ui
             tbWiadomosc.Select(0, 0);               
         }
 
+        // sprawdz czy istnieje polaczenie do rozmowcy
         bool moznaWysylac() 
         {
-            if (komunikator == null)
+            if (Komunikator == null)
             {
                 MessageBox.Show("Nie wysłano. Jestes niedostępny.");
                 return false;
             }
 
-            if (!komunikator.CzyDostepny(rozmowca.ID))
+            if (!Komunikator.CzyDostepny(rozmowca.ID))
             {
                 MessageBox.Show("Nie wysłano. Twój rozmówca jest niedostępny.");
                 return false;
@@ -101,9 +85,7 @@ namespace MojCzat.ui
             return true;
         }
 
-        /// <summary>
-        /// wysylamy nowa wiadomosc
-        /// </summary>
+        // wysylamy nowa wiadomosc
         void wyslijWpisanaWiadomosc() {
             if (!moznaWysylac()) { return; }    
                 
@@ -114,25 +96,22 @@ namespace MojCzat.ui
             // nie chcemy wysylac pustych wiadomosci
             if (wiadomosc == String.Empty) { return; }
 
-            //TODO: sprawdz czy dostepny
-             
             // wysylamy wiadomosc
-            komunikator.WyslijWiadomosc(rozmowca.ID, wiadomosc);
+            Komunikator.WyslijWiadomosc(rozmowca.ID, wiadomosc);
             
             // dodajemy wiadomosc do naszego okna czatu
             tbCzat.AppendText(String.Format("[{0}] {1}\n", "Ty", wiadomosc));
             // czyscimy pole wpisywania dla nowej wiadomosci
             wyczyscPoleWiadomosci();
-            
         }
 
+        // wyslij plik do rozmowcy
         void wyslijPlik(string sciezka) 
         {
             if (!moznaWysylac()) { return; }
-            komunikator.WyslijPlik(rozmowca.ID, sciezka);
+            Komunikator.WyslijPlik(rozmowca.ID, sciezka);
         }
 
-        // obługa zdarzeń interfejsu uzytkownika - poczatek
 
         // klikniecie przycisku "Wyslij"
         void btnWyslij_Click(object sender, EventArgs e)
@@ -149,17 +128,14 @@ namespace MojCzat.ui
                 wyslijWpisanaWiadomosc();
                 // nie chcemy nowej linii w polu wiadomosci
                 e.SuppressKeyPress = true;
-            }
-            
+            }            
         }
 
+        // "zamknij" okno na klawisz Escape
         void OknoCzat_KeyDown(object sender, KeyEventArgs e)
-        {
-            if (e.KeyCode == Keys.Escape) {
-                Close();
-            }
-        }
+        { if (e.KeyCode == Keys.Escape) { Close(); } }
 
+        // wyslij plik
         void btnWyslijPlik_Click(object sender, EventArgs e)
         {
             var wynik = ofdWyslij.ShowDialog(this);
@@ -168,6 +144,5 @@ namespace MojCzat.ui
             wyslijPlik(ofdWyslij.FileName);
         }
 
-        // obługa zdarzeń interfejsu uzytkownika - koniec
     }
 }

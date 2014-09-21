@@ -14,8 +14,14 @@ namespace MojCzat.ui
 {
     public partial class OknoDodajKontakt : Form
     {
+        /// <summary>
+        /// Dodany kontakt
+        /// </summary>
         public Kontakt NowyKontakt { get; private set; }
         
+        /// <summary>
+        /// Konstruktor
+        /// </summary>
         public OknoDodajKontakt()
         {
             InitializeComponent();
@@ -23,6 +29,10 @@ namespace MojCzat.ui
             NowyKontakt = new Kontakt();
         }
 
+        /// <summary>
+        /// Konstruktor
+        /// </summary>
+        /// <param name="kontakt">istniejacy kontakt do wypenienia pol</param>
         public OknoDodajKontakt(Kontakt kontakt):this() 
         {
             tbIP.Text = kontakt.IP.ToString();
@@ -30,12 +40,14 @@ namespace MojCzat.ui
             NowyKontakt = kontakt;
         }
 
+        // centruj
         protected override void OnShown(EventArgs e)
         {
             base.OnShown(e);
             CenterToParent();
         }
 
+        // wcisnieto "dodaj"
         void btnDodaj_Click(object sender, EventArgs e)
         {
             IPAddress adres;
@@ -60,6 +72,7 @@ namespace MojCzat.ui
 
         }
         
+        // zamknij na klawisc Escape
         private void OknoDodajKontakt_KeyDown(object sender, KeyEventArgs e)
         {
             if (e.KeyCode == Keys.Escape) {

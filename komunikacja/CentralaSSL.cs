@@ -12,19 +12,19 @@ using System.Threading.Tasks;
 
 namespace MojCzat.komunikacja
 {
+    /// <summary>
+    /// Obiekt odpowiedzialny za otwieranie i zamykanie polaczen SSL
+    /// </summary>
     class CentralaSSL:Centrala
     {
-        /// <summary>
-        /// Certyfikat serwera - pozwala laczyc sie przez SSL/TLS
-        /// </summary>
+
+        // Certyfikat serwera - pozwala laczyc sie przez SSL/TLS
         X509Certificate2 certyfikat;
 
         protected override int Port { get { return 5443; } }
 
         public CentralaSSL(X509Certificate2 certyfikat):base()
-        {
-            this.certyfikat = certyfikat;
-        }
+        { this.certyfikat = certyfikat; }
          
         protected override Stream dajStrumienJakoKlient(TcpClient polaczenie)
         {
@@ -44,21 +44,16 @@ namespace MojCzat.komunikacja
             return strumien;
         }
 
-        /// <summary>
-        /// Spradzamy waznosc certyfikatu
-        /// </summary>
-        /// <param name="sender"></param>
-        /// <param name="certificate"></param>
-        /// <param name="chain"></param>
-        /// <param name="sslPolicyErrors"></param>
-        /// <returns></returns>
+        // Spradzamy waznosc certyfikatu 
         bool sprawdzCertyfikat(object sender, X509Certificate certyfikat,
             X509Chain lancuch, SslPolicyErrors bledy)
         {            
-            // w rzeczywistosci powinno byc tak, ale nie mamy testowych certyfikatow
-            // podpisanych przez instytucje zaufane przez Microsoft
-            // return bledy == SslPolicyErrors.None;
-            
+            /*  w rzeczywistosci powinno byc mniej wiecej tak:
+                
+                 return bledy == SslPolicyErrors.None;
+                ale nie mamy testowych certyfikatow
+                podpisanych przez instytucje zaufane przez Microsoft
+            */
             return true;
         }
     }

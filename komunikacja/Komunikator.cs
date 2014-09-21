@@ -27,7 +27,9 @@ namespace MojCzat.komunikacja
     // delegata definiujaca funkcje obslugujace zdarzenie ZmianaStanuPolaczenia
     public delegate void ZmianaStanuPolaczenia(string idUzytkownika);
 
-    // Obiekt odpowiedzialny za odbieranie i przesylanie wiadomosci
+    /// <summary>
+    /// Obiekt koordynujacy wartwe transportu
+    /// </summary>
     public class Komunikator
     {
         public String Opis { get; set; }

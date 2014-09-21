@@ -12,22 +12,25 @@ namespace MojCzat.ui
 {
     public partial class OknoHasloCertyfikat : Form
     {
+        /// <summary>
+        /// Konstruktor
+        /// </summary>
         public OknoHasloCertyfikat()
         {
             InitializeComponent();
             CenterToParent();
         }
 
-        public string Haslo { get; set; }
+        public string Haslo { get; private set; }
         
         private void btnOK_Click(object sender, EventArgs e)
-        {
-            Haslo = tbHaslo.Text;
-        }
+        { Haslo = tbHaslo.Text; }
 
+        // reaguj na klawisz "Enger"
         private void tbHaslo_KeyDown(object sender, KeyEventArgs e)
         {
-            if (e.KeyCode == Keys.Enter) { 
+            if (e.KeyCode == Keys.Enter) 
+            { 
                 btnOK_Click(sender, e);
                 DialogResult = System.Windows.Forms.DialogResult.OK;
                 Close();

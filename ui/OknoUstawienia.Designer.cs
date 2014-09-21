@@ -48,7 +48,7 @@
             this.groupBox1.Controls.Add(this.chBoxWlaczSSL);
             this.groupBox1.Location = new System.Drawing.Point(12, 12);
             this.groupBox1.Name = "groupBox1";
-            this.groupBox1.Size = new System.Drawing.Size(361, 144);
+            this.groupBox1.Size = new System.Drawing.Size(343, 77);
             this.groupBox1.TabIndex = 0;
             this.groupBox1.TabStop = false;
             this.groupBox1.Text = "SSL";
@@ -94,7 +94,7 @@
             // btnZapisz
             // 
             this.btnZapisz.DialogResult = System.Windows.Forms.DialogResult.OK;
-            this.btnZapisz.Location = new System.Drawing.Point(114, 202);
+            this.btnZapisz.Location = new System.Drawing.Point(109, 106);
             this.btnZapisz.Name = "btnZapisz";
             this.btnZapisz.Size = new System.Drawing.Size(75, 23);
             this.btnZapisz.TabIndex = 4;
@@ -105,7 +105,7 @@
             // btnAnuluj
             // 
             this.btnAnuluj.DialogResult = System.Windows.Forms.DialogResult.Cancel;
-            this.btnAnuluj.Location = new System.Drawing.Point(195, 202);
+            this.btnAnuluj.Location = new System.Drawing.Point(190, 106);
             this.btnAnuluj.Name = "btnAnuluj";
             this.btnAnuluj.Size = new System.Drawing.Size(75, 23);
             this.btnAnuluj.TabIndex = 5;
@@ -117,10 +117,11 @@
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(380, 237);
+            this.ClientSize = new System.Drawing.Size(368, 141);
             this.Controls.Add(this.btnAnuluj);
             this.Controls.Add(this.btnZapisz);
             this.Controls.Add(this.groupBox1);
+            this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedSingle;
             this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
             this.MaximizeBox = false;
             this.MinimizeBox = false;

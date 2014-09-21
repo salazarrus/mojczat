@@ -6,6 +6,9 @@ using System.Xml;
 
 namespace MojCzat.uzytki
 {
+    /// <summary>
+    /// Klasa pomocnicza dla obslugi XML
+    /// </summary>
     class Xml
     {
         public static string DajAtrybut(XmlNode wezel, string atrybut)

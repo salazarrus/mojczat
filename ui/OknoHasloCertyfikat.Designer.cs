@@ -93,6 +93,7 @@
             this.Controls.Add(this.btnAnuluj);
             this.Controls.Add(this.tbHaslo);
             this.Controls.Add(this.btnOK);
+            this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedSingle;
             this.MaximizeBox = false;
             this.MinimizeBox = false;
             this.Name = "OknoHasloCertyfikat";

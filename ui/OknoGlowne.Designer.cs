@@ -31,17 +31,16 @@
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(OknoGlowne));
             this.btnDodaj = new System.Windows.Forms.Button();
             this.btnUsun = new System.Windows.Forms.Button();
-            this.btnHistoria = new System.Windows.Forms.Button();
             this.btnUstawienia = new System.Windows.Forms.Button();
             this.groupBox1 = new System.Windows.Forms.GroupBox();
+            this.btnZmien = new System.Windows.Forms.Button();
             this.label2 = new System.Windows.Forms.Label();
+            this.lbKontakty = new MojCzat.ui.ListaKontaktowUI();
             this.label1 = new System.Windows.Forms.Label();
             this.comboStatus = new System.Windows.Forms.ComboBox();
             this.btnUstawOpis = new System.Windows.Forms.Button();
             this.tbOpis = new System.Windows.Forms.TextBox();
             this.label3 = new System.Windows.Forms.Label();
-            this.btnZmien = new System.Windows.Forms.Button();
-            this.lbKontakty = new MojCzat.ui.ListaKontaktowUI();
             this.groupBox1.SuspendLayout();
             this.SuspendLayout();
             // 
@@ -66,16 +65,6 @@
             this.btnUsun.UseVisualStyleBackColor = true;
             this.btnUsun.Click += new System.EventHandler(this.btnUsun_Click);
             // 
-            // btnHistoria
-            // 
-            this.btnHistoria.Location = new System.Drawing.Point(162, 12);
-            this.btnHistoria.Name = "btnHistoria";
-            this.btnHistoria.Size = new System.Drawing.Size(75, 23);
-            this.btnHistoria.TabIndex = 2;
-            this.btnHistoria.Text = "Historia";
-            this.btnHistoria.UseVisualStyleBackColor = true;
-            this.btnHistoria.Click += new System.EventHandler(this.btnHistoria_Click);
-            // 
             // btnUstawienia
             // 
             this.btnUstawienia.Location = new System.Drawing.Point(243, 12);
@@ -99,6 +88,17 @@
             this.groupBox1.TabIndex = 0;
             this.groupBox1.TabStop = false;
             // 
+            // btnZmien
+            // 
+            this.btnZmien.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.btnZmien.Location = new System.Drawing.Point(119, 378);
+            this.btnZmien.Name = "btnZmien";
+            this.btnZmien.Size = new System.Drawing.Size(64, 23);
+            this.btnZmien.TabIndex = 7;
+            this.btnZmien.Text = "Zmień";
+            this.btnZmien.UseVisualStyleBackColor = true;
+            this.btnZmien.Click += new System.EventHandler(this.btnZmien_Click);
+            // 
             // label2
             // 
             this.label2.AutoSize = true;
@@ -107,6 +107,18 @@
             this.label2.Size = new System.Drawing.Size(49, 13);
             this.label2.TabIndex = 6;
             this.label2.Text = "Kontakty";
+            // 
+            // lbKontakty
+            // 
+            this.lbKontakty.DrawMode = System.Windows.Forms.DrawMode.OwnerDrawFixed;
+            this.lbKontakty.FormattingEnabled = true;
+            this.lbKontakty.ItemHeight = 66;
+            this.lbKontakty.Location = new System.Drawing.Point(11, 38);
+            this.lbKontakty.Name = "lbKontakty";
+            this.lbKontakty.Size = new System.Drawing.Size(293, 334);
+            this.lbKontakty.TabIndex = 0;
+            this.lbKontakty.KeyDown += new System.Windows.Forms.KeyEventHandler(this.lbKontatky_KeyDown);
+            this.lbKontakty.MouseDoubleClick += new System.Windows.Forms.MouseEventHandler(this.lbKontatky_MouseDoubleClick);
             // 
             // label1
             // 
@@ -132,7 +144,7 @@
             // 
             // btnUstawOpis
             // 
-            this.btnUstawOpis.Location = new System.Drawing.Point(169, 458);
+            this.btnUstawOpis.Location = new System.Drawing.Point(259, 461);
             this.btnUstawOpis.Name = "btnUstawOpis";
             this.btnUstawOpis.Size = new System.Drawing.Size(75, 23);
             this.btnUstawOpis.TabIndex = 6;
@@ -143,8 +155,9 @@
             // tbOpis
             // 
             this.tbOpis.Location = new System.Drawing.Point(63, 461);
+            this.tbOpis.MaxLength = 100;
             this.tbOpis.Name = "tbOpis";
-            this.tbOpis.Size = new System.Drawing.Size(100, 20);
+            this.tbOpis.Size = new System.Drawing.Size(190, 20);
             this.tbOpis.TabIndex = 7;
             // 
             // label3
@@ -155,29 +168,6 @@
             this.label3.Size = new System.Drawing.Size(31, 13);
             this.label3.TabIndex = 8;
             this.label3.Text = "Opis:";
-            // 
-            // btnZmien
-            // 
-            this.btnZmien.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.btnZmien.Location = new System.Drawing.Point(119, 378);
-            this.btnZmien.Name = "btnZmien";
-            this.btnZmien.Size = new System.Drawing.Size(64, 23);
-            this.btnZmien.TabIndex = 7;
-            this.btnZmien.Text = "Zmień";
-            this.btnZmien.UseVisualStyleBackColor = true;
-            this.btnZmien.Click += new System.EventHandler(this.btnZmien_Click);
-            // 
-            // lbKontakty
-            // 
-            this.lbKontakty.DrawMode = System.Windows.Forms.DrawMode.OwnerDrawFixed;
-            this.lbKontakty.FormattingEnabled = true;
-            this.lbKontakty.ItemHeight = 66;
-            this.lbKontakty.Location = new System.Drawing.Point(11, 38);
-            this.lbKontakty.Name = "lbKontakty";
-            this.lbKontakty.Size = new System.Drawing.Size(293, 334);
-            this.lbKontakty.TabIndex = 0;
-            this.lbKontakty.KeyDown += new System.Windows.Forms.KeyEventHandler(this.lbKontatky_KeyDown);
-            this.lbKontakty.MouseDoubleClick += new System.Windows.Forms.MouseEventHandler(this.lbKontatky_MouseDoubleClick);
             // 
             // OknoGlowne
             // 
@@ -191,7 +181,7 @@
             this.Controls.Add(this.label1);
             this.Controls.Add(this.groupBox1);
             this.Controls.Add(this.btnUstawienia);
-            this.Controls.Add(this.btnHistoria);
+            this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedSingle;
             this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
             this.MaximizeBox = false;
             this.Name = "OknoGlowne";
@@ -207,7 +197,6 @@
 
         private System.Windows.Forms.Button btnDodaj;
         private System.Windows.Forms.Button btnUsun;
-        private System.Windows.Forms.Button btnHistoria;
         private System.Windows.Forms.Button btnUstawienia;
         private System.Windows.Forms.GroupBox groupBox1;
         private System.Windows.Forms.Label label2;

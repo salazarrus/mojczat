@@ -51,9 +51,11 @@
             // tbWiadomosc
             // 
             this.tbWiadomosc.Location = new System.Drawing.Point(12, 271);
+            this.tbWiadomosc.MaxLength = 500;
             this.tbWiadomosc.Multiline = true;
             this.tbWiadomosc.Name = "tbWiadomosc";
-            this.tbWiadomosc.Size = new System.Drawing.Size(389, 81);
+            this.tbWiadomosc.ScrollBars = System.Windows.Forms.ScrollBars.Vertical;
+            this.tbWiadomosc.Size = new System.Drawing.Size(403, 81);
             this.tbWiadomosc.TabIndex = 0;
             this.tbWiadomosc.KeyDown += new System.Windows.Forms.KeyEventHandler(this.tbWiadomosc_KeyDown);
             // 
@@ -104,6 +106,7 @@
             this.Controls.Add(this.btnWyslij);
             this.Controls.Add(this.tbWiadomosc);
             this.Controls.Add(this.tbCzat);
+            this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedSingle;
             this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
             this.KeyPreview = true;
             this.MaximizeBox = false;
