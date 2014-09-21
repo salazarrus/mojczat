@@ -29,10 +29,10 @@ namespace MojCzat.komunikacja
         Centrala centrala;
         Ustawienia ustawienia;
         Mapownik mapownik;
+        Strumieniownia strumieniownia;
+
         const int DlugoscNaglowka = 5; // 1 bajt na rodzaj komunikatu, 4 na dlugosc
 
-        Dictionary<string, PolaczenieZasadnicze> polaczeniaZasadnicze = new Dictionary<string, PolaczenieZasadnicze>();
-        Dictionary<string, PolaczeniePlikowe> polaczeniaPlikowe = new Dictionary<string, PolaczeniePlikowe>();
 
         public Protokol(Mapownik mapownik, Ustawienia ustawienia) {
             this.wiadomosciownia = new Wiadomosciownia(new CzytanieSkonczone(czekajNaZapytanie)); ;
@@ -48,6 +48,7 @@ namespace MojCzat.komunikacja
             centrala.OtwartoPolaczenie += centrala_OtwartoPolaczenie;
             centrala.ZamknietoPolaczenie += centrala_ZamknietoPolaczenie;
 
+            strumieniownia = new Strumieniownia(mapownik, centrala);
             this.plikownia = new Plikownia();
         }
 
@@ -61,25 +62,19 @@ namespace MojCzat.komunikacja
         public event ZamknietoPolaczenieZasadnicze ZamknietoPolaczenieZasadnicze;
 
         public void Polacz(string id)
-        { 
-            var guid = centrala.Polacz(mapownik[id]);
-            if (guid == null) { return; }
-            if (!polaczeniaZasadnicze.Values.Any(p => p.IdUzytkownika == id))
-            { polaczeniaZasadnicze.Add(guid, new PolaczenieZasadnicze() { IdUzytkownika = id }); }
-            else
-            { polaczeniaPlikowe.Add(guid, new PolaczeniePlikowe() { IdUzytkownika = id });  }
+        {
+            strumieniownia.Polacz(id);
         }
 
         public void Rozlacz(string id) 
         {
-            polaczeniaZasadnicze.Where(k => k.Value.IdUzytkownika == id).ToList().ForEach(
-                k => centrala.Rozlacz(k.Key));
+            strumieniownia.RozlaczUzytkownika(id);
         }
 
         public void Start()
         { centrala.Start(); }
-        
-        public void Stop() 
+
+        public void Stop()
         {
             centrala.OtwartoPolaczenie -= centrala_OtwartoPolaczenie;
             centrala.ZamknietoPolaczenie -= centrala_ZamknietoPolaczenie;
@@ -93,7 +88,7 @@ namespace MojCzat.komunikacja
         { wiadomosciownia.UsunUzytkownika(idUzytkownika); }
 
         public void WyslijWiadomosc(String idRozmowcy, byte rodzaj, String wiadomosc)
-        { wiadomosciownia.WyslijWiadomosc(strumienZasadniczy(idRozmowcy) ,idRozmowcy, stworzKomunikat(rodzaj, wiadomosc)); }
+        { wiadomosciownia.WyslijWiadomosc( strumieniownia.StrumienZasadniczy(idRozmowcy) ,idRozmowcy, stworzKomunikat(rodzaj, wiadomosc)); }
 
         public void WyslijPlik(String idRozmowcy, String sciezka)
         { plikownia.Wyslij(idRozmowcy, sciezka); }
@@ -105,73 +100,21 @@ namespace MojCzat.komunikacja
         void czekajNaZapytanie(string guid)
         {
             Trace.TraceInformation("Czekamy na zapytanie ");
-                        
-            var kanal = polaczeniaZasadnicze[guid];
+
+            var polaczenie = strumieniownia.DajPolaczenieZasadnicze(guid); 
             var wynik = new StatusObsluzZapytanie() { guidStrumienia = guid, Naglowek = new byte[DlugoscNaglowka] };
             
-            kanal.Strumien.BeginRead(wynik.Naglowek, 0, DlugoscNaglowka, obsluzZapytanie, wynik);
+            polaczenie.Strumien.BeginRead(wynik.Naglowek, 0, DlugoscNaglowka, obsluzZapytanie, wynik);
         }
 
-        void centrala_ZamknietoPolaczenie(string guid)
-        {
-            if (polaczeniaZasadnicze.ContainsKey(guid)) {
-                var kanal = polaczeniaZasadnicze[guid];
-                polaczeniaZasadnicze.Remove(guid);
-                polaczeniaPlikowe.Where(p => p.Value.IdUzytkownika == kanal.IdUzytkownika).ToList().
-                    ForEach(p => centrala.Rozlacz(p.Key));
-                if (ZamknietoPolaczenieZasadnicze != null)
-                { ZamknietoPolaczenieZasadnicze(kanal.IdUzytkownika); }
-            
-            }
-            if (polaczeniaPlikowe.ContainsKey(guid)) { polaczeniaPlikowe.Remove(guid); }
-        }
-
-        void centrala_OtwartoPolaczenie(string guid, Stream strumien, IPAddress ip)
-        {
-            string idUzytkownika;
-            idUzytkownika = mapownik.CzyZnasz(ip) ? mapownik[ip] : ip.ToString();
-            
-            Trace.TraceInformation("otwarto polaczenie");
-
-            if (polaczeniaZasadnicze.ContainsKey(guid)) 
-            {
-                var kanal = polaczeniaZasadnicze[guid];
-                kanal.Strumien = strumien;
-                if (OtwartoPolaczenieZasadnicze != null)
-                { OtwartoPolaczenieZasadnicze(idUzytkownika); }
-                
-            }
-            else if (polaczeniaPlikowe.ContainsKey(guid))
-            {
-                var kanal = polaczeniaPlikowe[guid];
-                kanal.Strumien = strumien;
-            }
-            else if (!polaczeniaZasadnicze.Values.Any(p => p.IdUzytkownika == idUzytkownika))
-            {
-                polaczeniaZasadnicze.Add(guid, new PolaczenieZasadnicze() { IdUzytkownika = idUzytkownika, Strumien = strumien });
-
-                if (OtwartoPolaczenieZasadnicze != null)
-                { OtwartoPolaczenieZasadnicze(idUzytkownika); }
-            }
-            else
-            {
-                polaczeniaPlikowe.Add(guid, new PolaczeniePlikowe() { IdUzytkownika = guid, Strumien = strumien });
-            }
-            czekajNaZapytanie(guid);
-        }
-
-        Stream strumienZasadniczy(string idUzytkownika) {
-            return polaczeniaZasadnicze.Values.Where(p => p.IdUzytkownika == idUzytkownika).
-                Select(p => p.Strumien).SingleOrDefault();
-        }
-
+     
         void obsluzZapytanie(IAsyncResult wynik)
         {
             var status = (StatusObsluzZapytanie)wynik.AsyncState;
             Trace.TraceInformation("Przyszlo nowe zapytanie: " + status.Naglowek[0].ToString());
             int dlugoscWiadomosci = BitConverter.ToInt32(status.Naglowek, 1);
-            if (!polaczeniaZasadnicze.ContainsKey(status.guidStrumienia)) { return; }
-            var kanal = polaczeniaZasadnicze[status.guidStrumienia];
+            if (!strumieniownia.CzyZnasz(status.guidStrumienia)) { return; }
+            var kanal = strumieniownia.DajPolaczenieZasadnicze(status.guidStrumienia);
 
             try { kanal.Strumien.EndRead(wynik); }
             catch // zostalismy rozlaczeni
@@ -205,6 +148,58 @@ namespace MojCzat.komunikacja
             }
         }
 
+        void centrala_OtwartoPolaczenie(string guid, Stream strumien, IPAddress ip)
+        {
+            string idUzytkownika;
+            idUzytkownika = mapownik.CzyZnasz(ip) ? mapownik[ip] : ip.ToString();
+
+            Trace.TraceInformation("otwarto polaczenie");
+            var polaczenie = strumieniownia.DajPolaczenieZasadnicze(guid);
+            
+            if (polaczenie is PolaczenieZasadnicze)
+            {
+                polaczenie.Strumien = strumien;
+                if (OtwartoPolaczenieZasadnicze != null)
+                { OtwartoPolaczenieZasadnicze(idUzytkownika); }
+
+            }
+            else if (polaczenie is PolaczeniePlikowe)
+            {
+                polaczenie.Strumien = strumien;
+            }
+            else if (!strumieniownia.IstniejePolaczenieZasadnicze(idUzytkownika))
+            {
+                 strumieniownia.DodajPolaczenie(guid, new PolaczenieZasadnicze() 
+                    { IdUzytkownika = idUzytkownika, Strumien = strumien });
+
+                if (OtwartoPolaczenieZasadnicze != null)
+                { OtwartoPolaczenieZasadnicze(idUzytkownika); }
+            }
+            else
+            {
+                strumieniownia.DodajPolaczenie(guid, new PolaczeniePlikowe() 
+                    { IdUzytkownika = guid, Strumien = strumien });
+            }
+            czekajNaZapytanie(guid);
+        }
+
+
+
+        void centrala_ZamknietoPolaczenie(string guid)
+        {
+            if ( strumieniownia.DajPolaczenieZasadnicze(guid) != null)
+            {
+                var kanal = strumieniownia.DajPolaczenieZasadnicze(guid);
+                strumieniownia.Usun(guid);
+                strumieniownia.RozlaczPolaczeniaPlikowe(kanal.IdUzytkownika);
+
+                if (ZamknietoPolaczenieZasadnicze != null)
+                { ZamknietoPolaczenieZasadnicze(kanal.IdUzytkownika); }
+
+            }
+            if (strumieniownia.DajPolaczeniePlikowe(guid) != null) { strumieniownia.Usun(guid); }
+        }
+
 
         byte[] stworzKomunikat(byte rodzaj, string wiadomosc)
         {
@@ -217,20 +212,7 @@ namespace MojCzat.komunikacja
             Array.Copy(dlugoscZawartosciNaglowek, 0, bajty, 1, dlugoscZawartosciNaglowek.Length);
             Array.Copy(bajtyZawartosc, 0, bajty, DlugoscNaglowka, bajtyZawartosc.Length);
             return bajty;
-        }
-
-        class PolaczenieZasadnicze 
-        {
-            public Stream Strumien { get; set; }
-            public string IdUzytkownika { get; set; }
-        }
-
-        class PolaczeniePlikowe
-        {
-            public Stream Strumien { get; set; }
-            public string IdUzytkownika { get; set; }
-            public string Plik { get; set; }
-        }
+        }    
 
         class StatusObsluzZapytanie
         {
