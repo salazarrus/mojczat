@@ -48,6 +48,8 @@ namespace MojCzat.komunikacja
         /// </summary>
         public event ZamknietoPolaczenieZasadnicze ZamknietoPolaczenieZasadnicze;
 
+        public event NawiazalismyPolaczeniePlikowe NawiazalismyPolaczeniePlikowe;
+
         /// <summary>
         /// Strumien jest gotowy do czytania z niego
         /// </summary>
@@ -80,14 +82,22 @@ namespace MojCzat.komunikacja
         /// Polacz sie z uzytkownikiem
         /// </summary>
         /// <param name="idUzytkownika">Identyfikator uzytkownika</param>
-        public void Polacz(string idUzytkownika)
+        public string NawiazPolaczenieZasadnicze(string idUzytkownika)
+        {
+            var idPolaczenia = centrala.Polacz(mapownik[idUzytkownika]);
+            if (idPolaczenia == null) { return null; }
+            if (!polaczeniaZasadnicze.Values.Any(p => p.IdUzytkownika == idUzytkownika))
+            { polaczeniaZasadnicze.Add(idPolaczenia, new PolaczenieZasadnicze() { IdUzytkownika = idUzytkownika }); }
+            return idPolaczenia;
+        }
+
+        public string NawiazPolaczeniePlikowe(string sciezkaPliku, string idUzytkownika) 
         {
             var idStrumienia = centrala.Polacz(mapownik[idUzytkownika]);
-            if (idStrumienia == null) { return; }
-            if (!polaczeniaZasadnicze.Values.Any(p => p.IdUzytkownika == idUzytkownika))
-            { polaczeniaZasadnicze.Add(idStrumienia, new PolaczenieZasadnicze() { IdUzytkownika = idUzytkownika }); }
-            else
-            { polaczeniaPlikowe.Add(idStrumienia, new PolaczeniePlikowe() { IdUzytkownika = idUzytkownika }); }
+            Trace.TraceInformation("NawiazPolaczeniePlikowe " + idStrumienia);
+            polaczeniaPlikowe.Add(idStrumienia, new PolaczeniePlikowe()
+                { IdUzytkownika = idUzytkownika, Plik=sciezkaPliku });
+            return idStrumienia;
         }
 
         /// <summary>
@@ -107,13 +117,13 @@ namespace MojCzat.komunikacja
                 k => centrala.Rozlacz(k.Key));
         }
 
-        public IPolaczenie DajPolaczenie(string idStrumienia)
+        public IPolaczenie DajPolaczenie(string idPolaczenia)
         {
-            if(polaczeniaZasadnicze.ContainsKey(idStrumienia))
-            { return polaczeniaZasadnicze[idStrumienia]; }
+            if(polaczeniaZasadnicze.ContainsKey(idPolaczenia))
+            { return polaczeniaZasadnicze[idPolaczenia]; }
             
-            if (polaczeniaPlikowe.ContainsKey(idStrumienia))
-            { return polaczeniaZasadnicze[idStrumienia]; }
+            if (polaczeniaPlikowe.ContainsKey(idPolaczenia))
+            { return polaczeniaPlikowe[idPolaczenia]; }
          
             return null;
         }
@@ -121,12 +131,12 @@ namespace MojCzat.komunikacja
         /// <summary>
         /// Czy istnieje taki strumien?
         /// </summary>
-        /// <param name="idStrumienia"></param>
+        /// <param name="idPolaczenia"></param>
         /// <returns></returns>
-        public bool CzyZnasz(string idStrumienia) 
+        public bool CzyZnasz(string idPolaczenia) 
         {
-            return polaczeniaZasadnicze.ContainsKey(idStrumienia)
-                || polaczeniaPlikowe.ContainsKey(idStrumienia);
+            return polaczeniaZasadnicze.ContainsKey(idPolaczenia)
+                || polaczeniaPlikowe.ContainsKey(idPolaczenia);
         }
 
         /// <summary>
@@ -146,40 +156,48 @@ namespace MojCzat.komunikacja
             if (polaczenie is PolaczenieZasadnicze)
             { polaczeniaZasadnicze.Add(idPolaczenie, (PolaczenieZasadnicze)polaczenie); }
             else if (polaczenie is PolaczeniePlikowe)
-            { polaczeniaPlikowe.Add(idPolaczenie, (PolaczeniePlikowe)polaczenie); }
+            { 
+                polaczeniaPlikowe.Add(idPolaczenie, (PolaczeniePlikowe)polaczenie);
+                Trace.TraceInformation("dodajPolaczenie " + idPolaczenie);
+            }
         }
         
         // centrala informuje, ze otwarto nowe polaczenie
-        void centrala_OtwartoPolaczenie(string idStrumienia, Stream strumien, IPAddress ip)
+        void centrala_OtwartoPolaczenie(string idPolaczenia, Stream strumien, IPAddress ip)
         {
             string idUzytkownika;
             idUzytkownika = mapownik.CzyZnasz(ip) ? mapownik[ip] : ip.ToString();
 
-            Trace.TraceInformation("otwarto polaczenie");
-            var polaczenie = DajPolaczenie(idStrumienia);
-
-            if (polaczenie is PolaczenieZasadnicze)
+            
+            var polaczenie = DajPolaczenie(idPolaczenia);
+            Trace.TraceInformation("otwarto polaczenie " + polaczenie.IdUzytkownika);
+            if (polaczenie is PolaczenieZasadnicze) // z naszej strony
             {
                 polaczenie.Strumien = strumien;
                 if (OtwartoPolaczenieZasadnicze != null)
                 { OtwartoPolaczenieZasadnicze(idUzytkownika); }
 
             }
-            else if (polaczenie is PolaczeniePlikowe) { polaczenie.Strumien = strumien; }
-            else if (DajStrumienZasadniczy(idUzytkownika) == null)
+            else if (polaczenie is PolaczeniePlikowe) { // z naszej strony 
+                polaczenie.Strumien = strumien;
+                Trace.TraceInformation("nawiazalismy polaczenie plikowe");
+                if (NawiazalismyPolaczeniePlikowe != null)
+                { NawiazalismyPolaczeniePlikowe(idPolaczenia); }
+            }
+            else if (DajStrumienZasadniczy(idUzytkownika) == null) // z cudzej strony
             {
-                dodajPolaczenie(idStrumienia, new PolaczenieZasadnicze() 
+                dodajPolaczenie(idPolaczenia, new PolaczenieZasadnicze() 
                     { IdUzytkownika = idUzytkownika, Strumien = strumien });
 
                 if (OtwartoPolaczenieZasadnicze != null)
                 { OtwartoPolaczenieZasadnicze(idUzytkownika); }
             }
-            else
+            else // z cudziej strony
             {
-                dodajPolaczenie(idStrumienia, new PolaczeniePlikowe() 
-                    { IdUzytkownika = idStrumienia, Strumien = strumien });
+                dodajPolaczenie(idPolaczenia, new PolaczeniePlikowe() 
+                    { IdUzytkownika = idPolaczenia, Strumien = strumien });
             }
-            if (GotowyDoOdbioru != null) { GotowyDoOdbioru(idStrumienia); }
+            if (GotowyDoOdbioru != null) { GotowyDoOdbioru(idPolaczenia); }
         }
         
         //centrala informuje o zamknieciu polaczenie

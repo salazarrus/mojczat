@@ -20,6 +20,8 @@ namespace MojCzat.komunikacja
     // delegata definiujaca funkcje obslugujace zdarzenie NowaWiadomosc
     public delegate void NowaWiadomosc(string id, TypWiadomosci rodzaj , string wiadomosc);
 
+    public delegate void PlikZaoferowano(string idUzytkownika, string nazwa);
+    
     public delegate void PlikWyslano(string id, string nazwa);
 
     public delegate void PlikOdebrano(string id, string nazwa);
@@ -66,9 +68,16 @@ namespace MojCzat.komunikacja
         /// <summary>
         /// Otwrzymalismy nowa wiadomosc
         /// </summary>
-        public event NowaWiadomosc NowaWiadomosc{
+        public event NowaWiadomosc NowaWiadomosc
+        {
             add { protokol.NowaWiadomosc += value; }
             remove { protokol.NowaWiadomosc -= value; }
+        }
+
+        public event PlikZaoferowano PlikZaoferowano 
+        {
+            add { protokol.PlikZaoferowano += value; }
+            remove { protokol.PlikZaoferowano -= value; }
         }
 
         /// <summary>

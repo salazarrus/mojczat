@@ -140,12 +140,22 @@ namespace MojCzat.ui
             komunikator.NowaWiadomosc += komunikator_NowaWiadomosc;
             // zapisujemy sie jako sluchacz wydarzenia ZmianaStanuPolaczenia
             komunikator.ZmianaStanuPolaczenia += komunikator_ZmianaStanuPolaczenia;
+            komunikator.PlikZaoferowano += komunikator_PlikZaoferowano;
 
             komunikator.Opis = ustawienia.Opis;
             // nawiaz polaczenia z kontaktami
             komunikator.Start();
            
             oknaCzatu.Values.ToList().ForEach(o => o.Komunikator = komunikator);
+        }
+
+        void komunikator_PlikZaoferowano(string idUzytkownika, string nazwa)
+        {
+            var wynik = new ZachowajPlik(nazwa).ShowDialog(this);
+            if (wynik == System.Windows.Forms.DialogResult.OK) 
+            { 
+                
+            }
         }
 
         // ustawiony status "Niedostepny"

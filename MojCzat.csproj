@@ -51,6 +51,7 @@
     <Compile Include="komunikacja\Buforownia.cs" />
     <Compile Include="komunikacja\Centrala.cs" />
     <Compile Include="komunikacja\CentralaSSL.cs" />
+    <Compile Include="komunikacja\Komunikat.cs" />
     <Compile Include="komunikacja\Komunikator.cs" />
     <Compile Include="komunikacja\Mapownik.cs" />
     <Compile Include="komunikacja\Plikownia.cs" />
@@ -93,6 +94,12 @@
     <Compile Include="ui\OknoUstawienia.Designer.cs">
       <DependentUpon>OknoUstawienia.cs</DependentUpon>
     </Compile>
+    <Compile Include="ui\ZachowajPlik.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="ui\ZachowajPlik.Designer.cs">
+      <DependentUpon>ZachowajPlik.cs</DependentUpon>
+    </Compile>
     <Compile Include="uzytki\Xml.cs" />
     <EmbeddedResource Include="Properties\Resources.resx">
       <Generator>ResXFileCodeGenerator</Generator>
@@ -118,6 +125,9 @@
     </EmbeddedResource>
     <EmbeddedResource Include="ui\OknoUstawienia.resx">
       <DependentUpon>OknoUstawienia.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="ui\ZachowajPlik.resx">
+      <DependentUpon>ZachowajPlik.cs</DependentUpon>
     </EmbeddedResource>
     <None Include="App.config" />
     <None Include="Properties\Settings.settings">
