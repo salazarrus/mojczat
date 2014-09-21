@@ -162,13 +162,12 @@ namespace MojCzat.komunikacja
         {
             var polaczenie = (PolaczeniePlikowe)strumieniownia.DajPolaczenie(idPolaczenia);
             plikownia.OferujPlik(polaczenie.IdUzytkownika, polaczenie.Plik, polaczenie.Strumien);
-            czekajNaZapytanie(idPolaczenia);
         }   
 
         // Czekaj (pasywnie) na zapytania i wiadomosci
         void czekajNaZapytanie(string idPolaczenia)
         {
-            Trace.TraceInformation("Czekamy na zapytanie ");
+            Trace.TraceInformation("Protokol.czekajNaZapytanie " + idPolaczenia);
             var polaczenie = strumieniownia.DajPolaczenie(idPolaczenia); 
             var wynik = new StatusObsluzZapytanie() { IdStrumienia = idPolaczenia, Naglowek = new byte[DlugoscNaglowka] };
             polaczenie.Strumien.BeginRead(wynik.Naglowek, 0, DlugoscNaglowka, obsluzZapytanie, wynik);
@@ -178,11 +177,11 @@ namespace MojCzat.komunikacja
         void obsluzZapytanie(IAsyncResult wynik)
         {
             var status = (StatusObsluzZapytanie)wynik.AsyncState;
-            Trace.TraceInformation("Przyszlo nowe zapytanie: " + status.Naglowek[0].ToString());
+            Trace.TraceInformation("Protoko.obsluzZapytanie " + status.Naglowek[0].ToString() + " " + status.IdStrumienia);
             int dlugoscWiadomosci = BitConverter.ToInt32(status.Naglowek, 1);
             if (!strumieniownia.CzyZnasz(status.IdStrumienia)) { return; }
             var polaczenie = strumieniownia.DajPolaczenie(status.IdStrumienia);
-
+            
             try { polaczenie.Strumien.EndRead(wynik); }
             catch // zostalismy rozlaczeni
             {  strumieniownia.ToPolaczenieNieDziala(status.IdStrumienia);

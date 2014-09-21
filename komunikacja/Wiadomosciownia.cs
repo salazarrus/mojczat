@@ -139,7 +139,7 @@ namespace MojCzat.komunikacja
         {
             var status = (WyslijKomunikatStatus)wynik.AsyncState;
             status.Strumien.EndWrite(wynik);
-            Trace.TraceInformation(String.Format("Komunikat wyslany"));
+            Trace.TraceInformation(String.Format("Wiadomosciownia.komunikatWyslany"));
             lock (zamkiWysylania[status.IdNadawcy])
             { wysylanieWToku[status.IdNadawcy] = false; }
             wysylajZKolejki(status.Strumien, status.IdNadawcy);

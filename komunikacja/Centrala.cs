@@ -93,23 +93,20 @@ namespace MojCzat.komunikacja
         /// </summary>
         /// <param name="ip">adres IP</param>
         /// <returns>identyfikator, ktory otrzyma polaczenie</returns>
-        public string Polacz(IPAddress ip)
+        public void Polacz(string idPolaczenia ,IPAddress ip)
         {
             // tworzymy nowe polaczenie 
-            Trace.TraceInformation("nawiazujemy polaczenie");
-            var idStrumienia = Guid.NewGuid().ToString();
+            Trace.TraceInformation("Centrala.Polacz " + idPolaczenia);
             var klient = new TcpClient();
             int portJego;
             int.TryParse(ConfigurationManager.AppSettings["portJego"], out portJego);
             var wynik = klient.BeginConnect(ip, portJego, new AsyncCallback(nawiazPolaczenieWynik),
-                new NawiazPolaczenieStatus() { IdStrumienia = idStrumienia, Polaczenie = klient });
+                new NawiazPolaczenieStatus() { IdStrumienia = idPolaczenia, Polaczenie = klient });
             
             if (!wynik.AsyncWaitHandle.WaitOne(POLOCZENIE_TIMEOUT, true)) 
             {
                 Trace.TraceInformation("timeout nawiaz polaczenie");
-                return null;
             }
-            return idStrumienia;
         }
 
         /// <summary>
@@ -166,7 +163,7 @@ namespace MojCzat.komunikacja
         // zachowujemy polaczenie na pozniej
         void zachowajNowePolaczenie(TcpClient polaczenie, string idStrumienia ,Stream strumien)
         {
-            Trace.TraceInformation("Zachowujemy polaczenie");
+            Trace.TraceInformation("Centrala.zachowajNowePolaczenie " + idStrumienia);
 
             polaczenia.Add(idStrumienia, polaczenie);
             strumienie.Add(idStrumienia, strumien);
