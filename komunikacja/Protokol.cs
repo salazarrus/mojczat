@@ -157,7 +157,7 @@ namespace MojCzat.komunikacja
         void czekajNaZapytanie(string idStrumienia)
         {
             Trace.TraceInformation("Czekamy na zapytanie ");
-            var polaczenie = strumieniownia.DajPolaczenieZasadnicze(idStrumienia); 
+            var polaczenie = strumieniownia.DajPolaczenie(idStrumienia); 
             var wynik = new StatusObsluzZapytanie() { IdStrumienia = idStrumienia, Naglowek = new byte[DlugoscNaglowka] };
             polaczenie.Strumien.BeginRead(wynik.Naglowek, 0, DlugoscNaglowka, obsluzZapytanie, wynik);
         }
@@ -169,7 +169,7 @@ namespace MojCzat.komunikacja
             Trace.TraceInformation("Przyszlo nowe zapytanie: " + status.Naglowek[0].ToString());
             int dlugoscWiadomosci = BitConverter.ToInt32(status.Naglowek, 1);
             if (!strumieniownia.CzyZnasz(status.IdStrumienia)) { return; }
-            var polaczenie = strumieniownia.DajPolaczenieZasadnicze(status.IdStrumienia);
+            var polaczenie = strumieniownia.DajPolaczenie(status.IdStrumienia);
 
             try { polaczenie.Strumien.EndRead(wynik); }
             catch // zostalismy rozlaczeni

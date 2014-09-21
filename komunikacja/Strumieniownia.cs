@@ -107,15 +107,15 @@ namespace MojCzat.komunikacja
                 k => centrala.Rozlacz(k.Key));
         }
 
-        /// <summary>
-        /// Daj polaczenie na wiadomosci do uzytkownika
-        /// </summary>
-        /// <param name="idStrumienia">Identyfikator strumienia</param>
-        /// <returns></returns>
-        public IPolaczenie DajPolaczenieZasadnicze(string idStrumienia)
+        public IPolaczenie DajPolaczenie(string idStrumienia)
         {
-            return polaczeniaZasadnicze.ContainsKey(idStrumienia) ? 
-                polaczeniaZasadnicze[idStrumienia] : null;
+            if(polaczeniaZasadnicze.ContainsKey(idStrumienia))
+            { return polaczeniaZasadnicze[idStrumienia]; }
+            
+            if (polaczeniaPlikowe.ContainsKey(idStrumienia))
+            { return polaczeniaZasadnicze[idStrumienia]; }
+         
+            return null;
         }
 
         /// <summary>
@@ -125,7 +125,8 @@ namespace MojCzat.komunikacja
         /// <returns></returns>
         public bool CzyZnasz(string idStrumienia) 
         {
-            return polaczeniaZasadnicze.ContainsKey(idStrumienia);
+            return polaczeniaZasadnicze.ContainsKey(idStrumienia)
+                || polaczeniaPlikowe.ContainsKey(idStrumienia);
         }
 
         /// <summary>
@@ -155,7 +156,7 @@ namespace MojCzat.komunikacja
             idUzytkownika = mapownik.CzyZnasz(ip) ? mapownik[ip] : ip.ToString();
 
             Trace.TraceInformation("otwarto polaczenie");
-            var polaczenie = DajPolaczenieZasadnicze(idStrumienia);
+            var polaczenie = DajPolaczenie(idStrumienia);
 
             if (polaczenie is PolaczenieZasadnicze)
             {
@@ -184,9 +185,9 @@ namespace MojCzat.komunikacja
         //centrala informuje o zamknieciu polaczenie
         void centrala_ZamknietoPolaczenie(string idPolaczenia)
         {
-            if (DajPolaczenieZasadnicze(idPolaczenia) != null)
+            var polaczenie = DajPolaczenie(idPolaczenia);
+            if (polaczenie is PolaczenieZasadnicze)
             {
-                var polaczenie = DajPolaczenieZasadnicze(idPolaczenia);
                 usunStrumien(idPolaczenia);
                 rozlaczPolaczeniaPlikowe(polaczenie.IdUzytkownika);
 
@@ -194,7 +195,7 @@ namespace MojCzat.komunikacja
                 { ZamknietoPolaczenieZasadnicze(polaczenie.IdUzytkownika); }
 
             }
-            if (dajPolaczeniePlikowe(idPolaczenia) != null) { usunStrumien(idPolaczenia); }
+            if (polaczenie is PolaczeniePlikowe) { usunStrumien(idPolaczenia); }
         }
 
         // rozlacz polaczenia do przesylu plikow przez/do uzytkownika
