@@ -15,10 +15,17 @@ namespace MojCzat.komunikacja
     {
         Mapownik mapownik;
         Centrala centrala;
+
+        // polaczenia wykorzystywane do przesylania wiadomosci tekstowych
         Dictionary<string, PolaczenieZasadnicze> polaczeniaZasadnicze = new Dictionary<string, PolaczenieZasadnicze>();
+        // polaczenia do wysylania plikow
         Dictionary<string, PolaczeniePlikowe> polaczeniaPlikowe = new Dictionary<string, PolaczeniePlikowe>();
 
-
+        /// <summary>
+        /// Konstruktor
+        /// </summary>
+        /// <param name="mapownik"></param>
+        /// <param name="ustawienia"></param>
         public Strumieniownia(Mapownik mapownik, Ustawienia ustawienia)
         {
             this.mapownik = mapownik;
@@ -28,15 +35,30 @@ namespace MojCzat.komunikacja
             centrala.ZamknietoPolaczenie += centrala_ZamknietoPolaczenie;
         }
 
+        /// <summary>
+        /// Polaczono sie z dotychczas niedostepnym uzytkownikiem
+        /// </summary>
         public event OtwartoPolaczenieZasadnicze OtwartoPolaczenieZasadnicze;
 
+        /// <summary>
+        /// Wszystkie polaczenia do uzytkownika zostaly zamkniete
+        /// </summary>
         public event ZamknietoPolaczenieZasadnicze ZamknietoPolaczenieZasadnicze;
 
+        /// <summary>
+        /// Strumien jest gotowy do czytania z niego
+        /// </summary>
         public event GotowyDoOdbioru GotowyDoOdbioru;
 
+        /// <summary>
+        /// Ropocznij dzialanie
+        /// </summary>
         public void Start()
         { centrala.Start(); }
 
+        /// <summary>
+        /// Zakoncz dzialanie
+        /// </summary>
         public void Stop()
         {
             centrala.OtwartoPolaczenie -= centrala_OtwartoPolaczenie;
@@ -44,71 +66,95 @@ namespace MojCzat.komunikacja
             centrala.Stop();
         }
 
-        public void ToNieDziala(string guidStrumienia)
+        /// <summary>
+        /// Zglos, ze dane polaczenie nie dziala
+        /// </summary>
+        /// <param name="idStrumienia">Identyfikator strumienia</param>
+        public void ToPolaczenieNieDziala(string idStrumienia)
         {
-            centrala.ToNieDziala(guidStrumienia);
+            centrala.ToNieDziala(idStrumienia);
         }
 
-        public void Polacz(string id)
+        /// <summary>
+        /// Polacz sie z uzytkownikiem
+        /// </summary>
+        /// <param name="idUzytkownika">Identyfikator uzytkownika</param>
+        public void Polacz(string idUzytkownika)
         {
-            var guid = centrala.Polacz(mapownik[id]);
-            if (guid == null) { return; }
-            if (!polaczeniaZasadnicze.Values.Any(p => p.IdUzytkownika == id))
-            { polaczeniaZasadnicze.Add(guid, new PolaczenieZasadnicze() { IdUzytkownika = id }); }
+            var idStrumienia = centrala.Polacz(mapownik[idUzytkownika]);
+            if (idStrumienia == null) { return; }
+            if (!polaczeniaZasadnicze.Values.Any(p => p.IdUzytkownika == idUzytkownika))
+            { polaczeniaZasadnicze.Add(idStrumienia, new PolaczenieZasadnicze() { IdUzytkownika = idUzytkownika }); }
             else
-            { polaczeniaPlikowe.Add(guid, new PolaczeniePlikowe() { IdUzytkownika = id }); }
-        }
-        public void Rozlacz(string guidStrumienia)
-        {
-            centrala.Rozlacz(guidStrumienia);
+            { polaczeniaPlikowe.Add(idStrumienia, new PolaczeniePlikowe() { IdUzytkownika = idUzytkownika }); }
         }
 
+        /// <summary>
+        /// Zamknij strumien
+        /// </summary>
+        /// <param name="idStrumienia">Identyfikator strumienia</param>
+        public void Rozlacz(string idStrumienia)
+        { centrala.Rozlacz(idStrumienia);}
 
-        public void RozlaczUzytkownika(string id)
+        /// <summary>
+        /// Zamknij polaczenia do uzytkownika
+        /// </summary>
+        /// <param name="idUzytkownika">Identyfikator uzytkownika</param>
+        public void RozlaczUzytkownika(string idUzytkownika)
         {
-            polaczeniaZasadnicze.Where(k => k.Value.IdUzytkownika == id).ToList().ForEach(
+            polaczeniaZasadnicze.Where(k => k.Value.IdUzytkownika == idUzytkownika).ToList().ForEach(
                 k => centrala.Rozlacz(k.Key));
         }
 
-        public IPolaczenie DajPolaczenieZasadnicze(string guid)
+        /// <summary>
+        /// Daj polaczenie na wiadomosci do uzytkownika
+        /// </summary>
+        /// <param name="idStrumienia">Identyfikator strumienia</param>
+        /// <returns></returns>
+        public IPolaczenie DajPolaczenieZasadnicze(string idStrumienia)
         {
-            return polaczeniaZasadnicze.ContainsKey(guid) ? 
-                polaczeniaZasadnicze[guid] : null;
+            return polaczeniaZasadnicze.ContainsKey(idStrumienia) ? 
+                polaczeniaZasadnicze[idStrumienia] : null;
         }
 
-
+        /// <summary>
+        /// Czy istnieje taki strumien?
+        /// </summary>
+        /// <param name="guid"></param>
+        /// <returns></returns>
         public bool CzyZnasz(string guid) 
         {
             return polaczeniaZasadnicze.ContainsKey(guid);
         }
 
-
-        public Stream StrumienZasadniczy(string idUzytkownika)
+        /// <summary>
+        /// Daj strumien na wiadomosci do uzytkownika
+        /// </summary>
+        /// <param name="idUzytkownika"></param>
+        /// <returns></returns>
+        public Stream DajStrumienZasadniczy(string idUzytkownika)
         {
             return polaczeniaZasadnicze.Values.Where(p => p.IdUzytkownika == idUzytkownika).
                 Select(p => p.Strumien).SingleOrDefault();
         }
 
-        void DodajPolaczenie(string guid, IPolaczenie polaczenie)
+        // Dodaj nowe polaczenie 
+        void dodajPolaczenie(string idPolaczenie, IPolaczenie polaczenie)
         {
             if (polaczenie is PolaczenieZasadnicze)
-            { polaczeniaZasadnicze.Add(guid, (PolaczenieZasadnicze)polaczenie); }
+            { polaczeniaZasadnicze.Add(idPolaczenie, (PolaczenieZasadnicze)polaczenie); }
             else if (polaczenie is PolaczeniePlikowe)
-            { polaczeniaPlikowe.Add(guid, (PolaczeniePlikowe)polaczenie); }
+            { polaczeniaPlikowe.Add(idPolaczenie, (PolaczeniePlikowe)polaczenie); }
         }
-
-        bool IstniejePolaczenieZasadnicze(string idUzytkownika)
-        {
-            return polaczeniaZasadnicze.Values.Any(p => p.IdUzytkownika == idUzytkownika);
-        }
-
-        void centrala_OtwartoPolaczenie(string guid, Stream strumien, IPAddress ip)
+        
+        // centrala informuje, ze otwarto nowe polaczenie
+        void centrala_OtwartoPolaczenie(string idStrumienia, Stream strumien, IPAddress ip)
         {
             string idUzytkownika;
             idUzytkownika = mapownik.CzyZnasz(ip) ? mapownik[ip] : ip.ToString();
 
             Trace.TraceInformation("otwarto polaczenie");
-            var polaczenie = DajPolaczenieZasadnicze(guid);
+            var polaczenie = DajPolaczenieZasadnicze(idStrumienia);
 
             if (polaczenie is PolaczenieZasadnicze)
             {
@@ -117,58 +163,59 @@ namespace MojCzat.komunikacja
                 { OtwartoPolaczenieZasadnicze(idUzytkownika); }
 
             }
-            else if (polaczenie is PolaczeniePlikowe)
+            else if (polaczenie is PolaczeniePlikowe) { polaczenie.Strumien = strumien; }
+            else if (DajStrumienZasadniczy(idUzytkownika) == null)
             {
-                polaczenie.Strumien = strumien;
-            }
-            else if (!IstniejePolaczenieZasadnicze(idUzytkownika))
-            {
-                DodajPolaczenie(guid, new PolaczenieZasadnicze() { IdUzytkownika = idUzytkownika, Strumien = strumien });
+                dodajPolaczenie(idStrumienia, new PolaczenieZasadnicze() 
+                    { IdUzytkownika = idUzytkownika, Strumien = strumien });
 
                 if (OtwartoPolaczenieZasadnicze != null)
                 { OtwartoPolaczenieZasadnicze(idUzytkownika); }
             }
             else
             {
-                DodajPolaczenie(guid, new PolaczeniePlikowe() { IdUzytkownika = guid, Strumien = strumien });
+                dodajPolaczenie(idStrumienia, new PolaczeniePlikowe() 
+                    { IdUzytkownika = idStrumienia, Strumien = strumien });
             }
-            if (GotowyDoOdbioru != null) { GotowyDoOdbioru(guid); }
+            if (GotowyDoOdbioru != null) { GotowyDoOdbioru(idStrumienia); }
         }
         
-        void centrala_ZamknietoPolaczenie(string guid)
+        //centrala informuje o zamknieciu polaczenie
+        void centrala_ZamknietoPolaczenie(string idPolaczenia)
         {
-            if (DajPolaczenieZasadnicze(guid) != null)
+            if (DajPolaczenieZasadnicze(idPolaczenia) != null)
             {
-                var kanal = DajPolaczenieZasadnicze(guid);
-                Usun(guid);
-                RozlaczPolaczeniaPlikowe(kanal.IdUzytkownika);
+                var polaczenie = DajPolaczenieZasadnicze(idPolaczenia);
+                usunStrumien(idPolaczenia);
+                rozlaczPolaczeniaPlikowe(polaczenie.IdUzytkownika);
 
                 if (ZamknietoPolaczenieZasadnicze != null)
-                { ZamknietoPolaczenieZasadnicze(kanal.IdUzytkownika); }
+                { ZamknietoPolaczenieZasadnicze(polaczenie.IdUzytkownika); }
 
             }
-            if (DajPolaczeniePlikowe(guid) != null) { Usun(guid); }
+            if (dajPolaczeniePlikowe(idPolaczenia) != null) { usunStrumien(idPolaczenia); }
         }
 
-
-        void RozlaczPolaczeniaPlikowe(string idUzytkownika)
+        // rozlacz polaczenia do przesylu plikow przez/do uzytkownika
+        void rozlaczPolaczeniaPlikowe(string idUzytkownika)
         {
             polaczeniaPlikowe.Where(p => p.Value.IdUzytkownika == idUzytkownika).ToList()
                 .ForEach(p => centrala.Rozlacz(p.Key));
         }
 
-        void Usun(string guid)
+        // usun strumien
+        void usunStrumien(string idStrumienia)
         {
-            if (polaczeniaZasadnicze.ContainsKey(guid)) { polaczeniaZasadnicze.Remove(guid); }
-            if (polaczeniaPlikowe.ContainsKey(guid)) { polaczeniaPlikowe.Remove(guid); }
+            if (polaczeniaZasadnicze.ContainsKey(idStrumienia)) { polaczeniaZasadnicze.Remove(idStrumienia); }
+            if (polaczeniaPlikowe.ContainsKey(idStrumienia)) { polaczeniaPlikowe.Remove(idStrumienia); }
         }
 
-        IPolaczenie DajPolaczeniePlikowe(string guid)
+        // znajdz polaczenie plikowe
+        IPolaczenie dajPolaczeniePlikowe(string idUzytkownika)
         {
-            return polaczeniaPlikowe.ContainsKey(guid) ?
-                polaczeniaPlikowe[guid] : null;
-        }
-        
+            return polaczeniaPlikowe.ContainsKey(idUzytkownika) ?
+                polaczeniaPlikowe[idUzytkownika] : null;
+        }        
     }
 
     interface IPolaczenie 

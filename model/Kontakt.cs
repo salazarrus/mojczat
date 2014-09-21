@@ -1,4 +1,5 @@
-﻿using System;
+﻿using MojCzat.uzytki;
+using System;
 using System.Collections.Generic;
 using System.Net;
 using System.Xml;
@@ -26,6 +27,9 @@ namespace MojCzat.model
         /// </summary>
         public bool Polaczony { get; set; }
 
+        /// <summary>
+        /// Dostepny/niedostepny
+        /// </summary>
         public String StatusTekst { 
             get {
                 return Polaczony ? "Dostępny" : "Niedostępny";
@@ -37,7 +41,9 @@ namespace MojCzat.model
         /// </summary>
         public string Nazwa { get; set; }
 
-
+        /// <summary>
+        /// Opis do statusu
+        /// </summary>
         public string Opis { get; set; }
 
         /// <summary>
@@ -48,19 +54,19 @@ namespace MojCzat.model
         public static List<Kontakt> WczytajListeKontaktow(string sciezkaPliku) {
             List<Kontakt> listaWynikowa = new List<Kontakt>();
             XmlDocument plikXML = new XmlDocument();
-            try 
-            { 
-                plikXML.Load(sciezkaPliku); 
-                foreach (XmlNode node in plikXML.DocumentElement.ChildNodes)
+            try
+            {
+                plikXML.Load(sciezkaPliku);
+                foreach (XmlNode wezel in plikXML.DocumentElement.ChildNodes)
                 {
-                    
-                    string ip = node.Attributes["ip"].InnerText;
+                    string ip = Xml.DajAtrybut(wezel, "ip");
                     string id = ip;
-                    string nazwa = node.Attributes["nazwa"].InnerText;
-                    listaWynikowa.Add(new Kontakt() { ID = id, IP = IPAddress.Parse(ip), Nazwa = nazwa ,Polaczony=false });
+                    string nazwa = Xml.DajAtrybut(wezel, "nazwa");
+                    listaWynikowa.Add(new Kontakt() { ID = id, IP = IPAddress.Parse(ip), Nazwa = nazwa, Polaczony = false });
                 }
-            } catch { return listaWynikowa; }
-
+            }
+            catch { return listaWynikowa; }
+            
             return listaWynikowa;        
         }
 
@@ -74,18 +80,13 @@ namespace MojCzat.model
         {
             XmlDocument plikXML = new XmlDocument();
 
-            var elementGlowny = plikXML.CreateElement("xml");
+            var elementGlowny = plikXML.CreateElement("kontakty");
             foreach(var kontakt in lista){
                 
                 var elementKontakt = plikXML.CreateElement("kontakt");
                 
-                var atrybutIP = plikXML.CreateAttribute("ip") ;
-                atrybutIP.InnerText = kontakt.IP.ToString();
-                elementKontakt.Attributes.Append(atrybutIP);
-
-                var atrybutNazwa = plikXML.CreateAttribute("nazwa");
-                atrybutNazwa.InnerText = kontakt.Nazwa;
-                elementKontakt.Attributes.Append(atrybutNazwa);
+                Xml.DodajAtrybut(plikXML, elementKontakt, "ip", kontakt.IP.ToString());
+                Xml.DodajAtrybut(plikXML, elementKontakt, "nazwa", kontakt.Nazwa);
                 
                 elementGlowny.AppendChild(elementKontakt);                
             }

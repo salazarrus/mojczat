@@ -78,7 +78,7 @@ namespace MojCzat.komunikacja
         { wiadomosciownia.UsunUzytkownika(idUzytkownika); }
 
         public void WyslijWiadomosc(String idRozmowcy, byte rodzaj, String wiadomosc)
-        { wiadomosciownia.WyslijWiadomosc( strumieniownia.StrumienZasadniczy(idRozmowcy) 
+        { wiadomosciownia.WyslijWiadomosc( strumieniownia.DajStrumienZasadniczy(idRozmowcy) 
             ,idRozmowcy, stworzKomunikat(rodzaj, wiadomosc)); }
 
         public void WyslijPlik(String idRozmowcy, String sciezka)
@@ -109,13 +109,13 @@ namespace MojCzat.komunikacja
 
             try { kanal.Strumien.EndRead(wynik); }
             catch // zostalismy rozlaczeni
-            {  strumieniownia.ToNieDziala(status.guidStrumienia);
+            {  strumieniownia.ToPolaczenieNieDziala(status.guidStrumienia);
                return; }
 
             switch (status.Naglowek[0])
             {
                 case Protokol.KoniecPolaczenia:
-                    strumieniownia.ToNieDziala(status.guidStrumienia);
+                    strumieniownia.ToPolaczenieNieDziala(status.guidStrumienia);
                     return;
                 case Protokol.ZwyklaWiadomosc://zwykla wiadomosc
                     wiadomosciownia.CzytajZawartosc(kanal.Strumien,status.guidStrumienia, 

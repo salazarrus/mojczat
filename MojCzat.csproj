@@ -93,6 +93,7 @@
     <Compile Include="ui\OknoUstawienia.Designer.cs">
       <DependentUpon>OknoUstawienia.cs</DependentUpon>
     </Compile>
+    <Compile Include="uzytki\Xml.cs" />
     <EmbeddedResource Include="Properties\Resources.resx">
       <Generator>ResXFileCodeGenerator</Generator>
       <LastGenOutput>Resources.Designer.cs</LastGenOutput>
