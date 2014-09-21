@@ -55,7 +55,7 @@ namespace MojCzat.komunikacja
                     // czekaj na przychodzace polaczenia
                     TcpClient polaczenie = serwer.AcceptTcpClient();
                     var strumien = dajStrumienJakoSerwer(polaczenie);
-                    zachowajNowePolaczenie(polaczenie, strumien);
+                    zachowajNowePolaczenie(polaczenie, Guid.NewGuid().ToString(), strumien);
                 }
             }
             catch (Exception ex) { Trace.TraceInformation("[Start]" + ex.ToString()); } // program zostal zamkniety
@@ -75,18 +75,23 @@ namespace MojCzat.komunikacja
             Rozlacz(guid);
         }
                 
-        public void Polacz(IPAddress ip)
+        public string Polacz(IPAddress ip)
         {
             // tworzymy nowe polaczenie 
             Trace.TraceInformation("nawiazujemy polaczenie");
+            var guid = Guid.NewGuid().ToString();
             var klient = new TcpClient();
             int portJego;
             int.TryParse(ConfigurationManager.AppSettings["portJego"], out portJego);
-            var wynik = klient.BeginConnect(ip, portJego, new AsyncCallback(nawiazPolaczenieWynik), klient);
+            var wynik = klient.BeginConnect(ip, portJego, new AsyncCallback(nawiazPolaczenieWynik),
+                new NawiazPolaczenieStatus() { Guid = guid, Polaczenie = klient });
             
-            if (!wynik.AsyncWaitHandle.WaitOne(POLOCZENIE_TIMEOUT, true)) {
+            if (!wynik.AsyncWaitHandle.WaitOne(POLOCZENIE_TIMEOUT, true)) 
+            {
                 Trace.TraceInformation("timeout nawiaz polaczenie");
+                return null;
             }
+            return guid;
         }
 
         /// <summary>
@@ -123,31 +128,37 @@ namespace MojCzat.komunikacja
 
         void nawiazPolaczenieWynik(IAsyncResult wynik)
         {
+            var status = (NawiazPolaczenieStatus)wynik.AsyncState;
             try
-            {
-                var polaczenie = (TcpClient)wynik.AsyncState;
-                polaczenie.EndConnect(wynik);
-                
-                if (!polaczenie.Connected)
-                {   polaczenie.Close();
+            {                
+                status.Polaczenie.EndConnect(wynik);
+
+                if (!status.Polaczenie.Connected)
+                {   status.Polaczenie.Close();
                     return; }
 
-                var strumien = dajStrumienJakoKlient(polaczenie);
-                zachowajNowePolaczenie(polaczenie, strumien);
+                var strumien = dajStrumienJakoKlient(status.Polaczenie);
+                zachowajNowePolaczenie(status.Polaczenie, status.Guid, strumien);
             }
-            catch{ }
+            catch
+            { if (ZamknietoPolaczenie != null) { ZamknietoPolaczenie(status.Guid); } }
         }
 
-        void zachowajNowePolaczenie(TcpClient polaczenie, Stream strumien)
+        void zachowajNowePolaczenie(TcpClient polaczenie, string guid ,Stream strumien)
         {
             Trace.TraceInformation("Zachowujemy polaczenie");
 
-            var guid = Guid.NewGuid().ToString();
             otwartePolaczenia.Add(guid, polaczenie);
             otwarteStrumienie.Add(guid, strumien);
             var ip = ((IPEndPoint)polaczenie.Client.RemoteEndPoint).Address;
 
             if (OtwartoPolaczenie != null) { OtwartoPolaczenie(guid, strumien, ip); }
+        }
+
+        class NawiazPolaczenieStatus 
+        {
+            public TcpClient Polaczenie { get; set; }
+            public string Guid { get; set; }
         }
 
     }

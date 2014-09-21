@@ -20,8 +20,10 @@ namespace MojCzat.komunikacja
     // delegata definiujaca funkcje obslugujace zdarzenie NowaWiadomosc
     public delegate void NowaWiadomosc(string id, TypWiadomosci rodzaj , string wiadomosc);
 
-    public delegate void PlikWyslano(string id, string nazwa); 
+    public delegate void PlikWyslano(string id, string nazwa);
 
+    public delegate void PlikOdebrano(string id, string nazwa);
+ 
     // delegata definiujaca funkcje obslugujace zdarzenie ZmianaStanuPolaczenia
     public delegate void ZmianaStanuPolaczenia(string idUzytkownika);
 
@@ -94,10 +96,10 @@ namespace MojCzat.komunikacja
 
         public void OglosOpis()
         { mapownik.WszystkieId.ForEach(s => 
-            protokol.WyslijWiadomosc(s, Protokol.OtoMojOpis, Opis)); }
+            protokol.WyslijWiadomosc(s, Protokol.WezOpis, Opis)); }
 
         public void PoprosOpis(string id)
-        { protokol.WyslijWiadomosc(id, Protokol.DajMiSwojOpis, ""); }
+        { protokol.WyslijWiadomosc(id, Protokol.DajOpis, ""); }
 
 
         public bool CzyDostepny(string idUzytkownika) 

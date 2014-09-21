@@ -17,14 +17,12 @@ namespace MojCzat.komunikacja
         Dictionary<string, Boolean> wysylanieWToku = new Dictionary<string, Boolean>();
         Dictionary<string, object> zamkiWysylania = new Dictionary<string, object>();
 
-        Centrala centrala;
         Buforownia buforownia = new Buforownia(512);
         CzytanieSkonczone czytanieSkonczone;
         const int DlugoscNaglowka = 5; 
 
-        public Wiadomosciownia(Centrala centrala, CzytanieSkonczone czytanieSkonczone)
+        public Wiadomosciownia(CzytanieSkonczone czytanieSkonczone)
         {
-            this.centrala = centrala;
             this.czytanieSkonczone = czytanieSkonczone;
         }
 
@@ -41,18 +39,17 @@ namespace MojCzat.komunikacja
         /// </summary>
         /// <param name="idRozmowcy">Identyfikator rozmowcy</param>
         /// <param name="wiadomosc">Nowa wiadomosc</param>
-        public void WyslijWiadomosc(Stream strumien, String idRozmowcy, byte rodzaj ,String wiadomosc)
+        public void WyslijWiadomosc(Stream strumien, String idRozmowcy, byte[] komunikat)
         {
             try
             {
-                Trace.TraceInformation(String.Format("Probojemy wyslac wiadomosc rodzaj {0}: {1} ", rodzaj, wiadomosc));
-                if (string.IsNullOrEmpty(wiadomosc) && rodzaj != Protokol.DajMiSwojOpis) { return;  }
+                //Trace.TraceInformation(String.Format("Probojemy wyslac wiadomosc rodzaj {0}: {1} ", rodzaj, wiadomosc));
+                //if (komunikat.Length  && rodzaj != Protokol.DajOpis) { return;  }
                 // tranformacja tekstu w bajty
-                Trace.TraceInformation(String.Format("Wysylamy wiadomosc rodzaj {0}: {1} ",rodzaj, wiadomosc));
+                //Trace.TraceInformation(String.Format("Wysylamy wiadomosc rodzaj {0}: {1} ",rodzaj, wiadomosc));
 
-                Byte[] bajty = stworzKomunikat(rodzaj, wiadomosc);
                 // wysylanie bajtow polaczeniem TCP 
-                dajKolejkeWiadomosci(idRozmowcy).Enqueue(bajty);
+                dajKolejkeWiadomosci(idRozmowcy).Enqueue(komunikat);
                 wysylajZKolejki(strumien, idRozmowcy);
             }
             catch(Exception ex) 
@@ -75,18 +72,6 @@ namespace MojCzat.komunikacja
         }
 
 
-        byte[] stworzKomunikat(byte rodzaj, string wiadomosc)
-        {
-            var dlugoscZawartosci = Encoding.UTF8.GetByteCount(wiadomosc);
-            var bajtyZawartosc = Encoding.UTF8.GetBytes(wiadomosc);
-            var bajty = new byte[dlugoscZawartosci + DlugoscNaglowka];
-            var dlugoscZawartosciNaglowek = BitConverter.GetBytes(dlugoscZawartosci);
-            if (BitConverter.IsLittleEndian) { dlugoscZawartosciNaglowek.Reverse(); }
-            bajty[0] = rodzaj;
-            Array.Copy(dlugoscZawartosciNaglowek, 0, bajty, 1, dlugoscZawartosciNaglowek.Length);
-            Array.Copy(bajtyZawartosc, 0, bajty, DlugoscNaglowka, bajtyZawartosc.Length);
-            return bajty;
-        }
 
         Queue<byte[]> dajKolejkeWiadomosci(string id)
         {

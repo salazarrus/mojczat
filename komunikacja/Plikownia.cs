@@ -9,12 +9,10 @@ namespace MojCzat.komunikacja
     class Plikownia
     {
         Buforownia buforownia = new Buforownia(4096);
-        Centrala centrala;
-        CzytanieSkonczone czytanieSkonczone;
 
-        public Plikownia(Centrala centrala, CzytanieSkonczone czytanieSkonczone)
+        public Plikownia()
         { 
-              
+            
         }
 
         public event PlikWyslano PlikWyslano;

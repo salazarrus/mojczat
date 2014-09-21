@@ -287,6 +287,7 @@ namespace MojCzat.ui
             { 
                 komunikator.DodajKontakt(kontakt.ID, kontakt.IP);
                 kontakt.Polaczony = komunikator.CzyDostepny(kontakt.ID);
+                komunikator.PoprosOpis(kontakt.ID);
             }            
             
             odswiezListeKontaktow();
