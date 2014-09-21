@@ -45,5 +45,10 @@ namespace MojCzat.komunikacja
         public bool CzyZnasz(String id) {
             return ID_IP.ContainsKey(id);
         }
+
+        public bool CzyZnasz(IPAddress ip)
+        {
+            return IP_ID.ContainsKey(ip);
+        }
     }
 }

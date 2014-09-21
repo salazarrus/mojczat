@@ -176,6 +176,7 @@ namespace MojCzat.ui
         /// </summary>
         void komunikator_ZmianaStanuPolaczenia(string rozmowca)
         {
+            if (!kontakty.Any(k => k.ID == rozmowca)) { return; }
             if (komunikator.CzyDostepny(rozmowca)) { komunikator.PoprosOpis(rozmowca); }
                 
             odswiezStatusKontaktu(rozmowca);
@@ -186,6 +187,7 @@ namespace MojCzat.ui
         /// Odswiez liste kontaktow
         /// </summary>
         void odswiezListeKontaktow() {
+            listaZrodlo.DataSource = kontakty;
             listaZrodlo.ResetBindings(false);
         }
 
@@ -202,6 +204,8 @@ namespace MojCzat.ui
             {// nieznany 
                 kontakt = new Kontakt() { ID = id, IP = IPAddress.Parse(id), Nazwa = id, Polaczony = true };
                 kontakty.Add(kontakt);
+                Invoke(odswiezOknoDelegata);
+                if (komunikator.CzyDostepny(id)) { komunikator.PoprosOpis(id); }
             }
              Invoke(obsluzNowaWiadomoscUI, kontakt, rodzaj , wiadomosc); 
         }
@@ -280,8 +284,10 @@ namespace MojCzat.ui
             kontakty.Add(kontakt);
 
             if (polaczony)
-            { komunikator.DodajKontakt(kontakt.ID, kontakt.IP); }
-            
+            { 
+                komunikator.DodajKontakt(kontakt.ID, kontakt.IP);
+                kontakt.Polaczony = komunikator.CzyDostepny(kontakt.ID);
+            }            
             
             odswiezListeKontaktow();
             Kontakt.ZapiszListeKontaktow(kontakty, "kontakty.xml");

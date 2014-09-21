@@ -101,7 +101,7 @@ namespace MojCzat.komunikacja
 
 
         public bool CzyDostepny(string idUzytkownika) 
-        { return dostepnosc[idUzytkownika]; }
+        { return dostepnosc.ContainsKey(idUzytkownika) && dostepnosc[idUzytkownika]; }
         
         /// <summary>
         /// Rozlacz sie z uzytkownikiem
@@ -117,10 +117,7 @@ namespace MojCzat.komunikacja
         /// <param name="punktKontaktu"></param>
         public void DodajKontakt(string idUzytkownika, IPAddress ip)
         {
-            if (mapownik.CzyZnasz(idUzytkownika)) { return; }
-            mapownik.Dodaj(idUzytkownika, ip);
-            protokol.DodajUzytkownika(idUzytkownika);
-            dostepnosc.Add(idUzytkownika, false);
+            dodajKontakt(idUzytkownika, ip, false);
         }
 
         /// <summary>
@@ -128,17 +125,26 @@ namespace MojCzat.komunikacja
         /// </summary>
         /// <param name="idUzytkownika"></param>
         public void UsunKontakt(string idUzytkownika)
-        {
-            mapownik.Usun(idUzytkownika);
+        {           
             protokol.UsunUzytkownika(idUzytkownika);
             dostepnosc.Remove(idUzytkownika);
+            mapownik.Usun(idUzytkownika);
         }
 
+
+        void dodajKontakt(string idUzytkownika, IPAddress ip, bool dostepny)
+        {
+            if (mapownik.CzyZnasz(idUzytkownika)) { return; }
+            mapownik.Dodaj(idUzytkownika, ip);
+            protokol.DodajUzytkownika(idUzytkownika);
+            dostepnosc.Add(idUzytkownika, dostepny);
+        }
+        
         void zainicjujPingacz()
         {
             this.timer = new System.Timers.Timer();
             timer.Elapsed += timer_Elapsed;
-            timer.Interval = 60000;
+            timer.Interval = 6000;
         }
 
         void sprobojPolaczyc() 
@@ -161,13 +167,15 @@ namespace MojCzat.komunikacja
 
         void protokol_ZamknietoPolaczenieZasadnicze(string idUzytkownika)
         {
-            dostepnosc[idUzytkownika] = false;
+            dostepnosc[idUzytkownika] = false; 
             if (ZmianaStanuPolaczenia != null) { ZmianaStanuPolaczenia(idUzytkownika); }
         }
 
         void protokol_OtwartoPolaczenieZasadnicze(string idUzytkownika)
         {
-            // TODO a co jak nieznany?
+            if (!mapownik.CzyZnasz(idUzytkownika)) { 
+                dodajKontakt(idUzytkownika, IPAddress.Parse(idUzytkownika), true);                
+            }
             dostepnosc[idUzytkownika] = true;
             if (ZmianaStanuPolaczenia != null) { ZmianaStanuPolaczenia(idUzytkownika); }
         }

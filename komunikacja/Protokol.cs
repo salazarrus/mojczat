@@ -119,18 +119,22 @@ namespace MojCzat.komunikacja
 
         void centrala_OtwartoPolaczenie(string guid, Stream strumien, IPAddress ip)
         {
+            string idUzytkownika;
+            idUzytkownika = mapownik.CzyZnasz(ip) ? mapownik[ip] : ip.ToString();
+
+
             Trace.TraceInformation("otwarto polaczenie");
-            var mamyZasadnicze = polaczenia.Values.Any(p => p.IdUzytkownika == mapownik[ip]
+            var mamyZasadnicze = polaczenia.Values.Any(p => p.IdUzytkownika == idUzytkownika
                 && p.Typ == KanalTyp.ZASADNICZY);
 
-            Kanal kanal = new Kanal() { IdUzytkownika = mapownik[ip], strumien = strumien, 
+            Kanal kanal = new Kanal() { IdUzytkownika = idUzytkownika, strumien = strumien, 
                 Typ = mamyZasadnicze ? KanalTyp.DODATKOWY : KanalTyp.ZASADNICZY };
 
             polaczenia.Add(guid, kanal);
             czekajNaZapytanie(guid);
             
             if (!mamyZasadnicze && OtwartoPolaczenieZasadnicze != null)
-            { OtwartoPolaczenieZasadnicze(mapownik[ip]); } // TODO co z nieznajomym          
+            { OtwartoPolaczenieZasadnicze(idUzytkownika); }
         }
 
         Stream strumienZasadniczy(string idUzytkownika) {
