@@ -48,14 +48,15 @@ namespace MojCzat.komunikacja
         /// Czytaj ze strumienia zawartosc wiadomosci (juz bez naglowka)
         /// </summary>
         /// <param name="strumien">stad czytamy</param>
-        /// <param name="guidStrumienia">identyfikator strumienia</param>
+        /// <param name="idStrumienia">identyfikator strumienia</param>
         /// <param name="idUzytkownika">od kogo ta wiadomosc</param>
         /// <param name="rodzaj">Zwykla / Opis</param>
         /// <param name="dlugoscWiadomosci">ile bajtow do wczytania</param>
-        public void CzytajZawartosc(Stream strumien, string guidStrumienia ,string idUzytkownika, TypWiadomosci rodzaj, int dlugoscWiadomosci)
+        public void CzytajZawartosc(Stream strumien, string idStrumienia, 
+            string idUzytkownika, TypWiadomosci rodzaj, int dlugoscWiadomosci)
         {
             if (dlugoscWiadomosci == 0) { czytanieSkonczone(idUzytkownika); }
-            czytajZawartosc(strumien, guidStrumienia , idUzytkownika, rodzaj, dlugoscWiadomosci, 0);    
+            czytajZawartosc(strumien, idStrumienia , idUzytkownika, rodzaj, dlugoscWiadomosci, 0);    
         }
 
         /// <summary>
@@ -145,14 +146,14 @@ namespace MojCzat.komunikacja
         }
 
         // czytaj ze strumienia
-        void czytajZawartosc(Stream strumien, string guidStrumienia ,
+        void czytajZawartosc(Stream strumien, string idStrumienia ,
             string idUzytkownika, TypWiadomosci rodzaj, int dlugoscWiadomosci, int wczytanoBajow)
         {
             strumien.BeginRead(buforownia[idUzytkownika], wczytanoBajow,
                 dlugoscWiadomosci, new AsyncCallback(zawartoscWczytana),
                 new CzytajWiadomoscStatus() { 
                     IdNadawcy = idUzytkownika, Rodzaj = rodzaj, DlugoscWiadomosci = dlugoscWiadomosci, 
-                    Wczytano = wczytanoBajow, Strumien = strumien, guidStrumienia= guidStrumienia });
+                    Wczytano = wczytanoBajow, Strumien = strumien, IdStrumienia= idStrumienia });
         }
 
         // wczytalismy cos ze strumienia
@@ -165,7 +166,7 @@ namespace MojCzat.komunikacja
                 int bajtyWczytane = status.Strumien.EndRead(wynik);
                 if (status.DlugoscWiadomosci > status.Wczytano + bajtyWczytane)
                 {
-                    czytajZawartosc(status.Strumien, status.guidStrumienia, status.IdNadawcy, status.Rodzaj, 
+                    czytajZawartosc(status.Strumien, status.IdStrumienia, status.IdNadawcy, status.Rodzaj, 
                         status.DlugoscWiadomosci, status.Wczytano + bajtyWczytane);
                     return;
                 }
@@ -181,7 +182,7 @@ namespace MojCzat.komunikacja
             if (NowaWiadomosc != null) // informujemy zainteresowanych
             { NowaWiadomosc(status.IdNadawcy, status.Rodzaj, wiadomosc); }
 
-            czytanieSkonczone(status.guidStrumienia);
+            czytanieSkonczone(status.IdStrumienia);
         }
 
         // obiekt uzywany w operacji asynchronicznej
@@ -195,7 +196,7 @@ namespace MojCzat.komunikacja
         class CzytajWiadomoscStatus
         {
             public Stream Strumien { get; set; }
-            public String guidStrumienia{ get; set; }
+            public String IdStrumienia{ get; set; }
             public String IdNadawcy { get; set; }
             public TypWiadomosci Rodzaj { get; set; }
             public int DlugoscWiadomosci { get; set; }

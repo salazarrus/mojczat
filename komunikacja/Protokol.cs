@@ -154,11 +154,11 @@ namespace MojCzat.komunikacja
         }
         
         // Czekaj (pasywnie) na zapytania i wiadomosci
-        void czekajNaZapytanie(string guid)
+        void czekajNaZapytanie(string idStrumienia)
         {
             Trace.TraceInformation("Czekamy na zapytanie ");
-            var polaczenie = strumieniownia.DajPolaczenieZasadnicze(guid); 
-            var wynik = new StatusObsluzZapytanie() { IdStrumienia = guid, Naglowek = new byte[DlugoscNaglowka] };
+            var polaczenie = strumieniownia.DajPolaczenieZasadnicze(idStrumienia); 
+            var wynik = new StatusObsluzZapytanie() { IdStrumienia = idStrumienia, Naglowek = new byte[DlugoscNaglowka] };
             polaczenie.Strumien.BeginRead(wynik.Naglowek, 0, DlugoscNaglowka, obsluzZapytanie, wynik);
         }
 

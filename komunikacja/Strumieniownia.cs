@@ -9,7 +9,7 @@ using System.Text;
 
 namespace MojCzat.komunikacja
 {
-    public delegate void GotowyDoOdbioru(string guid);
+    public delegate void GotowyDoOdbioru(string idStrumienia);
 
     /// <summary>
     /// Obiekt odpowiedzialny za zarzadzanie strumieniami do innych uzytkownikow
@@ -74,9 +74,7 @@ namespace MojCzat.komunikacja
         /// </summary>
         /// <param name="idStrumienia">Identyfikator strumienia</param>
         public void ToPolaczenieNieDziala(string idStrumienia)
-        {
-            centrala.ToNieDziala(idStrumienia);
-        }
+        { centrala.ToNieDziala(idStrumienia); }
 
         /// <summary>
         /// Polacz sie z uzytkownikiem
@@ -123,11 +121,11 @@ namespace MojCzat.komunikacja
         /// <summary>
         /// Czy istnieje taki strumien?
         /// </summary>
-        /// <param name="guid"></param>
+        /// <param name="idStrumienia"></param>
         /// <returns></returns>
-        public bool CzyZnasz(string guid) 
+        public bool CzyZnasz(string idStrumienia) 
         {
-            return polaczeniaZasadnicze.ContainsKey(guid);
+            return polaczeniaZasadnicze.ContainsKey(idStrumienia);
         }
 
         /// <summary>
