@@ -29,7 +29,7 @@ namespace MojCzat.ui
             InitializeComponent();
             ustawObszarSSL();
         }
-            
+
         // centruj okno
         protected override void OnShown(EventArgs e)
         {
@@ -38,8 +38,9 @@ namespace MojCzat.ui
         }
 
         // wypelnij pola SSL
-        void ustawObszarSSL(){            
-            tbCertyfikat.Text = Ustawienia.SSLWlaczone?
+        void ustawObszarSSL()
+        {
+            tbCertyfikat.Text = Ustawienia.SSLWlaczone ?
                 Ustawienia.SSLCertyfikatSciezka : String.Empty;
 
             chBoxWlaczSSL.Checked = tbCertyfikat.Enabled =
@@ -58,7 +59,7 @@ namespace MojCzat.ui
         // kliknieto przycisk "zapisz"
         private void btnZapisz_Click(object sender, EventArgs e)
         {
-            if (chBoxWlaczSSL.Checked && !File.Exists(tbCertyfikat.Text)) 
+            if (chBoxWlaczSSL.Checked && !File.Exists(tbCertyfikat.Text))
             {
                 MessageBox.Show("Podana sciezka do certyfikatu jest nieprawidlowa.");
                 return;

@@ -32,7 +32,6 @@ namespace MojCzat.komunikacja
                    RemoteCertificateValidationCallback(sprawdzCertyfikat));
             string host = ((IPEndPoint)polaczenie.Client.RemoteEndPoint).Address.ToString();
             strumien.AuthenticateAsClient(host);
-
             return strumien;
         }
 

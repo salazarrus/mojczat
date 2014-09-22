@@ -18,7 +18,7 @@ namespace MojCzat.ui
         /// Dodany kontakt
         /// </summary>
         public Kontakt NowyKontakt { get; private set; }
-        
+
         /// <summary>
         /// Konstruktor
         /// </summary>
@@ -33,7 +33,8 @@ namespace MojCzat.ui
         /// Konstruktor
         /// </summary>
         /// <param name="kontakt">istniejacy kontakt do wypenienia pol</param>
-        public OknoDodajKontakt(Kontakt kontakt):this() 
+        public OknoDodajKontakt(Kontakt kontakt)
+            : this()
         {
             tbIP.Text = kontakt.IP.ToString();
             tbNazwa.Text = kontakt.Nazwa;
@@ -53,12 +54,14 @@ namespace MojCzat.ui
             IPAddress adres;
             string nazwa = this.tbNazwa.Text.Trim();
 
-            if (this.tbNazwa.Text.Trim() == String.Empty) {
+            if (this.tbNazwa.Text.Trim() == String.Empty)
+            {
                 MessageBox.Show("Pole nazwa nie moze byc puste.");
                 return;
             }
-            
-            if (!IPAddress.TryParse(this.tbIP.Text, out adres)) {
+
+            if (!IPAddress.TryParse(this.tbIP.Text, out adres))
+            {
                 MessageBox.Show("Niepoprawy adres IP.");
                 return;
             }
@@ -71,11 +74,12 @@ namespace MojCzat.ui
             Close();
 
         }
-        
+
         // zamknij na klawisc Escape
         private void OknoDodajKontakt_KeyDown(object sender, KeyEventArgs e)
         {
-            if (e.KeyCode == Keys.Escape) {
+            if (e.KeyCode == Keys.Escape)
+            {
                 DialogResult = System.Windows.Forms.DialogResult.Cancel;
                 Close();
             }

@@ -1,6 +1,4 @@
-﻿#define TRACE
-
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
@@ -36,9 +34,10 @@ namespace MojCzat.komunikacja
         public void OferujPlik(string idUzytkownika, string plik, Stream strumien)
         {
             FileInfo info = new FileInfo(plik);
-            var status = new OferujPlikStatus() { 
-                NazwaPliku = plik, 
-                IdUzytkownika = idUzytkownika, 
+            var status = new OferujPlikStatus()
+            {
+                NazwaPliku = plik,
+                IdUzytkownika = idUzytkownika,
                 StrumienSieciowy = strumien
             };
 
@@ -103,7 +102,7 @@ namespace MojCzat.komunikacja
             var wczytaneBajty = status.plik.EndRead(wynik);
             status.WczytanoBajtow += wczytaneBajty;
 
-            status.StrumienSieciowy.BeginWrite(buforownia[status.IdStrumieniaSieciowego], 
+            status.StrumienSieciowy.BeginWrite(buforownia[status.IdStrumieniaSieciowego],
                 0, wczytaneBajty, wysylaniePlikuCzescWyslano, status);
         }
 
@@ -148,7 +147,7 @@ namespace MojCzat.komunikacja
             if (PlikOdebrano != null) { PlikOdebrano(status.IdStrumieniaSieciowego); }
 
             status.plik.Close();
-        }        
+        }
 
         void wczytajCzescNazwyPliku(WczytajNazweStatus status)
         {
@@ -173,7 +172,7 @@ namespace MojCzat.komunikacja
             Array.Clear(buforownia[status.IdUzytkownika], 0, status.DlugoscNazwy);
             if (PlikZaoferowano != null) { PlikZaoferowano(status.IdUzytkownika, nazwa, status.IdPolaczenia); }
         }
-        
+
         void poproszonoOPlik(IAsyncResult wynik)
         {
             var strumien = (Stream)wynik.AsyncState;

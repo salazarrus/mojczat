@@ -1,6 +1,4 @@
-﻿#define TRACE
-
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Configuration;
 using System.Net;
@@ -16,16 +14,16 @@ using MojCzat.model;
 using System.Diagnostics;
 
 namespace MojCzat.komunikacja
-{    
+{
     // delegata definiujaca funkcje obslugujace zdarzenie NowaWiadomosc
-    public delegate void NowaWiadomosc(string id, TypWiadomosci rodzaj , string wiadomosc);
+    public delegate void NowaWiadomosc(string id, TypWiadomosci rodzaj, string wiadomosc);
 
     public delegate void PlikZaoferowano(string idUzytkownika, string nazwaPliku, string idPolaczenia);
-    
+
     public delegate void PlikWyslano(string id, string nazwa);
 
     public delegate void PlikOdebrano(string idPolaczenia);
- 
+
     // delegata definiujaca funkcje obslugujace zdarzenie ZmianaStanuPolaczenia
     public delegate void ZmianaStanuPolaczenia(string idUzytkownika);
 
@@ -35,10 +33,10 @@ namespace MojCzat.komunikacja
     public class Komunikator
     {
         public String Opis { get; set; }
-        
+
         // Dostepnosc uzytkownikow
-        Dictionary<string, bool> dostepnosc = new Dictionary<string,bool>();
-        
+        Dictionary<string, bool> dostepnosc = new Dictionary<string, bool>();
+
         // obiekt uzywany do regularnego sprawdzania dostepnosci innych uzytkownikow
         System.Timers.Timer pingacz;
 
@@ -56,15 +54,15 @@ namespace MojCzat.komunikacja
         /// <param name="ustawienia">obiekt ustawien programu</param>
         public Komunikator(Dictionary<string, IPAddress> mapa_ID_IP, Ustawienia ustawienia)
         {
-         
+
             foreach (var i in mapa_ID_IP) { dostepnosc.Add(i.Key, false); }
 
             zainicjujPingacz();
-    
+
             mapownik = new Mapownik(mapa_ID_IP);
-            protokol = new Protokol(mapownik, ustawienia);                 
+            protokol = new Protokol(mapownik, ustawienia);
         }
-        
+
         /// <summary>
         /// Otwrzymalismy nowa wiadomosc
         /// </summary>
@@ -74,7 +72,7 @@ namespace MojCzat.komunikacja
             remove { protokol.NowaWiadomosc -= value; }
         }
 
-        public event PlikZaoferowano PlikZaoferowano 
+        public event PlikZaoferowano PlikZaoferowano
         {
             add { protokol.PlikZaoferowano += value; }
             remove { protokol.PlikZaoferowano -= value; }
@@ -84,7 +82,7 @@ namespace MojCzat.komunikacja
         /// Polaczenie z uzytkownikiem zostalo zamkniete badz otwarte
         /// </summary>
         public event ZmianaStanuPolaczenia ZmianaStanuPolaczenia;
-        
+
         /// <summary>
         /// Rozpocznij dzialanie komunikatora
         /// </summary>
@@ -93,7 +91,7 @@ namespace MojCzat.komunikacja
             watekKomunikator = new System.Threading.Thread(start);
             watekKomunikator.Start();
         }
-      
+
         /// <summary>
         /// Zatrzymaj dzialanie komunikatora
         /// </summary>
@@ -127,8 +125,11 @@ namespace MojCzat.komunikacja
         /// Wyslij swoj opis do uzytkownikow z listy kontaktow
         /// </summary>
         public void OglosOpis()
-        { mapownik.WszystkieId.ForEach(s => 
-            protokol.WyslijOpis(s, Opis)); }
+        {
+            if (Opis == null) { return; }
+            mapownik.WszystkieId.ForEach(s =>
+              protokol.WyslijOpis(s, Opis));
+        }
 
         /// <summary>
         /// Popros o opis uzytkownika
@@ -142,14 +143,14 @@ namespace MojCzat.komunikacja
         /// </summary>
         /// <param name="idUzytkownika">Identyfikator uzytkownika</param>
         /// <returns></returns>
-        public bool CzyDostepny(string idUzytkownika) 
+        public bool CzyDostepny(string idUzytkownika)
         { return dostepnosc.ContainsKey(idUzytkownika) && dostepnosc[idUzytkownika]; }
-        
+
         /// <summary>
         /// Rozlacz sie z uzytkownikiem
         /// </summary>
         /// <param name="idUzytkownika">Identyfikator uzytkownika</param>
-        public void Rozlacz(string idUzytkownika) 
+        public void Rozlacz(string idUzytkownika)
         { protokol.Rozlacz(idUzytkownika); }
 
         /// <summary>
@@ -167,7 +168,7 @@ namespace MojCzat.komunikacja
         /// </summary>
         /// <param name="idUzytkownika">Identyfikator uzytkownika</param>
         public void UsunKontakt(string idUzytkownika)
-        {           
+        {
             protokol.UsunUzytkownika(idUzytkownika);
             dostepnosc.Remove(idUzytkownika);
             mapownik.Usun(idUzytkownika);
@@ -181,7 +182,7 @@ namespace MojCzat.komunikacja
             protokol.DodajUzytkownika(idUzytkownika);
             dostepnosc.Add(idUzytkownika, dostepny);
         }
-        
+
         // zainicjuj obiekt sprawdzajacy dostepnosc innych uzytkownikow
         void zainicjujPingacz()
         {
@@ -191,7 +192,7 @@ namespace MojCzat.komunikacja
         }
 
         // sproboj polaczyc sie z niedostepnymi uzytkownikami
-        void sprobojPolaczyc() 
+        void sprobojPolaczyc()
         {
             dostepnosc.Keys.Where(id => !dostepnosc[id]).ToList()
                 .ForEach(id => protokol.Polacz(id));
@@ -213,15 +214,16 @@ namespace MojCzat.komunikacja
         // polaczenie do uzytkownika zostalo zamkniete
         void protokol_ZamknietoPolaczenieZasadnicze(string idUzytkownika)
         {
-            dostepnosc[idUzytkownika] = false; 
+            dostepnosc[idUzytkownika] = false;
             if (ZmianaStanuPolaczenia != null) { ZmianaStanuPolaczenia(idUzytkownika); }
         }
 
         // polaczenie do uzytkownika zostalo otwarte
         void protokol_OtwartoPolaczenieZasadnicze(string idUzytkownika)
         {
-            if (!mapownik.CzyZnasz(idUzytkownika)) { 
-                dodajKontakt(idUzytkownika, IPAddress.Parse(idUzytkownika), true);                
+            if (!mapownik.CzyZnasz(idUzytkownika))
+            {
+                dodajKontakt(idUzytkownika, IPAddress.Parse(idUzytkownika), true);
             }
             dostepnosc[idUzytkownika] = true;
             if (ZmianaStanuPolaczenia != null) { ZmianaStanuPolaczenia(idUzytkownika); }

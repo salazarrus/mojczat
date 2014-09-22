@@ -1,5 +1,4 @@
 ﻿#define TRACE
-
 using MojCzat.model;
 using System;
 using System.Collections.Generic;
@@ -14,9 +13,8 @@ namespace MojCzat.komunikacja
     public delegate void OtwartoPolaczenieZasadnicze(string idUzytkownika);
     public delegate void ZamknietoPolaczenieZasadnicze(string idUzytkownika);
     public delegate void NawiazalismyPolaczeniePlikowe(string idPolaczenia);
-    
-    public delegate void CzytanieSkonczone(string idUzytkownika);
-    
+    public delegate void CzytanieSkonczone(string idUzytkownika, string powod);
+
     /// <summary>
     /// Obiekt odpowiedzialny za koordynacje przesylania i odbierania komunikatow
     /// </summary>
@@ -29,42 +27,41 @@ namespace MojCzat.komunikacja
         Strumieniownia strumieniownia;
 
         const int DlugoscNaglowka = 5; // 1 bajt na rodzaj komunikatu, 4 na dlugosc
-        
+
         /// <summary>
         /// Konstruktor
         /// </summary>
         /// <param name="mapownik">obiekt mapownika</param>
         /// <param name="ustawienia">obiekt ustawien</param>
-        public Protokol(Mapownik mapownik, Ustawienia ustawienia) {
+        public Protokol(Mapownik mapownik, Ustawienia ustawienia)
+        {
             this.wiadomosciownia = new Wiadomosciownia(new CzytanieSkonczone(czekajNaZapytanie)); ;
-            
+
             foreach (var i in mapownik.WszystkieId) { wiadomosciownia.DodajUzytkownika(i); }
 
             this.ustawienia = ustawienia;
             this.mapownik = mapownik;
-            
+
             strumieniownia = new Strumieniownia(mapownik, ustawienia);
             strumieniownia.NawiazalismyPolaczeniePlikowe += strumieniownia_NawiazalismyPolaczeniePlikowe;
             strumieniownia.GotowyDoOdbioru += strumieniownia_GotowyDoOdbioru;
             this.plikownia = new Plikownia();
 
-            plikownia.PlikOdebrano += plikownia_PlikOdebrano;           
+            plikownia.PlikOdebrano += plikownia_PlikOdebrano;
         }
-
-        void plikownia_PlikOdebrano(string idPolaczenia)
-        {
-            strumieniownia.Rozlacz(idPolaczenia);
-        }
-  
 
         /// <summary>
         /// Nadeszla nowa wiadomosc tekstowa
         /// </summary>
-        public event NowaWiadomosc NowaWiadomosc {
+        public event NowaWiadomosc NowaWiadomosc
+        {
             add { wiadomosciownia.NowaWiadomosc += value; }
             remove { wiadomosciownia.NowaWiadomosc -= value; }
         }
 
+        /// <summary>
+        /// Zaoferowano nam plik
+        /// </summary>
         public event PlikZaoferowano PlikZaoferowano
         {
             add { plikownia.PlikZaoferowano += value; }
@@ -83,7 +80,7 @@ namespace MojCzat.komunikacja
         /// <summary>
         /// Rozlaczylismy sie z innym uzytkownikiem
         /// </summary>
-        public event ZamknietoPolaczenieZasadnicze ZamknietoPolaczenieZasadnicze 
+        public event ZamknietoPolaczenieZasadnicze ZamknietoPolaczenieZasadnicze
         {
             add { strumieniownia.ZamknietoPolaczenieZasadnicze += value; }
             remove { strumieniownia.ZamknietoPolaczenieZasadnicze -= value; }
@@ -115,7 +112,7 @@ namespace MojCzat.komunikacja
         /// Obsluguj nowego uzytkownika
         /// </summary>
         /// <param name="idUzytkownika">Identyfikator uzytkownika</param>
-        public void DodajUzytkownika(string idUzytkownika) 
+        public void DodajUzytkownika(string idUzytkownika)
         { wiadomosciownia.DodajUzytkownika(idUzytkownika); }
 
         /// <summary>
@@ -155,9 +152,14 @@ namespace MojCzat.komunikacja
         /// <param name="sciezka">sciezka do pliku</param>
         public void WyslijPlik(String idUzytkownika, String sciezka)
         {
-            strumieniownia.NawiazPolaczeniePlikowe(sciezka, idUzytkownika); 
+            strumieniownia.NawiazPolaczeniePlikowe(sciezka, idUzytkownika);
         }
 
+        /// <summary>
+        /// Popros plik, ktory nam zaoferowano
+        /// </summary>
+        /// <param name="idPrzesylu"></param>
+        /// <param name="nazwaPliku"></param>
         public void PoprosPlik(string idPrzesylu, string nazwaPliku)
         {
             PolaczeniePlikowe polaczeniePlikowe = (PolaczeniePlikowe)strumieniownia.DajPolaczenie(idPrzesylu);
@@ -172,34 +174,43 @@ namespace MojCzat.komunikacja
               , idRozmowcy, Komunikat.Generuj(rodzaj, wiadomosc));
         }
 
+        // odebralismy plik
+        void plikownia_PlikOdebrano(string idPolaczenia)
+        {
+            strumieniownia.Rozlacz(idPolaczenia);
+        }
+
+        // nawiazalismy polaczenie dla przeslania pliku
         void strumieniownia_NawiazalismyPolaczeniePlikowe(string idPolaczenia)
         {
             var polaczenie = (PolaczeniePlikowe)strumieniownia.DajPolaczenie(idPolaczenia);
             plikownia.OferujPlik(polaczenie.IdUzytkownika, polaczenie.Plik, polaczenie.Strumien);
-        }   
+        }
 
         // Czekaj (pasywnie) na zapytania i wiadomosci
-        void czekajNaZapytanie(string idPolaczenia)
+        void czekajNaZapytanie(string idPolaczenia, string zrodlo)
         {
-            Trace.TraceInformation("Protokol.czekajNaZapytanie " + idPolaczenia);
-            var polaczenie = strumieniownia.DajPolaczenie(idPolaczenia); 
+            Trace.TraceInformation("Protokol.czekajNaZapytanie " + idPolaczenia + " " + zrodlo);
+            var polaczenie = strumieniownia.DajPolaczenie(idPolaczenia);
             var wynik = new StatusObsluzZapytanie() { IdStrumienia = idPolaczenia, Naglowek = new byte[DlugoscNaglowka] };
             polaczenie.Strumien.BeginRead(wynik.Naglowek, 0, DlugoscNaglowka, obsluzZapytanie, wynik);
-        }
+         }
 
         // przyszlo nowe zapytanie / wiadomosc
         void obsluzZapytanie(IAsyncResult wynik)
-        {
+        {           
             var status = (StatusObsluzZapytanie)wynik.AsyncState;
             Trace.TraceInformation("Protoko.obsluzZapytanie " + status.Naglowek[0].ToString() + " " + status.IdStrumienia);
             int dlugoscWiadomosci = BitConverter.ToInt32(status.Naglowek, 1);
             if (!strumieniownia.CzyZnasz(status.IdStrumienia)) { return; }
             var polaczenie = strumieniownia.DajPolaczenie(status.IdStrumienia);
-            
+            Trace.TraceInformation(string.Format("Protoko.obsluzZapytanie {0} , {1}", status.IdStrumienia, polaczenie.IdUzytkownika));
             try { polaczenie.Strumien.EndRead(wynik); }
             catch // zostalismy rozlaczeni
-            {  strumieniownia.ToPolaczenieNieDziala(status.IdStrumienia);
-               return; }
+            {
+                strumieniownia.ToPolaczenieNieDziala(status.IdStrumienia);
+                return;
+            }
 
             switch (status.Naglowek[0])
             {
@@ -207,22 +218,24 @@ namespace MojCzat.komunikacja
                     strumieniownia.ToPolaczenieNieDziala(status.IdStrumienia);
                     return;
                 case Komunikat.ZwyklaWiadomosc://zwykla wiadomosc
-                    wiadomosciownia.CzytajZawartosc(polaczenie.Strumien,status.IdStrumienia, 
+                    wiadomosciownia.CzytajZawartosc(polaczenie.Strumien, status.IdStrumienia,
                         polaczenie.IdUzytkownika, TypWiadomosci.Zwykla, dlugoscWiadomosci);
                     break;
                 case Komunikat.DajOpis: // prosza nas o nasz opis
-                    czekajNaZapytanie(status.IdStrumienia);
-                    WyslijOpis(polaczenie.IdUzytkownika, ustawienia.Opis);
+                    Trace.TraceInformation("dajopis " + status.IdStrumienia);
+                    czekajNaZapytanie(status.IdStrumienia, "dajopis");
+                    if (ustawienia.Opis != null) { WyslijOpis(polaczenie.IdUzytkownika, ustawienia.Opis); }
                     break;
                 case Komunikat.WezOpis: // my prosimy o opis
-                    wiadomosciownia.CzytajZawartosc(polaczenie.Strumien, status.IdStrumienia, 
+                    Trace.TraceInformation(string.Format("wezopis {0}, {1}", status.IdStrumienia, polaczenie.IdUzytkownika));
+                    wiadomosciownia.CzytajZawartosc(polaczenie.Strumien, status.IdStrumienia,
                         polaczenie.IdUzytkownika, TypWiadomosci.Opis, dlugoscWiadomosci);
                     break;
                 case Komunikat.ChceszPlik:
-                    Trace.TraceInformation("zaoferowano nam plik");
-                    plikownia.WczytajNazwe(polaczenie.Strumien, status.IdStrumienia, 
+                    Trace.TraceInformation("zaoferowano nam plik " + status.IdStrumienia);
+                    plikownia.WczytajNazwe(polaczenie.Strumien, status.IdStrumienia,
                         polaczenie.IdUzytkownika, dlugoscWiadomosci);
-                    czekajNaZapytanie(status.IdStrumienia);    
+                    czekajNaZapytanie(status.IdStrumienia, "chceszplik");
                     break;
                 case Komunikat.DajPlik:
                     {
@@ -240,13 +253,17 @@ namespace MojCzat.komunikacja
                     strumieniownia.Rozlacz(status.IdStrumienia);
                     break;
             }
+   
         }
 
         // strumien jest gotowy do czytania z niego
         void strumieniownia_GotowyDoOdbioru(string idStrumienia)
-        { czekajNaZapytanie(idStrumienia); }
+        { 
+            Trace.TraceInformation("gotowyDoOdbioru " + idStrumienia);
+            czekajNaZapytanie(idStrumienia, "gotowydoodbioru"); 
+        }
 
-       
+
 
         // klasa uzywana do operacji asynchronicznej
         class StatusObsluzZapytanie

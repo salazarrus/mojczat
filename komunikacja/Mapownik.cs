@@ -11,7 +11,7 @@ namespace MojCzat.komunikacja
     /// </summary>
     class Mapownik
     {
-        // Mapowanie Identyfikatora rozmowcy do punktu kontatku (adres IP,Port)
+        // Mapowanie Identyfikatora rozmowcy do adresu IP
         Dictionary<string, IPAddress> ID_IP;
 
         /// <summary>
@@ -25,7 +25,7 @@ namespace MojCzat.komunikacja
         /// <param name="id">Identyfikator uzytkownika</param>
         /// <returns>adres IP</returns>
         public IPAddress this[string id] { get { return ID_IP[id]; } }
-        
+
         /// <summary>
         /// Powiedz kto znajduje sie pod tym adresem IP
         /// </summary>
@@ -37,12 +37,13 @@ namespace MojCzat.komunikacja
         /// Daj liste wszystkich uzytkownikow, ktorych lokalizacje znasz
         /// </summary>       
         public List<string> WszystkieId { get { return ID_IP.Keys.ToList(); } }
-        
+
         /// <summary>
         /// Konstruktor
         /// </summary>
         /// <param name="ID_IP">mapowanie z identyfikatora uzytkownika do adresu IP</param>
-        public Mapownik(Dictionary<string, IPAddress> ID_IP){
+        public Mapownik(Dictionary<string, IPAddress> ID_IP)
+        {
             this.ID_IP = ID_IP;
             this.IP_ID = new Dictionary<IPAddress, string>();
             foreach (var i in ID_IP)
@@ -54,7 +55,8 @@ namespace MojCzat.komunikacja
         /// </summary>
         /// <param name="idUzytkownika">Identyfikator uzytkownika </param>
         /// <param name="ip">adres IP</param>
-        public void Dodaj(string idUzytkownika, IPAddress ip) {
+        public void Dodaj(string idUzytkownika, IPAddress ip)
+        {
             IP_ID.Add(ip, idUzytkownika);
             ID_IP.Add(idUzytkownika, ip);
         }
@@ -63,7 +65,8 @@ namespace MojCzat.komunikacja
         /// Nie obsluguj juz tego uzytkownika
         /// </summary>
         /// <param name="idUzytkownika">Identyfikator uzytkownika </param>
-        public void Usun(string idUzytkownika) {
+        public void Usun(string idUzytkownika)
+        {
             IP_ID.Remove(ID_IP[idUzytkownika]);
             ID_IP.Remove(idUzytkownika);
         }
@@ -73,7 +76,7 @@ namespace MojCzat.komunikacja
         /// </summary>
         /// <param name="idUzytkownika">Identyfikator uzytkownika </param>
         /// <returns></returns>
-        public bool CzyZnasz(String idUzytkownika) 
+        public bool CzyZnasz(String idUzytkownika)
         { return ID_IP.ContainsKey(idUzytkownika); }
 
         /// <summary>

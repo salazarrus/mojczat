@@ -1,6 +1,4 @@
-﻿#define TRACE
-
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Configuration;
 using System.Diagnostics;
@@ -52,9 +50,7 @@ namespace MojCzat.komunikacja
         {
             try
             {
-                int portMoj;
-                int.TryParse(ConfigurationManager.AppSettings["portMoj"], out portMoj);
-                serwer = new TcpListener(IPAddress.Any, portMoj); // stworz serwer
+                serwer = new TcpListener(IPAddress.Any, Port); // stworz serwer
                 serwer.Start(); //uruchom serwer
 
                 while (true) // zapetlamy
@@ -65,7 +61,7 @@ namespace MojCzat.komunikacja
                     zachowajNowePolaczenie(polaczenie, Guid.NewGuid().ToString(), strumien);
                 }
             }
-            catch (Exception ex) { Trace.TraceInformation("[Start]" + ex.ToString()); } // program zostal zamkniety
+            catch (Exception ex) { } // program zostal zamkniety
             finally { Stop(); }
         }
 
@@ -96,17 +92,12 @@ namespace MojCzat.komunikacja
         public void Polacz(string idPolaczenia ,IPAddress ip)
         {
             // tworzymy nowe polaczenie 
-            Trace.TraceInformation("Centrala.Polacz " + idPolaczenia);
             var klient = new TcpClient();
-            int portJego;
-            int.TryParse(ConfigurationManager.AppSettings["portJego"], out portJego);
-            var wynik = klient.BeginConnect(ip, portJego, new AsyncCallback(nawiazPolaczenieWynik),
+            var wynik = klient.BeginConnect(ip, Port, new AsyncCallback(nawiazPolaczenieWynik),
                 new NawiazPolaczenieStatus() { IdStrumienia = idPolaczenia, Polaczenie = klient });
-            
-            if (!wynik.AsyncWaitHandle.WaitOne(POLOCZENIE_TIMEOUT, true)) 
-            {
-                Trace.TraceInformation("timeout nawiaz polaczenie");
-            }
+
+            wynik.AsyncWaitHandle.WaitOne(POLOCZENIE_TIMEOUT, true); 
+       
         }
 
         /// <summary>
@@ -163,8 +154,6 @@ namespace MojCzat.komunikacja
         // zachowujemy polaczenie na pozniej
         void zachowajNowePolaczenie(TcpClient polaczenie, string idStrumienia ,Stream strumien)
         {
-            Trace.TraceInformation("Centrala.zachowajNowePolaczenie " + idStrumienia);
-
             polaczenia.Add(idStrumienia, polaczenie);
             strumienie.Add(idStrumienia, strumien);
             var ip = ((IPEndPoint)polaczenie.Client.RemoteEndPoint).Address;

@@ -1,6 +1,4 @@
-﻿#define TRACE
-
-using MojCzat.komunikacja;
+﻿using MojCzat.komunikacja;
 using MojCzat.model;
 using System;
 using System.Configuration;
@@ -8,7 +6,7 @@ using System.Windows.Forms;
 
 namespace MojCzat.ui
 {
-    
+
 
     /// <summary>
     /// Okno rozmowy z innym uzytkownikiem
@@ -25,7 +23,7 @@ namespace MojCzat.ui
         /// </summary>
         /// <param name="rozmowca">drugi uczestnik czatu</param>
         public OknoCzat(Kontakt rozmowca)
-        {           
+        {
             // inicjalizacja elementow graficznych okna
             InitializeComponent();
             // ustalanie naglowka okna
@@ -34,7 +32,7 @@ namespace MojCzat.ui
             this.rozmowca = rozmowca;
             tbCzat.MaxLength = int.MaxValue;
         }
-        
+
         /// <summary>
         /// Dodaj wiadomosc do rozmowy
         /// </summary>
@@ -47,7 +45,7 @@ namespace MojCzat.ui
         // Centralne pozycjonowanie okna wzgledem OknaGlownego
         protected override void OnShown(EventArgs e)
         {
-            base.OnShown(e);            
+            base.OnShown(e);
             CenterToParent();
         }
 
@@ -59,17 +57,18 @@ namespace MojCzat.ui
         }
 
         // Wiadomosc zostala wyslana, czyscimy wiec pole wpisywania wiadomosci
-        void wyczyscPoleWiadomosci(){
+        void wyczyscPoleWiadomosci()
+        {
             // wyczysc pole z tekstu
             tbWiadomosc.Text = String.Empty;
             // przygotuj do wpisywania
             tbWiadomosc.Focus();
             // ustaw kursor w pozycji poczatkowej
-            tbWiadomosc.Select(0, 0);               
+            tbWiadomosc.Select(0, 0);
         }
 
         // sprawdz czy istnieje polaczenie do rozmowcy
-        bool moznaWysylac() 
+        bool moznaWysylac()
         {
             if (Komunikator == null)
             {
@@ -86,9 +85,10 @@ namespace MojCzat.ui
         }
 
         // wysylamy nowa wiadomosc
-        void wyslijWpisanaWiadomosc() {
-            if (!moznaWysylac()) { return; }    
-                
+        void wyslijWpisanaWiadomosc()
+        {
+            if (!moznaWysylac()) { return; }
+
             String wiadomosc = tbWiadomosc.Text;
 
             // usuwamy biale znaki z lewej i prawej strony tekstu
@@ -98,7 +98,7 @@ namespace MojCzat.ui
 
             // wysylamy wiadomosc
             Komunikator.WyslijWiadomosc(rozmowca.ID, wiadomosc);
-            
+
             // dodajemy wiadomosc do naszego okna czatu
             tbCzat.AppendText(String.Format("[{0}] {1}\n", "Ty", wiadomosc));
             // czyscimy pole wpisywania dla nowej wiadomosci
@@ -106,7 +106,7 @@ namespace MojCzat.ui
         }
 
         // wyslij plik do rozmowcy
-        void wyslijPlik(string sciezka) 
+        void wyslijPlik(string sciezka)
         {
             if (!moznaWysylac()) { return; }
             Komunikator.WyslijPlik(rozmowca.ID, sciezka);
@@ -124,11 +124,12 @@ namespace MojCzat.ui
         {
             // jesli wlaczona jest funkcja wysylania po wcisnieciu klawisza Enter i 
             // ten klawisz zostal wcisniety, wysylamy wiadomosc
-            if (e.KeyCode == Keys.Enter && cbWyslijEnter.Checked) {
+            if (e.KeyCode == Keys.Enter && cbWyslijEnter.Checked)
+            {
                 wyslijWpisanaWiadomosc();
                 // nie chcemy nowej linii w polu wiadomosci
                 e.SuppressKeyPress = true;
-            }            
+            }
         }
 
         // "zamknij" okno na klawisz Escape

@@ -1,6 +1,4 @@
-﻿#define TRACE
-
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
@@ -14,10 +12,10 @@ namespace MojCzat.komunikacja
     /// Obiekt odpowiedziany za przesylanie i odbior komunikatow tekstowych
     /// </summary>
     class Wiadomosciownia
-    {        
+    {
         // dla kazdego uzytkownika kolejka wiadomosci do wyslania
         Dictionary<string, Queue<byte[]>> komunikatyWychodzace = new Dictionary<string, Queue<byte[]>>();
-        
+
         // zeby uniknac wysylania przez jeden strumien z roznych watkow uzywamy
         // nastepnych dwoch obiektow
         Dictionary<string, Boolean> wysylanieWToku = new Dictionary<string, Boolean>();
@@ -25,12 +23,12 @@ namespace MojCzat.komunikacja
 
         // obiekt zajmujacy sie alokacja buforow dla odbieranych wiadomosci
         Buforownia buforownia = new Buforownia(512);
-        
+
         // uruchamiamy te delegate, gdy skonczylismy czytac ze strumienia
         CzytanieSkonczone czytanieSkonczone;
-        
+
         // dlugosc (w bajtach) naglowka komunikatu
-        const int DlugoscNaglowka = 5; 
+        const int DlugoscNaglowka = 5;
 
         /// <summary>
         /// Konstruktor
@@ -52,11 +50,14 @@ namespace MojCzat.komunikacja
         /// <param name="idUzytkownika">od kogo ta wiadomosc</param>
         /// <param name="rodzaj">Zwykla / Opis</param>
         /// <param name="dlugoscWiadomosci">ile bajtow do wczytania</param>
-        public void CzytajZawartosc(Stream strumien, string idStrumienia, 
+        public void CzytajZawartosc(Stream strumien, string idStrumienia,
             string idUzytkownika, TypWiadomosci rodzaj, int dlugoscWiadomosci)
         {
-            if (dlugoscWiadomosci == 0) { czytanieSkonczone(idUzytkownika); }
-            czytajZawartosc(strumien, idStrumienia , idUzytkownika, rodzaj, dlugoscWiadomosci, 0);    
+            if (dlugoscWiadomosci == 0) { 
+                czytanieSkonczone(idStrumienia, "CzytajZawartosc");
+                return;
+            }
+            czytajZawartosc(strumien, idStrumienia, idUzytkownika, rodzaj, dlugoscWiadomosci, 0);
         }
 
         /// <summary>
@@ -74,10 +75,8 @@ namespace MojCzat.komunikacja
                 dajKolejkeWiadomosci(idRozmowcy).Enqueue(komunikat);
                 wysylajZKolejki(strumien, idRozmowcy);
             }
-            catch(Exception ex) 
-            {
-                Trace.TraceInformation("[WyslijWiadomosc]" + ex.ToString());
-            }
+            catch (Exception ex)
+            { }
         }
 
         /// <summary>
@@ -110,14 +109,14 @@ namespace MojCzat.komunikacja
             }
             return komunikatyWychodzace[idUzytkownika];
         }
-        
+
         // zacznij wysylac komunikaty z kolejki
         void wysylajZKolejki(Stream strumien, string idUzytkownika)
         {
             byte[] doWyslania = null;
             lock (zamkiWysylania[idUzytkownika])
             {
-                if (wysylanieWToku[idUzytkownika]){ return; }
+                if (wysylanieWToku[idUzytkownika]) { return; }
 
                 if (dajKolejkeWiadomosci(idUzytkownika).Any())
                 {
@@ -127,11 +126,10 @@ namespace MojCzat.komunikacja
             }
 
             if (doWyslania == null) { return; }
-            
-            strumien.BeginWrite(doWyslania, 0, 
-                doWyslania.Length, new AsyncCallback(komunikatWyslany), new WyslijKomunikatStatus() 
-                { IdNadawcy = idUzytkownika, Strumien = strumien });
-            
+
+            strumien.BeginWrite(doWyslania, 0,
+                doWyslania.Length, new AsyncCallback(komunikatWyslany), new WyslijKomunikatStatus() { IdNadawcy = idUzytkownika, Strumien = strumien });
+
         }
 
         // komunikat zostal wyslany
@@ -139,21 +137,26 @@ namespace MojCzat.komunikacja
         {
             var status = (WyslijKomunikatStatus)wynik.AsyncState;
             status.Strumien.EndWrite(wynik);
-            Trace.TraceInformation(String.Format("Wiadomosciownia.komunikatWyslany"));
             lock (zamkiWysylania[status.IdNadawcy])
             { wysylanieWToku[status.IdNadawcy] = false; }
             wysylajZKolejki(status.Strumien, status.IdNadawcy);
         }
 
         // czytaj ze strumienia
-        void czytajZawartosc(Stream strumien, string idStrumienia ,
+        void czytajZawartosc(Stream strumien, string idStrumienia,
             string idUzytkownika, TypWiadomosci rodzaj, int dlugoscWiadomosci, int wczytanoBajow)
         {
             strumien.BeginRead(buforownia[idUzytkownika], wczytanoBajow,
                 dlugoscWiadomosci, new AsyncCallback(zawartoscWczytana),
-                new CzytajWiadomoscStatus() { 
-                    IdNadawcy = idUzytkownika, Rodzaj = rodzaj, DlugoscWiadomosci = dlugoscWiadomosci, 
-                    Wczytano = wczytanoBajow, Strumien = strumien, IdStrumienia= idStrumienia });
+                new CzytajWiadomoscStatus()
+                {
+                    IdNadawcy = idUzytkownika,
+                    Rodzaj = rodzaj,
+                    DlugoscWiadomosci = dlugoscWiadomosci,
+                    Wczytano = wczytanoBajow,
+                    Strumien = strumien,
+                    IdStrumienia = idStrumienia
+                });
         }
 
         // wczytalismy cos ze strumienia
@@ -166,12 +169,12 @@ namespace MojCzat.komunikacja
                 int bajtyWczytane = status.Strumien.EndRead(wynik);
                 if (status.DlugoscWiadomosci > status.Wczytano + bajtyWczytane)
                 {
-                    czytajZawartosc(status.Strumien, status.IdStrumienia, status.IdNadawcy, status.Rodzaj, 
+                    czytajZawartosc(status.Strumien, status.IdStrumienia, status.IdNadawcy, status.Rodzaj,
                         status.DlugoscWiadomosci, status.Wczytano + bajtyWczytane);
                     return;
                 }
             }
-            catch (Exception ex) { Trace.TraceInformation(ex.ToString()); }
+            catch (Exception ex) { }
             
             // dekodujemy wiadomosc
             string wiadomosc = Encoding.UTF8.GetString(buforownia[status.IdNadawcy], 0, status.DlugoscWiadomosci);
@@ -181,22 +184,21 @@ namespace MojCzat.komunikacja
             // jesli sa zainteresowani, informujemy ich o nowej wiadomosci
             if (NowaWiadomosc != null) // informujemy zainteresowanych
             { NowaWiadomosc(status.IdNadawcy, status.Rodzaj, wiadomosc); }
-
-            czytanieSkonczone(status.IdStrumienia);
+            czytanieSkonczone(status.IdStrumienia, "zawartosWczytana");
         }
 
         // obiekt uzywany w operacji asynchronicznej
         class WyslijKomunikatStatus
         {
             public String IdNadawcy { get; set; }
-            public Stream Strumien{ get; set; }
+            public Stream Strumien { get; set; }
         }
 
         // obiekt uzywany w operacji asynchronicznej
         class CzytajWiadomoscStatus
         {
             public Stream Strumien { get; set; }
-            public String IdStrumienia{ get; set; }
+            public String IdStrumienia { get; set; }
             public String IdNadawcy { get; set; }
             public TypWiadomosci Rodzaj { get; set; }
             public int DlugoscWiadomosci { get; set; }

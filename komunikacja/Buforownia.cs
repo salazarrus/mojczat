@@ -10,14 +10,16 @@ namespace MojCzat.komunikacja
         /// <summary>
         /// Ile bajtow mozna przeslac w jednej wiadomosci
         /// </summary>
-        public int RozmiarBufora { get; private set;}
-        
+        public int RozmiarBufora { get; private set; }
+
 
         // bufory na przychodzace dane
         Dictionary<string, byte[]> bufory = new Dictionary<string, byte[]>();
 
-        public byte[] this[string id] {
-            get { 
+        public byte[] this[string id]
+        {
+            get
+            {
                 if (!bufory.ContainsKey(id))
                 {
                     bufory.Add(id, new byte[RozmiarBufora]);
@@ -30,7 +32,7 @@ namespace MojCzat.komunikacja
         /// Konstruktor
         /// </summary>
         /// <param name="rozmiarBufora">ile bajtow ma bufor</param>
-        public Buforownia(int rozmiarBufora) 
+        public Buforownia(int rozmiarBufora)
         { RozmiarBufora = rozmiarBufora; }
 
         /// <summary>

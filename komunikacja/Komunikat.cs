@@ -41,6 +41,6 @@ namespace MojCzat.komunikacja
             bajty[0] = rodzaj;
             Array.Copy(dlugoscZawartosciNaglowek, 0, bajty, 1, dlugoscZawartosciNaglowek.Length);
             return bajty;
-        }    
+        }
     }
 }

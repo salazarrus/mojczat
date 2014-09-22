@@ -7,8 +7,8 @@ namespace MojCzat.ui
     /// <summary>
     /// Graficzne przedstawienie listy kontaktow
     /// </summary>
-    [System.ComponentModel.DesignerCategory("")] 
-    partial class ListaKontaktowUI: ListBox
+    [System.ComponentModel.DesignerCategory("")]
+    partial class ListaKontaktowUI : ListBox
     {
         Size rozmiarIkony;
         StringFormat format;
@@ -18,26 +18,26 @@ namespace MojCzat.ui
         public ListaKontaktowUI()
         {
             InitializeComponent();
-            rozmiarIkony = new Size(80,60);
+            rozmiarIkony = new Size(80, 60);
             this.ItemHeight = rozmiarIkony.Height + this.Margin.Vertical;
             this.DrawMode = System.Windows.Forms.DrawMode.OwnerDrawFixed;
             format = new StringFormat();
             format.Alignment = StringAlignment.Near;
             format.LineAlignment = StringAlignment.Near;
             czcionkaNazwa = new Font(this.Font, FontStyle.Bold);
-            czcionkaStatus = new Font(this.Font, FontStyle.Regular);            
+            czcionkaStatus = new Font(this.Font, FontStyle.Regular);
         }
-        
+
         protected override void OnDrawItem(DrawItemEventArgs e)
         {
             // nic do narysowania
-            if (this.Items.Count == 0) { return; }            
-        
+            if (this.Items.Count == 0) { return; }
+
             // rysuj
-            var kontakt = (Kontakt)this.Items[e.Index];  
+            var kontakt = (Kontakt)this.Items[e.Index];
             rysujElement(kontakt, e);
         }
-       
+
         void rysujElement(Kontakt kontakt, DrawItemEventArgs e)
         {
             Padding margines = this.Margin;
@@ -61,7 +61,7 @@ namespace MojCzat.ui
                                                   (int)czcionkaNazwa.GetHeight() + 2);
 
             // obliczanie ram dla detalu
-            Rectangle ramyStatus = 
+            Rectangle ramyStatus =
                 new Rectangle(e.Bounds.X + margines.Horizontal + rozmiarIkony.Width,
                     e.Bounds.Y + (int)czcionkaNazwa.GetHeight() + 2 + margines.Vertical + margines.Top,
                     e.Bounds.Width - margines.Right - rozmiarIkony.Width - margines.Horizontal,
@@ -69,8 +69,8 @@ namespace MojCzat.ui
 
             // rysuj tekst
             e.Graphics.DrawString(kontakt.Nazwa, czcionkaNazwa, Brushes.Black, ramyNazwa, format);
-            e.Graphics.DrawString(kontakt.StatusTekst + (kontakt.Opis!= null?" (" 
-                + kontakt.Opis + ")":""), czcionkaStatus, Brushes.DarkGray, ramyStatus, format);
+            e.Graphics.DrawString(kontakt.StatusTekst + (kontakt.Opis != null ? " ("
+                + kontakt.Opis + ")" : ""), czcionkaStatus, Brushes.DarkGray, ramyStatus, format);
 
             e.DrawFocusRectangle();
         }
