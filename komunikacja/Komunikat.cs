@@ -11,8 +11,10 @@ namespace MojCzat.komunikacja
         public const byte ZwyklaWiadomosc = 1;
         public const byte DajOpis = 2;
         public const byte WezOpis = 3;
-        public const byte WezPlik = 4;
+        public const byte ChceszPlik = 4;
         public const byte DajPlik = 5;
+        public const byte WezPlik = 6;
+
 
 
         const int DlugoscNaglowka = 5; // 1 bajt na rodzaj komunikatu, 4 na dlugosc
@@ -27,6 +29,17 @@ namespace MojCzat.komunikacja
             bajty[0] = rodzaj;
             Array.Copy(dlugoscZawartosciNaglowek, 0, bajty, 1, dlugoscZawartosciNaglowek.Length);
             Array.Copy(bajtyZawartosc, 0, bajty, DlugoscNaglowka, bajtyZawartosc.Length);
+            return bajty;
+        }
+
+
+        public static byte[] GenerujNaglowek(byte rodzaj, int dlugosc)
+        {
+            var bajty = new byte[DlugoscNaglowka];
+            var dlugoscZawartosciNaglowek = BitConverter.GetBytes(dlugosc);
+            if (BitConverter.IsLittleEndian) { dlugoscZawartosciNaglowek.Reverse(); }
+            bajty[0] = rodzaj;
+            Array.Copy(dlugoscZawartosciNaglowek, 0, bajty, 1, dlugoscZawartosciNaglowek.Length);
             return bajty;
         }    
     }

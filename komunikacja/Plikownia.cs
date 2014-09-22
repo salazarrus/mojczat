@@ -16,79 +16,200 @@ namespace MojCzat.komunikacja
     {
         Buforownia buforownia = new Buforownia(4096);
 
-        public event PlikWyslano PlikWyslano;
         public event PlikZaoferowano PlikZaoferowano;
 
-        public void WczytajNazwe(Stream strumien, String idUzytkownika ,int dlugoscNazwy) 
+        public event PlikOdebrano PlikOdebrano;
+
+        public void WczytajNazwe(Stream strumien, string idPolaczenia, String idUzytkownika, int dlugoscNazwy)
         {
-            wczytajNazwe(strumien, idUzytkownika, dlugoscNazwy, 0);
+            var status = new WczytajNazweStatus()
+            {
+                DlugoscNazwy = dlugoscNazwy,
+                IdUzytkownika = idUzytkownika,
+                StrumienSieciowy = strumien,
+                IdPolaczenia = idPolaczenia,
+                WczytanoBajtow = 0
+            };
+            wczytajCzescNazwyPliku(status);
         }
 
-        void wczytajNazwe(Stream strumien, String idUzytkownika, int dlugoscNazwy, int wczytano)
+        public void OferujPlik(string idUzytkownika, string plik, Stream strumien)
         {
-            strumien.BeginRead(buforownia[idUzytkownika], 0, dlugoscNazwy, nazwePlikuWczytano,
-                new WczytajNazweStatus() { dlugosc = dlugoscNazwy, idUzytkownika = idUzytkownika, strumien = strumien });
+            FileInfo info = new FileInfo(plik);
+            var status = new OferujPlikStatus() { 
+                NazwaPliku = plik, 
+                IdUzytkownika = idUzytkownika, 
+                StrumienSieciowy = strumien
+            };
+
+            var komunikat = Komunikat.Generuj(Komunikat.ChceszPlik, info.Name);
+            strumien.BeginWrite(komunikat, 0, komunikat.Length, zaoferowanoPlik, status);
         }
 
+        public void PoprosPlik(Stream strumien, string idStrumienia)
+        {
+            var komunikat = Komunikat.Generuj(Komunikat.DajPlik, "");
+            strumien.BeginWrite(komunikat, 0, komunikat.Length, poproszonoOPlik, strumien);
+        }
 
-        void nazwePlikuWczytano(IAsyncResult wynik)
+        public void WyslijPlik(Stream strumien, string idStrumienia, string sciezka)
+        {
+            FileInfo fi = new FileInfo(sciezka);
+            FileStream fs = new FileStream(sciezka, FileMode.Open, FileAccess.Read);
+            var status = new TransmitujPlikStatus()
+            {
+                RozmiarPliku = fi.Length,
+                IdStrumieniaSieciowego = idStrumienia,
+                StrumienSieciowy = strumien,
+                WczytanoBajtow = 0,
+                ZapisanoBajtow = 0,
+                plik = fs
+            };
+            var naglowek = Komunikat.GenerujNaglowek(Komunikat.WezPlik, (int)fi.Length);
+            strumien.BeginWrite(naglowek, 0, naglowek.Length, wyslanoNaglowek, status);
+        }
+
+        public void PobierzPlik(Stream strumien, string idStrumienia, string plik, int rozmiarPliku)
+        {
+            FileStream fs = new FileStream(plik, FileMode.Create, FileAccess.Write);
+            var status = new TransmitujPlikStatus()
+            {
+                RozmiarPliku = rozmiarPliku,
+                IdStrumieniaSieciowego = idStrumienia,
+                StrumienSieciowy = strumien,
+                WczytanoBajtow = 0,
+                ZapisanoBajtow = 0,
+                plik = fs
+            };
+            pobierzCzescPliku(status);
+        }
+
+        void wyslanoNaglowek(IAsyncResult wynik)
+        {
+            var status = (TransmitujPlikStatus)wynik.AsyncState;
+            status.StrumienSieciowy.EndWrite(wynik);
+            wyslijCzescPliku(status);
+        }
+
+        void wyslijCzescPliku(TransmitujPlikStatus status)
+        {
+            status.plik.BeginRead(buforownia[status.IdStrumieniaSieciowego], 0,
+                buforownia.RozmiarBufora, wysylaniePlikuWczytanoZDysku, status);
+        }
+
+        void wysylaniePlikuWczytanoZDysku(IAsyncResult wynik)
+        {
+            var status = (TransmitujPlikStatus)wynik.AsyncState;
+            var wczytaneBajty = status.plik.EndRead(wynik);
+            status.WczytanoBajtow += wczytaneBajty;
+
+            status.StrumienSieciowy.BeginWrite(buforownia[status.IdStrumieniaSieciowego], 
+                0, wczytaneBajty, wysylaniePlikuCzescWyslano, status);
+        }
+
+        void wysylaniePlikuCzescWyslano(IAsyncResult wynik)
+        {
+            var status = (TransmitujPlikStatus)wynik.AsyncState;
+            status.StrumienSieciowy.EndWrite(wynik);
+            status.ZapisanoBajtow = status.WczytanoBajtow;
+            if (status.ZapisanoBajtow < status.RozmiarPliku)
+            {
+                wyslijCzescPliku(status);
+                return;
+            }
+            status.plik.Close();
+        }
+
+        void pobierzCzescPliku(TransmitujPlikStatus status)
+        {
+            status.StrumienSieciowy.BeginRead(buforownia[status.IdStrumieniaSieciowego],
+                0, buforownia.RozmiarBufora, pobieraniePlikuZapiszCzesc, status);
+        }
+
+        void pobieraniePlikuZapiszCzesc(IAsyncResult wynik)
+        {
+            var status = (TransmitujPlikStatus)wynik.AsyncState;
+            var bajtyWczytane = status.StrumienSieciowy.EndRead(wynik);
+            status.WczytanoBajtow += bajtyWczytane;
+            status.plik.BeginWrite(buforownia[status.IdStrumieniaSieciowego], 0, bajtyWczytane,
+                pobieraniePlikuCzescZapisano, status);
+        }
+
+        void pobieraniePlikuCzescZapisano(IAsyncResult wynik)
+        {
+            var status = (TransmitujPlikStatus)wynik.AsyncState;
+            status.plik.EndWrite(wynik);
+            status.ZapisanoBajtow = status.WczytanoBajtow;
+            if (status.ZapisanoBajtow < status.RozmiarPliku)
+            {
+                pobierzCzescPliku(status);
+                return;
+            }
+            if (PlikOdebrano != null) { PlikOdebrano(status.IdStrumieniaSieciowego); }
+
+            status.plik.Close();
+        }        
+
+        void wczytajCzescNazwyPliku(WczytajNazweStatus status)
+        {
+            status.StrumienSieciowy.BeginRead(buforownia[status.IdUzytkownika], status.WczytanoBajtow,
+                status.DlugoscNazwy - status.WczytanoBajtow, wczytanoCzescNazwyPliku, status);
+        }
+
+        void wczytanoCzescNazwyPliku(IAsyncResult wynik)
         {
             var status = (WczytajNazweStatus)wynik.AsyncState;
-            
-            int bajtyWczytane = status.strumien.EndRead(wynik);
-            if (status.dlugosc > status.wczytano + bajtyWczytane)
+
+            int bajtyWczytane = status.StrumienSieciowy.EndRead(wynik);
+            status.WczytanoBajtow += bajtyWczytane;
+            if (status.DlugoscNazwy > status.WczytanoBajtow)
             {
-                wczytajNazwe(status.strumien, status.idUzytkownika, status.dlugosc ,status.wczytano + bajtyWczytane);
+                wczytajCzescNazwyPliku(status);
                 return;
             }
 
-            string nazwa = Encoding.UTF8.GetString(buforownia[status.idUzytkownika], 0, status.dlugosc);
+            string nazwa = Encoding.UTF8.GetString(buforownia[status.IdUzytkownika], 0, status.DlugoscNazwy);
 
-            // czyscimy bufor
-            Array.Clear(buforownia[status.idUzytkownika], 0, status.dlugosc);
-            if (PlikZaoferowano != null) { PlikZaoferowano(status.idUzytkownika, nazwa); }
-
+            Array.Clear(buforownia[status.IdUzytkownika], 0, status.DlugoscNazwy);
+            if (PlikZaoferowano != null) { PlikZaoferowano(status.IdUzytkownika, nazwa, status.IdPolaczenia); }
         }
-        public void OferujPlik(string idUzytkownika, string plik, Stream strumien)
+        
+        void poproszonoOPlik(IAsyncResult wynik)
         {
-            FileInfo f = new FileInfo(plik);
-            
-            Trace.TraceInformation("oferujemy plik  " + plik + " dla " + idUzytkownika);
-            var komunikat = Komunikat.Generuj(Komunikat.WezPlik, f.Name);
-            strumien.BeginWrite(komunikat, 0, komunikat.Length, zaoferowano, new
-                OferujPlikStatus() { plik = plik, idUzytkownika = idUzytkownika, strumien = strumien });
+            var strumien = (Stream)wynik.AsyncState;
+            strumien.EndWrite(wynik);
         }
 
-
-
-
-        void zaoferowano(IAsyncResult wynik) 
+        void zaoferowanoPlik(IAsyncResult wynik)
         {
             var status = (OferujPlikStatus)wynik.AsyncState;
-            status.strumien.EndWrite(wynik);
-            Trace.TraceInformation("wyslano oferte");
-        }
-        public void Wyslij(String idRozmowcy, String sciezka)
-        {
-            if(!File.Exists(sciezka)){ return; }
-            var rozmiar = new FileInfo(sciezka).Length;
-            //var strumienWyjscia = centrala[idRozmowcy];
+            status.StrumienSieciowy.EndWrite(wynik);
         }
 
         class OferujPlikStatus
-        { 
-            public string idUzytkownika { get; set;}
-            public string plik { get; set; }
-            public Stream strumien { get; set; }
+        {
+            public string IdUzytkownika { get; set; }
+            public string NazwaPliku { get; set; }
+            public Stream StrumienSieciowy { get; set; }
         }
 
         class WczytajNazweStatus
         {
-            public string idUzytkownika { get; set; }
-            public int dlugosc{ get; set; }
-            public int wczytano{ get; set; }
-            public Stream strumien { get; set; }
-        
+            public string IdUzytkownika { get; set; }
+            public string IdPolaczenia { get; set; }
+            public int DlugoscNazwy { get; set; }
+            public int WczytanoBajtow { get; set; }
+            public Stream StrumienSieciowy { get; set; }
+        }
+
+        class TransmitujPlikStatus
+        {
+            public long RozmiarPliku { get; set; }
+            public Stream StrumienSieciowy { get; set; }
+            public string IdStrumieniaSieciowego { get; set; }
+            public int WczytanoBajtow { get; set; }
+            public int ZapisanoBajtow { get; set; }
+            public FileStream plik { get; set; }
         }
     }
 }

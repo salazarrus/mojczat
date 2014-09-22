@@ -20,11 +20,11 @@ namespace MojCzat.komunikacja
     // delegata definiujaca funkcje obslugujace zdarzenie NowaWiadomosc
     public delegate void NowaWiadomosc(string id, TypWiadomosci rodzaj , string wiadomosc);
 
-    public delegate void PlikZaoferowano(string idUzytkownika, string nazwa);
+    public delegate void PlikZaoferowano(string idUzytkownika, string nazwaPliku, string idPolaczenia);
     
     public delegate void PlikWyslano(string id, string nazwa);
 
-    public delegate void PlikOdebrano(string id, string nazwa);
+    public delegate void PlikOdebrano(string idPolaczenia);
  
     // delegata definiujaca funkcje obslugujace zdarzenie ZmianaStanuPolaczenia
     public delegate void ZmianaStanuPolaczenia(string idUzytkownika);
@@ -119,6 +119,9 @@ namespace MojCzat.komunikacja
         /// <param name="sciezka">sciezka do pliku</param>
         public void WyslijPlik(String idUzytkownika, String sciezka)
         { protokol.WyslijPlik(idUzytkownika, sciezka); }
+
+        public void PoprosPlik(String idPrzesylu, string nazwaPliku)
+        { protokol.PoprosPlik(idPrzesylu, nazwaPliku); }
 
         /// <summary>
         /// Wyslij swoj opis do uzytkownikow z listy kontaktow

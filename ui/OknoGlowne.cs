@@ -81,7 +81,7 @@ namespace MojCzat.ui
         // gdy nastapila zmiana dostepnosci kontaktow, odswiezamy okno
         delegate void OdswiezOkno();
 
-        delegate void ZaoferujPlik(string nazwaPliku, string idPolaczenia);
+        delegate void ZaoferujPlik(string idUzytkownika, string nazwaPliku, string idPolaczenia);
 
         //sprzatamy po sobie
         protected override void OnClosing(System.ComponentModel.CancelEventArgs e)
@@ -153,18 +153,19 @@ namespace MojCzat.ui
             oknaCzatu.Values.ToList().ForEach(o => o.Komunikator = komunikator);
         }
 
-        void zaoferujPlik(string idUzytkownika, string nazwa)
+        void zaoferujPlik(string idUzytkownika, string nazwa, string idPrzesylu)
         {
             var wynik = new ZachowajPlik(nazwa).ShowDialog(this);
 
             if (wynik == System.Windows.Forms.DialogResult.OK)
             {
+                komunikator.PoprosPlik(idPrzesylu, nazwa);
             }
         }
 
-        void komunikator_PlikZaoferowano(string idUzytkownika, string nazwa)
+        void komunikator_PlikZaoferowano(string idUzytkownika, string nazwaPliku, string idPrzesylu)
         {
-            Invoke(zaoferujPlikDelegata, idUzytkownika, nazwa);
+            Invoke(zaoferujPlikDelegata, idUzytkownika, nazwaPliku, idPrzesylu);
         }
 
         // ustawiony status "Niedostepny"

@@ -47,6 +47,13 @@ namespace MojCzat.komunikacja
             strumieniownia.NawiazalismyPolaczeniePlikowe += strumieniownia_NawiazalismyPolaczeniePlikowe;
             strumieniownia.GotowyDoOdbioru += strumieniownia_GotowyDoOdbioru;
             this.plikownia = new Plikownia();
+
+            plikownia.PlikOdebrano += plikownia_PlikOdebrano;           
+        }
+
+        void plikownia_PlikOdebrano(string idPolaczenia)
+        {
+            strumieniownia.Rozlacz(idPolaczenia);
         }
   
 
@@ -151,6 +158,13 @@ namespace MojCzat.komunikacja
             strumieniownia.NawiazPolaczeniePlikowe(sciezka, idUzytkownika); 
         }
 
+        public void PoprosPlik(string idPrzesylu, string nazwaPliku)
+        {
+            PolaczeniePlikowe polaczeniePlikowe = (PolaczeniePlikowe)strumieniownia.DajPolaczenie(idPrzesylu);
+            polaczeniePlikowe.Plik = nazwaPliku;
+            plikownia.PoprosPlik(strumieniownia.DajPolaczenie(idPrzesylu).Strumien, idPrzesylu);
+        }
+
         // wyslij wiadomosc tekstowa
         void wyslijWiadomosc(String idRozmowcy, byte rodzaj, String wiadomosc)
         {
@@ -204,13 +218,24 @@ namespace MojCzat.komunikacja
                     wiadomosciownia.CzytajZawartosc(polaczenie.Strumien, status.IdStrumienia, 
                         polaczenie.IdUzytkownika, TypWiadomosci.Opis, dlugoscWiadomosci);
                     break;
-                case Komunikat.WezPlik:
+                case Komunikat.ChceszPlik:
                     Trace.TraceInformation("zaoferowano nam plik");
-                    plikownia.WczytajNazwe(polaczenie.Strumien, polaczenie.IdUzytkownika, dlugoscWiadomosci);
-                    //strumieniownia.Rozlacz(status.IdStrumienia);
+                    plikownia.WczytajNazwe(polaczenie.Strumien, status.IdStrumienia, 
+                        polaczenie.IdUzytkownika, dlugoscWiadomosci);
+                    czekajNaZapytanie(status.IdStrumienia);    
                     break;
                 case Komunikat.DajPlik:
-                    break;
+                    {
+                        var polaczeniePlikowe = (PolaczeniePlikowe)polaczenie;
+                        plikownia.WyslijPlik(polaczenie.Strumien, status.IdStrumienia, polaczeniePlikowe.Plik);
+                        break;
+                    }
+                case Komunikat.WezPlik:
+                    {
+                        var polaczeniePlikowe = (PolaczeniePlikowe)polaczenie;
+                        plikownia.PobierzPlik(polaczeniePlikowe.Strumien, status.IdStrumienia, polaczeniePlikowe.Plik, dlugoscWiadomosci);
+                        break;
+                    }
                 default: // blad, rozlacz
                     strumieniownia.Rozlacz(status.IdStrumienia);
                     break;
