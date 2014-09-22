@@ -23,6 +23,7 @@ namespace MojCzat.ui
         //  obiektu tego uzywamy do odswiezania okna z innego watku
         OdswiezOkno odswiezOknoDelegata;
 
+        ZaoferujPlik zaoferujPlikDelegata;
         
         // nasza lista kontaktow 
         List<Kontakt> kontakty;
@@ -71,6 +72,7 @@ namespace MojCzat.ui
             obsluzNowaWiadomoscUI = new ObluzNowaWiadomoscUI(obsluzWiadomosc);
             // inicjalizacja delegaty do odswiezania okna
             odswiezOknoDelegata = new OdswiezOkno(odswiezListeKontaktow);
+            zaoferujPlikDelegata = new ZaoferujPlik(zaoferujPlik);
         }
 
         // ponizsza delegata jest konieczna do otwierania nowego okna czatu z watku Komunikatora 
@@ -78,6 +80,8 @@ namespace MojCzat.ui
 
         // gdy nastapila zmiana dostepnosci kontaktow, odswiezamy okno
         delegate void OdswiezOkno();
+
+        delegate void ZaoferujPlik(string nazwaPliku, string idPolaczenia);
 
         //sprzatamy po sobie
         protected override void OnClosing(System.ComponentModel.CancelEventArgs e)
@@ -149,13 +153,18 @@ namespace MojCzat.ui
             oknaCzatu.Values.ToList().ForEach(o => o.Komunikator = komunikator);
         }
 
-        void komunikator_PlikZaoferowano(string idUzytkownika, string nazwa)
+        void zaoferujPlik(string idUzytkownika, string nazwa)
         {
             var wynik = new ZachowajPlik(nazwa).ShowDialog(this);
-            if (wynik == System.Windows.Forms.DialogResult.OK) 
-            { 
-                
+
+            if (wynik == System.Windows.Forms.DialogResult.OK)
+            {
             }
+        }
+
+        void komunikator_PlikZaoferowano(string idUzytkownika, string nazwa)
+        {
+            Invoke(zaoferujPlikDelegata, idUzytkownika, nazwa);
         }
 
         // ustawiony status "Niedostepny"
