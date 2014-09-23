@@ -1,5 +1,6 @@
 ﻿using MojCzat.model;
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
@@ -82,22 +83,18 @@ namespace MojCzat.komunikacja
         /// Polacz sie z uzytkownikiem
         /// </summary>
         /// <param name="idUzytkownika">Identyfikator uzytkownika</param>
-        public string NawiazPolaczenieZasadnicze(string idUzytkownika)
+        public void NawiazPolaczenieZasadnicze(string idUzytkownika)
         {
             var idPolaczenia = Guid.NewGuid().ToString();
-            polaczeniaZasadnicze.Add(idPolaczenia, new PolaczenieZasadnicze() 
-                { IdUzytkownika = idUzytkownika });
             centrala.Polacz(idPolaczenia, mapownik[idUzytkownika]);
-            if (idPolaczenia == null) { return null; }
-            if (!polaczeniaZasadnicze.Values.Any(p => p.IdUzytkownika == idUzytkownika))
-            { polaczeniaZasadnicze.Add(idPolaczenia, new PolaczenieZasadnicze() { IdUzytkownika = idUzytkownika }); }
-            return idPolaczenia;
+            return;
         }
 
         public string NawiazPolaczeniePlikowe(string sciezkaPliku, string idUzytkownika) 
         {
             var idPolaczenia = Guid.NewGuid().ToString();
-            polaczeniaPlikowe.Add(idPolaczenia, new PolaczeniePlikowe() { 
+            polaczeniaPlikowe.Add(idPolaczenia, new PolaczeniePlikowe()
+            { 
                 IdUzytkownika = idUzytkownika, Plik = sciezkaPliku });
             centrala.Polacz(idPolaczenia, mapownik[idUzytkownika]);
 
@@ -109,7 +106,7 @@ namespace MojCzat.komunikacja
         /// </summary>
         /// <param name="idStrumienia">Identyfikator strumienia</param>
         public void Rozlacz(string idStrumienia)
-        { centrala.Rozlacz(idStrumienia);}
+        { centrala.Rozlacz(idStrumienia, "wiele");}
 
         /// <summary>
         /// Zamknij polaczenia do uzytkownika
@@ -118,11 +115,12 @@ namespace MojCzat.komunikacja
         public void RozlaczUzytkownika(string idUzytkownika)
         {
             polaczeniaZasadnicze.Where(k => k.Value.IdUzytkownika == idUzytkownika).ToList().ForEach(
-                k => centrala.Rozlacz(k.Key));
+                k => centrala.Rozlacz(k.Key, "uzytkownika"));
         }
 
         public IPolaczenie DajPolaczenie(string idPolaczenia)
         {
+            Trace.TraceInformation("Strumieniownia.DajPolaczenie " + idPolaczenia);
             if(polaczeniaZasadnicze.ContainsKey(idPolaczenia))
             { return polaczeniaZasadnicze[idPolaczenia]; }
             
@@ -153,51 +151,45 @@ namespace MojCzat.komunikacja
             return polaczeniaZasadnicze.Values.Where(p => p.IdUzytkownika == idUzytkownika).
                 Select(p => p.Strumien).SingleOrDefault();
         }
-
-        // Dodaj nowe polaczenie 
-        void dodajPolaczenie(string idPolaczenie, IPolaczenie polaczenie)
-        {
-            if (polaczenie is PolaczenieZasadnicze)
-            { polaczeniaZasadnicze.Add(idPolaczenie, (PolaczenieZasadnicze)polaczenie); }
-            else if (polaczenie is PolaczeniePlikowe)
-            { 
-                polaczeniaPlikowe.Add(idPolaczenie, (PolaczeniePlikowe)polaczenie);           
-            }
-        }
-        
+                
         // centrala informuje, ze otwarto nowe polaczenie
-        void centrala_OtwartoPolaczenie(string idPolaczenia, Stream strumien, IPAddress ip)
+        void centrala_OtwartoPolaczenie(string idPolaczenia, Kierunek kierunek , Stream strumien, IPAddress ip)
         {
+            Trace.TraceInformation("centrala_OtwartoPolaczenie " + idPolaczenia);
             string idUzytkownika;
             idUzytkownika = mapownik.CzyZnasz(ip) ? mapownik[ip] : ip.ToString();
 
-            
-            var polaczenie = DajPolaczenie(idPolaczenia);
-         
-            if (polaczenie is PolaczenieZasadnicze) // z naszej strony
+            bool dodanoZasadnicze = false;
+            lock (polaczeniaZasadnicze)
             {
-                polaczenie.Strumien = strumien;
-                if (OtwartoPolaczenieZasadnicze != null)
-                { OtwartoPolaczenieZasadnicze(idUzytkownika); }
+                var mamyZasadnicze = polaczeniaZasadnicze.Any(p => p.Value.IdUzytkownika == idUzytkownika);
+                if (!mamyZasadnicze)
+                {
+                    Trace.TraceInformation("centrala_OtwartoPolaczenie dodajemy zasadnicze " + (kierunek==Kierunek.OD_NAS?"od nas": "do nas"));
+                    polaczeniaZasadnicze.Add(idPolaczenia, new PolaczenieZasadnicze() { IdUzytkownika = idUzytkownika, Strumien = strumien });
+                    dodanoZasadnicze = true;
+                }
+            }
+            if (dodanoZasadnicze && OtwartoPolaczenieZasadnicze != null) { OtwartoPolaczenieZasadnicze(idUzytkownika); }
 
-            }
-            else if (polaczenie is PolaczeniePlikowe) { // z naszej strony 
-                polaczenie.Strumien = strumien;
-                if (NawiazalismyPolaczeniePlikowe != null)
-                { NawiazalismyPolaczeniePlikowe(idPolaczenia); }
-            }
-            else if (DajStrumienZasadniczy(idUzytkownika) == null) // z cudzej strony
+            if (!dodanoZasadnicze)
             {
-                dodajPolaczenie(idPolaczenia, new PolaczenieZasadnicze() 
-                    { IdUzytkownika = idUzytkownika, Strumien = strumien });
-
-                if (OtwartoPolaczenieZasadnicze != null)
-                { OtwartoPolaczenieZasadnicze(idUzytkownika); }
-            }
-            else // z cudziej strony
-            {
-                dodajPolaczenie(idPolaczenia, new PolaczeniePlikowe() 
-                    { IdUzytkownika = idUzytkownika, Strumien = strumien });
+                if (kierunek == Kierunek.DO_NAS)
+                {
+                    Trace.TraceInformation("centrala_OtwartoPolaczenie dodajemy plikowe do nas");
+                    polaczeniaPlikowe.Add(idPolaczenia, new PolaczeniePlikowe() { IdUzytkownika = idUzytkownika, Strumien = strumien });
+                }
+                else if (kierunek == Kierunek.OD_NAS)
+                {
+                    Trace.TraceInformation("centrala_OtwartoPolaczenie otwarto plikowe od nas");
+                    if (!polaczeniaPlikowe.ContainsKey(idPolaczenia)) 
+                    {
+                        Rozlacz(idPolaczenia);
+                    }
+                    var polaczeniePlikowe = polaczeniaPlikowe[idPolaczenia];
+                    polaczeniePlikowe.Strumien = strumien;
+                    if (NawiazalismyPolaczeniePlikowe != null) { NawiazalismyPolaczeniePlikowe(idPolaczenia); }
+                }
             }
             if (GotowyDoOdbioru != null) { GotowyDoOdbioru(idPolaczenia); }
         }
@@ -222,14 +214,24 @@ namespace MojCzat.komunikacja
         void rozlaczPolaczeniaPlikowe(string idUzytkownika)
         {
             polaczeniaPlikowe.Where(p => p.Value.IdUzytkownika == idUzytkownika).ToList()
-                .ForEach(p => centrala.Rozlacz(p.Key));
+                .ForEach(p => centrala.Rozlacz(p.Key, "plikowe"));
         }
 
         // usun strumien
         void usunStrumien(string idStrumienia)
         {
-            if (polaczeniaZasadnicze.ContainsKey(idStrumienia)) { polaczeniaZasadnicze.Remove(idStrumienia); }
-            if (polaczeniaPlikowe.ContainsKey(idStrumienia)) { polaczeniaPlikowe.Remove(idStrumienia); }
+            Trace.TraceInformation("Strumieniownia.usunStrumien " + idStrumienia);
+
+            if (polaczeniaZasadnicze.ContainsKey(idStrumienia)) 
+            {
+                polaczeniaZasadnicze.Remove(idStrumienia); 
+            }
+            if (polaczeniaPlikowe.ContainsKey(idStrumienia)) 
+            {
+                polaczeniaPlikowe.Remove(idStrumienia); 
+            }
+            Trace.TraceInformation("Strumieniownia.usunStrumien liczba zasadniczych" + polaczeniaZasadnicze.Count);
+            
         }
 
         // znajdz polaczenie plikowe
@@ -258,4 +260,12 @@ namespace MojCzat.komunikacja
         public string IdUzytkownika { get; set; }
         public string Plik { get; set; }
     }
+
+    public enum Kierunek
+    { 
+        OD_NAS,
+        DO_NAS
+    }
+
+
 }

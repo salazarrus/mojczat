@@ -1,4 +1,5 @@
-﻿using System;
+﻿#define TRACE
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
@@ -70,6 +71,7 @@ namespace MojCzat.komunikacja
         {
             try
             {
+                Trace.TraceInformation("Wiadomosciownia.WyslijWiadomosc " + komunikat[0].ToString());
                 if (strumien == null) { return; }
                 // wysylanie bajtow polaczeniem TCP 
                 dajKolejkeWiadomosci(idRozmowcy).Enqueue(komunikat);
