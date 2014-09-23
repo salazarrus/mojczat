@@ -50,14 +50,13 @@ namespace MojCzat.komunikacja
         /// <param name="idUzytkownika">od kogo ta wiadomosc</param>
         /// <param name="rodzaj">Zwykla / Opis</param>
         /// <param name="dlugoscWiadomosci">ile bajtow do wczytania</param>
-        public void CzytajZawartosc(Stream strumien, string idStrumienia,
-            string idUzytkownika, TypWiadomosci rodzaj, int dlugoscWiadomosci)
+        public void CzytajZawartosc(StrumienSieciowy strumien, string idUzytkownika, TypWiadomosci rodzaj, int dlugoscWiadomosci)
         {
             if (dlugoscWiadomosci == 0) { 
-                czytanieSkonczone(idStrumienia, "CzytajZawartosc");
+                czytanieSkonczone(strumien.ID, "CzytajZawartosc");
                 return;
             }
-            czytajZawartosc(strumien, idStrumienia, idUzytkownika, rodzaj, dlugoscWiadomosci, 0);
+            czytajZawartosc(strumien, idUzytkownika, rodzaj, dlugoscWiadomosci, 0);
         }
 
         /// <summary>
@@ -66,7 +65,7 @@ namespace MojCzat.komunikacja
         /// <param name="strumien">dokad piszemy</param>
         /// <param name="idRozmowcy">do kogo piszemy</param>
         /// <param name="komunikat">wiadomosc z naglowkiem</param>
-        public void WyslijWiadomosc(Stream strumien, String idRozmowcy, byte[] komunikat)
+        public void WyslijWiadomosc(StrumienSieciowy strumien, String idRozmowcy, byte[] komunikat)
         {
             try
             {
@@ -111,7 +110,7 @@ namespace MojCzat.komunikacja
         }
 
         // zacznij wysylac komunikaty z kolejki
-        void wysylajZKolejki(Stream strumien, string idUzytkownika)
+        void wysylajZKolejki(StrumienSieciowy strumien, string idUzytkownika)
         {
             byte[] doWyslania = null;
             lock (zamkiWysylania[idUzytkownika])
@@ -143,8 +142,7 @@ namespace MojCzat.komunikacja
         }
 
         // czytaj ze strumienia
-        void czytajZawartosc(Stream strumien, string idStrumienia,
-            string idUzytkownika, TypWiadomosci rodzaj, int dlugoscWiadomosci, int wczytanoBajow)
+        void czytajZawartosc(StrumienSieciowy strumien, string idUzytkownika, TypWiadomosci rodzaj, int dlugoscWiadomosci, int wczytanoBajow)
         {
             strumien.BeginRead(buforownia[idUzytkownika], wczytanoBajow,
                 dlugoscWiadomosci, new AsyncCallback(zawartoscWczytana),
@@ -154,8 +152,7 @@ namespace MojCzat.komunikacja
                     Rodzaj = rodzaj,
                     DlugoscWiadomosci = dlugoscWiadomosci,
                     Wczytano = wczytanoBajow,
-                    Strumien = strumien,
-                    IdStrumienia = idStrumienia
+                    Strumien = strumien
                 });
         }
 
@@ -169,7 +166,7 @@ namespace MojCzat.komunikacja
                 int bajtyWczytane = status.Strumien.EndRead(wynik);
                 if (status.DlugoscWiadomosci > status.Wczytano + bajtyWczytane)
                 {
-                    czytajZawartosc(status.Strumien, status.IdStrumienia, status.IdNadawcy, status.Rodzaj,
+                    czytajZawartosc(status.Strumien, status.IdNadawcy, status.Rodzaj,
                         status.DlugoscWiadomosci, status.Wczytano + bajtyWczytane);
                     return;
                 }
@@ -184,21 +181,20 @@ namespace MojCzat.komunikacja
             // jesli sa zainteresowani, informujemy ich o nowej wiadomosci
             if (NowaWiadomosc != null) // informujemy zainteresowanych
             { NowaWiadomosc(status.IdNadawcy, status.Rodzaj, wiadomosc); }
-            czytanieSkonczone(status.IdStrumienia, "zawartosWczytana");
+            czytanieSkonczone(status.Strumien.ID, "zawartosWczytana");
         }
 
         // obiekt uzywany w operacji asynchronicznej
         class WyslijKomunikatStatus
         {
             public String IdNadawcy { get; set; }
-            public Stream Strumien { get; set; }
+            public StrumienSieciowy Strumien { get; set; }
         }
 
         // obiekt uzywany w operacji asynchronicznej
         class CzytajWiadomoscStatus
         {
-            public Stream Strumien { get; set; }
-            public String IdStrumienia { get; set; }
+            public StrumienSieciowy Strumien { get; set; }
             public String IdNadawcy { get; set; }
             public TypWiadomosci Rodzaj { get; set; }
             public int DlugoscWiadomosci { get; set; }

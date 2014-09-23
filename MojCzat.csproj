@@ -57,6 +57,7 @@
     <Compile Include="komunikacja\Plikownia.cs" />
     <Compile Include="komunikacja\Protokol.cs" />
     <Compile Include="komunikacja\Strumieniownia.cs" />
+    <Compile Include="komunikacja\StrumienSieciowy.cs" />
     <Compile Include="komunikacja\Wiadomosciownia.cs" />
     <Compile Include="model\Kontakt.cs" />
     <Compile Include="model\Ustawienia.cs" />

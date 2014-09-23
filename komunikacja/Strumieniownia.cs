@@ -5,6 +5,8 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Net;
+using System.Net.Security;
+using System.Net.Sockets;
 using System.Text;
 
 namespace MojCzat.komunikacja
@@ -148,31 +150,31 @@ namespace MojCzat.komunikacja
         /// </summary>
         /// <param name="idUzytkownika"></param>
         /// <returns></returns>
-        public Stream DajStrumienZasadniczy(string idUzytkownika)
+        public StrumienSieciowy DajStrumienZasadniczy(string idUzytkownika)
         {
             return polaczeniaZasadnicze.Values.Where(p => p.IdUzytkownika == idUzytkownika).
                 Select(p => p.Strumien).SingleOrDefault();
         }
 
         // Dodaj nowe polaczenie 
-        void dodajPolaczenie(string idPolaczenie, IPolaczenie polaczenie)
+        void dodajPolaczenie(IPolaczenie polaczenie)
         {
             if (polaczenie is PolaczenieZasadnicze)
-            { polaczeniaZasadnicze.Add(idPolaczenie, (PolaczenieZasadnicze)polaczenie); }
+            { polaczeniaZasadnicze.Add(polaczenie.Strumien.ID, (PolaczenieZasadnicze)polaczenie); }
             else if (polaczenie is PolaczeniePlikowe)
-            { 
-                polaczeniaPlikowe.Add(idPolaczenie, (PolaczeniePlikowe)polaczenie);           
+            {
+                polaczeniaPlikowe.Add(polaczenie.Strumien.ID, (PolaczeniePlikowe)polaczenie);           
             }
         }
         
         // centrala informuje, ze otwarto nowe polaczenie
-        void centrala_OtwartoPolaczenie(string idPolaczenia, Stream strumien, IPAddress ip)
+        void centrala_OtwartoPolaczenie(StrumienSieciowy strumien, IPAddress ip)
         {
             string idUzytkownika;
             idUzytkownika = mapownik.CzyZnasz(ip) ? mapownik[ip] : ip.ToString();
 
             
-            var polaczenie = DajPolaczenie(idPolaczenia);
+            var polaczenie = DajPolaczenie(strumien.ID);
          
             if (polaczenie is PolaczenieZasadnicze) // z naszej strony
             {
@@ -184,11 +186,11 @@ namespace MojCzat.komunikacja
             else if (polaczenie is PolaczeniePlikowe) { // z naszej strony 
                 polaczenie.Strumien = strumien;
                 if (NawiazalismyPolaczeniePlikowe != null)
-                { NawiazalismyPolaczeniePlikowe(idPolaczenia); }
+                { NawiazalismyPolaczeniePlikowe(strumien.ID); }
             }
             else if (DajStrumienZasadniczy(idUzytkownika) == null) // z cudzej strony
             {
-                dodajPolaczenie(idPolaczenia, new PolaczenieZasadnicze() 
+                dodajPolaczenie(new PolaczenieZasadnicze() 
                     { IdUzytkownika = idUzytkownika, Strumien = strumien });
 
                 if (OtwartoPolaczenieZasadnicze != null)
@@ -196,10 +198,10 @@ namespace MojCzat.komunikacja
             }
             else // z cudziej strony
             {
-                dodajPolaczenie(idPolaczenia, new PolaczeniePlikowe() 
+                dodajPolaczenie(new PolaczeniePlikowe() 
                     { IdUzytkownika = idUzytkownika, Strumien = strumien });
             }
-            if (GotowyDoOdbioru != null) { GotowyDoOdbioru(idPolaczenia); }
+            if (GotowyDoOdbioru != null) { GotowyDoOdbioru(strumien.ID); }
         }
         
         //centrala informuje o zamknieciu polaczenie
@@ -240,21 +242,28 @@ namespace MojCzat.komunikacja
         }        
     }
 
+    interface IStrumienSieciowy
+    {
+        String IdStrumienia { get; set; }
+    }
+
+    
+    
     interface IPolaczenie 
     {
-        Stream Strumien { get; set; }
+        StrumienSieciowy Strumien { get; set; }
         string IdUzytkownika { get; set; }
     }
 
     class PolaczenieZasadnicze: IPolaczenie
     {
-        public Stream Strumien { get; set; }
+        public StrumienSieciowy Strumien { get; set; }
         public string IdUzytkownika { get; set; }
     }
 
     class PolaczeniePlikowe: IPolaczenie
     {
-        public Stream Strumien { get; set; }
+        public StrumienSieciowy Strumien { get; set; }
         public string IdUzytkownika { get; set; }
         public string Plik { get; set; }
     }

@@ -12,7 +12,7 @@ using System.Windows.Forms;
 
 namespace MojCzat.komunikacja
 {
-    public delegate void OtwartoPolaczenie(string idStrumienia, Stream strumien, IPAddress ip);
+    public delegate void OtwartoPolaczenie(StrumienSieciowy strumien, IPAddress ip);
     public delegate void ZamknietoPoloczenie(string idStrumienia);
     
     /// <summary>
@@ -24,7 +24,7 @@ namespace MojCzat.komunikacja
         Dictionary<string, TcpClient> polaczenia = new Dictionary<string, TcpClient>();
 
         // Strumienie ktore zostaly otwarte. Klucz to indentyfikator polaczenia.
-        Dictionary<string, Stream> strumienie = new Dictionary<string, Stream>();
+        Dictionary<string, StrumienSieciowy> strumienie = new Dictionary<string, StrumienSieciowy>();
 
         // obiekt nasluchujacy nadchodzacych polaczen
         TcpListener serwer;
@@ -57,8 +57,8 @@ namespace MojCzat.komunikacja
                 {
                     // czekaj na przychodzace polaczenia
                     TcpClient polaczenie = serwer.AcceptTcpClient();
-                    var strumien = dajStrumienJakoSerwer(polaczenie);
-                    zachowajNowePolaczenie(polaczenie, Guid.NewGuid().ToString(), strumien);
+                    var strumien = new StrumienSieciowy(dajStrumienJakoSerwer(polaczenie), Guid.NewGuid().ToString());
+                    zachowajNowePolaczenie(polaczenie, strumien);
                 }
             }
             catch (Exception ex) { } // program zostal zamkniety
@@ -144,21 +144,21 @@ namespace MojCzat.komunikacja
                 {   status.Polaczenie.Close();
                     return; }
 
-                var strumien = dajStrumienJakoKlient(status.Polaczenie);
-                zachowajNowePolaczenie(status.Polaczenie, status.IdStrumienia, strumien);
+                var strumien = new StrumienSieciowySsl(dajStrumienJakoKlient(status.Polaczenie), status.IdStrumienia);
+                zachowajNowePolaczenie(status.Polaczenie, strumien);
             }
             catch
             { if (ZamknietoPolaczenie != null) { ZamknietoPolaczenie(status.IdStrumienia); } }
         }
 
         // zachowujemy polaczenie na pozniej
-        void zachowajNowePolaczenie(TcpClient polaczenie, string idStrumienia ,Stream strumien)
+        void zachowajNowePolaczenie(TcpClient polaczenie, StrumienSieciowy strumien)
         {
-            polaczenia.Add(idStrumienia, polaczenie);
-            strumienie.Add(idStrumienia, strumien);
+            polaczenia.Add(strumien.ID, polaczenie);
+            strumienie.Add(strumien.ID, strumien);
             var ip = ((IPEndPoint)polaczenie.Client.RemoteEndPoint).Address;
 
-            if (OtwartoPolaczenie != null) { OtwartoPolaczenie(idStrumienia, strumien, ip); }
+            if (OtwartoPolaczenie != null) { OtwartoPolaczenie(strumien, ip); }
         }
 
         // obiekt uzywany do operacji asynchronicznej
@@ -167,6 +167,5 @@ namespace MojCzat.komunikacja
             public TcpClient Polaczenie { get; set; }
             public string IdStrumienia { get; set; }
         }
-
     }
 }

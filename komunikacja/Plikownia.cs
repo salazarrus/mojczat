@@ -18,20 +18,19 @@ namespace MojCzat.komunikacja
 
         public event PlikOdebrano PlikOdebrano;
 
-        public void WczytajNazwe(Stream strumien, string idPolaczenia, String idUzytkownika, int dlugoscNazwy)
+        public void WczytajNazwe(StrumienSieciowy strumien, String idUzytkownika, int dlugoscNazwy)
         {
             var status = new WczytajNazweStatus()
             {
                 DlugoscNazwy = dlugoscNazwy,
                 IdUzytkownika = idUzytkownika,
                 StrumienSieciowy = strumien,
-                IdPolaczenia = idPolaczenia,
                 WczytanoBajtow = 0
             };
             wczytajCzescNazwyPliku(status);
         }
 
-        public void OferujPlik(string idUzytkownika, string plik, Stream strumien)
+        public void OferujPlik(string idUzytkownika, string plik, StrumienSieciowy strumien)
         {
             FileInfo info = new FileInfo(plik);
             var status = new OferujPlikStatus()
@@ -45,20 +44,19 @@ namespace MojCzat.komunikacja
             strumien.BeginWrite(komunikat, 0, komunikat.Length, zaoferowanoPlik, status);
         }
 
-        public void PoprosPlik(Stream strumien, string idStrumienia)
+        public void PoprosPlik(StrumienSieciowy strumien)
         {
             var komunikat = Komunikat.Generuj(Komunikat.DajPlik, "");
             strumien.BeginWrite(komunikat, 0, komunikat.Length, poproszonoOPlik, strumien);
         }
 
-        public void WyslijPlik(Stream strumien, string idStrumienia, string sciezka)
+        public void WyslijPlik(StrumienSieciowy strumien, string sciezka)
         {
             FileInfo fi = new FileInfo(sciezka);
             FileStream fs = new FileStream(sciezka, FileMode.Open, FileAccess.Read);
             var status = new TransmitujPlikStatus()
             {
                 RozmiarPliku = fi.Length,
-                IdStrumieniaSieciowego = idStrumienia,
                 StrumienSieciowy = strumien,
                 WczytanoBajtow = 0,
                 ZapisanoBajtow = 0,
@@ -68,13 +66,12 @@ namespace MojCzat.komunikacja
             strumien.BeginWrite(naglowek, 0, naglowek.Length, wyslanoNaglowek, status);
         }
 
-        public void PobierzPlik(Stream strumien, string idStrumienia, string plik, int rozmiarPliku)
+        public void PobierzPlik(StrumienSieciowy strumien, string plik, int rozmiarPliku)
         {
             FileStream fs = new FileStream(plik, FileMode.Create, FileAccess.Write);
             var status = new TransmitujPlikStatus()
             {
                 RozmiarPliku = rozmiarPliku,
-                IdStrumieniaSieciowego = idStrumienia,
                 StrumienSieciowy = strumien,
                 WczytanoBajtow = 0,
                 ZapisanoBajtow = 0,
@@ -92,7 +89,7 @@ namespace MojCzat.komunikacja
 
         void wyslijCzescPliku(TransmitujPlikStatus status)
         {
-            status.plik.BeginRead(buforownia[status.IdStrumieniaSieciowego], 0,
+            status.plik.BeginRead(buforownia[status.StrumienSieciowy.ID], 0,
                 buforownia.RozmiarBufora, wysylaniePlikuWczytanoZDysku, status);
         }
 
@@ -102,7 +99,7 @@ namespace MojCzat.komunikacja
             var wczytaneBajty = status.plik.EndRead(wynik);
             status.WczytanoBajtow += wczytaneBajty;
 
-            status.StrumienSieciowy.BeginWrite(buforownia[status.IdStrumieniaSieciowego],
+            status.StrumienSieciowy.BeginWrite(buforownia[status.StrumienSieciowy.ID],
                 0, wczytaneBajty, wysylaniePlikuCzescWyslano, status);
         }
 
@@ -121,7 +118,7 @@ namespace MojCzat.komunikacja
 
         void pobierzCzescPliku(TransmitujPlikStatus status)
         {
-            status.StrumienSieciowy.BeginRead(buforownia[status.IdStrumieniaSieciowego],
+            status.StrumienSieciowy.BeginRead(buforownia[status.StrumienSieciowy.ID],
                 0, buforownia.RozmiarBufora, pobieraniePlikuZapiszCzesc, status);
         }
 
@@ -130,7 +127,7 @@ namespace MojCzat.komunikacja
             var status = (TransmitujPlikStatus)wynik.AsyncState;
             var bajtyWczytane = status.StrumienSieciowy.EndRead(wynik);
             status.WczytanoBajtow += bajtyWczytane;
-            status.plik.BeginWrite(buforownia[status.IdStrumieniaSieciowego], 0, bajtyWczytane,
+            status.plik.BeginWrite(buforownia[status.StrumienSieciowy.ID], 0, bajtyWczytane,
                 pobieraniePlikuCzescZapisano, status);
         }
 
@@ -144,7 +141,7 @@ namespace MojCzat.komunikacja
                 pobierzCzescPliku(status);
                 return;
             }
-            if (PlikOdebrano != null) { PlikOdebrano(status.IdStrumieniaSieciowego); }
+            if (PlikOdebrano != null) { PlikOdebrano(status.StrumienSieciowy.ID); }
 
             status.plik.Close();
         }
@@ -170,12 +167,12 @@ namespace MojCzat.komunikacja
             string nazwa = Encoding.UTF8.GetString(buforownia[status.IdUzytkownika], 0, status.DlugoscNazwy);
 
             Array.Clear(buforownia[status.IdUzytkownika], 0, status.DlugoscNazwy);
-            if (PlikZaoferowano != null) { PlikZaoferowano(status.IdUzytkownika, nazwa, status.IdPolaczenia); }
+            if (PlikZaoferowano != null) { PlikZaoferowano(status.IdUzytkownika, nazwa, status.StrumienSieciowy.ID); }
         }
 
         void poproszonoOPlik(IAsyncResult wynik)
         {
-            var strumien = (Stream)wynik.AsyncState;
+            var strumien = (StrumienSieciowy)wynik.AsyncState;
             strumien.EndWrite(wynik);
         }
 
@@ -189,23 +186,21 @@ namespace MojCzat.komunikacja
         {
             public string IdUzytkownika { get; set; }
             public string NazwaPliku { get; set; }
-            public Stream StrumienSieciowy { get; set; }
+            public StrumienSieciowy StrumienSieciowy { get; set; }
         }
 
         class WczytajNazweStatus
         {
             public string IdUzytkownika { get; set; }
-            public string IdPolaczenia { get; set; }
             public int DlugoscNazwy { get; set; }
             public int WczytanoBajtow { get; set; }
-            public Stream StrumienSieciowy { get; set; }
+            public StrumienSieciowy StrumienSieciowy { get; set; }
         }
 
         class TransmitujPlikStatus
         {
             public long RozmiarPliku { get; set; }
-            public Stream StrumienSieciowy { get; set; }
-            public string IdStrumieniaSieciowego { get; set; }
+            public StrumienSieciowy StrumienSieciowy { get; set; }
             public int WczytanoBajtow { get; set; }
             public int ZapisanoBajtow { get; set; }
             public FileStream plik { get; set; }
