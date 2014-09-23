@@ -32,10 +32,7 @@ namespace MojCzat.model
         /// </summary>
         public String StatusTekst
         {
-            get
-            {
-                return Polaczony ? "Dostępny" : "Niedostępny";
-            }
+            get { return Polaczony ? "Dostępny" : "Niedostępny"; }
         }
 
         /// <summary>

@@ -16,6 +16,9 @@ namespace MojCzat.ui
         // Drugi uczestnik czatu
         Kontakt rozmowca;
 
+        /// <summary>
+        /// obiekt do przesylania wiadomosci
+        /// </summary>
         public Komunikator Komunikator { set; private get; }
 
         /// <summary>

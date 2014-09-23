@@ -49,6 +49,9 @@ namespace MojCzat.komunikacja
         /// </summary>
         public event ZamknietoPolaczenieZasadnicze ZamknietoPolaczenieZasadnicze;
 
+        /// <summary>
+        /// Nawiazalimy polaczenie do wymiany wiadomosci tekstowych
+        /// </summary>
         public event NawiazalismyPolaczeniePlikowe NawiazalismyPolaczeniePlikowe;
 
         /// <summary>
@@ -90,12 +93,20 @@ namespace MojCzat.komunikacja
             return;
         }
 
-        public string NawiazPolaczeniePlikowe(string sciezkaPliku, string idUzytkownika) 
+        /// <summary>
+        /// Nawiaz polaczenie dla przeslania pliku
+        /// </summary>
+        /// <param name="sciezkaPliku">jakieg pliku</param>
+        /// <param name="idUzytkownika">do kogo</param>
+        /// <returns>Identyfikator polaczenia</returns>
+        public string NawiazPolaczeniePlikowe(string sciezkaPliku, string idUzytkownika)
         {
             var idPolaczenia = Guid.NewGuid().ToString();
             polaczeniaPlikowe.Add(idPolaczenia, new PolaczeniePlikowe()
-            { 
-                IdUzytkownika = idUzytkownika, Plik = sciezkaPliku });
+            {
+                IdUzytkownika = idUzytkownika,
+                Plik = sciezkaPliku
+            });
             centrala.Polacz(idPolaczenia, mapownik[idUzytkownika]);
 
             return idPolaczenia;
@@ -106,7 +117,7 @@ namespace MojCzat.komunikacja
         /// </summary>
         /// <param name="idStrumienia">Identyfikator strumienia</param>
         public void Rozlacz(string idStrumienia)
-        { centrala.Rozlacz(idStrumienia);}
+        { centrala.Rozlacz(idStrumienia); }
 
         /// <summary>
         /// Zamknij polaczenia do uzytkownika
@@ -118,14 +129,19 @@ namespace MojCzat.komunikacja
                 k => centrala.Rozlacz(k.Key));
         }
 
+        /// <summary>
+        /// Znajdz polaczenie
+        /// </summary>
+        /// <param name="idPolaczenia">Identyfikator polaczenia</param>
+        /// <returns>polaczenie</returns>
         public IPolaczenie DajPolaczenie(string idPolaczenia)
         {
-            if(polaczeniaZasadnicze.ContainsKey(idPolaczenia))
+            if (polaczeniaZasadnicze.ContainsKey(idPolaczenia))
             { return polaczeniaZasadnicze[idPolaczenia]; }
-            
+
             if (polaczeniaPlikowe.ContainsKey(idPolaczenia))
             { return polaczeniaPlikowe[idPolaczenia]; }
-         
+
             return null;
         }
 
@@ -134,7 +150,7 @@ namespace MojCzat.komunikacja
         /// </summary>
         /// <param name="idPolaczenia"></param>
         /// <returns></returns>
-        public bool CzyZnasz(string idPolaczenia) 
+        public bool CzyZnasz(string idPolaczenia)
         {
             return polaczeniaZasadnicze.ContainsKey(idPolaczenia)
                 || polaczeniaPlikowe.ContainsKey(idPolaczenia);
@@ -150,9 +166,9 @@ namespace MojCzat.komunikacja
             return polaczeniaZasadnicze.Values.Where(p => p.IdUzytkownika == idUzytkownika).
                 Select(p => p.Strumien).SingleOrDefault();
         }
-                
+
         // centrala informuje, ze otwarto nowe polaczenie
-        void centrala_OtwartoPolaczenie(string idPolaczenia, Kierunek kierunek , Stream strumien, IPAddress ip)
+        void centrala_OtwartoPolaczenie(string idPolaczenia, Kierunek kierunek, Stream strumien, IPAddress ip)
         {
             string idUzytkownika;
             idUzytkownika = mapownik.CzyZnasz(ip) ? mapownik[ip] : ip.ToString();
@@ -177,7 +193,7 @@ namespace MojCzat.komunikacja
                 }
                 else if (kierunek == Kierunek.OD_NAS)
                 {
-                    if (!polaczeniaPlikowe.ContainsKey(idPolaczenia)) 
+                    if (!polaczeniaPlikowe.ContainsKey(idPolaczenia))
                     {
                         Rozlacz(idPolaczenia);
                     }
@@ -188,7 +204,7 @@ namespace MojCzat.komunikacja
             }
             if (GotowyDoOdbioru != null) { GotowyDoOdbioru(idPolaczenia); }
         }
-        
+
         //centrala informuje o zamknieciu polaczenie
         void centrala_ZamknietoPolaczenie(string idPolaczenia)
         {
@@ -215,11 +231,11 @@ namespace MojCzat.komunikacja
         // usun strumien
         void usunStrumien(string idStrumienia)
         {
-            if (polaczeniaZasadnicze.ContainsKey(idStrumienia)) 
+            if (polaczeniaZasadnicze.ContainsKey(idStrumienia))
             { polaczeniaZasadnicze.Remove(idStrumienia); }
-            
-            if (polaczeniaPlikowe.ContainsKey(idStrumienia)) 
-            { polaczeniaPlikowe.Remove(idStrumienia); }           
+
+            if (polaczeniaPlikowe.ContainsKey(idStrumienia))
+            { polaczeniaPlikowe.Remove(idStrumienia); }
         }
 
         // znajdz polaczenie plikowe
@@ -227,22 +243,22 @@ namespace MojCzat.komunikacja
         {
             return polaczeniaPlikowe.ContainsKey(idUzytkownika) ?
                 polaczeniaPlikowe[idUzytkownika] : null;
-        }        
+        }
     }
 
-    interface IPolaczenie 
+    interface IPolaczenie
     {
         Stream Strumien { get; set; }
         string IdUzytkownika { get; set; }
     }
 
-    class PolaczenieZasadnicze: IPolaczenie
+    class PolaczenieZasadnicze : IPolaczenie
     {
         public Stream Strumien { get; set; }
         public string IdUzytkownika { get; set; }
     }
 
-    class PolaczeniePlikowe: IPolaczenie
+    class PolaczeniePlikowe : IPolaczenie
     {
         public Stream Strumien { get; set; }
         public string IdUzytkownika { get; set; }
@@ -250,7 +266,7 @@ namespace MojCzat.komunikacja
     }
 
     public enum Kierunek
-    { 
+    {
         OD_NAS,
         DO_NAS
     }

@@ -50,7 +50,7 @@ namespace MojCzat.ui
             // separacja elementow listy
             e.Graphics.DrawLine(Pens.DarkGray, e.Bounds.X, e.Bounds.Y, e.Bounds.X + e.Bounds.Width, e.Bounds.Y);
 
-            // rysowanie obrazka
+            // rysowanie obrazka jak sie uda zaimplementowac
             // Image obrazek = null;
             //e.Graphics.DrawImage(obrazek, e.Bounds.X + margines.Left, e.Bounds.Y + margines.Top, rozmiarIkony.Width, rozmiarIkony.Height);
 

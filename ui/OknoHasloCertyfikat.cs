@@ -21,6 +21,9 @@ namespace MojCzat.ui
             CenterToParent();
         }
 
+        /// <summary>
+        /// Haslo certyfikatu
+        /// </summary>
         public string Haslo { get; private set; }
 
         private void btnOK_Click(object sender, EventArgs e)

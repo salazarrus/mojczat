@@ -14,10 +14,23 @@ namespace MojCzat.komunikacja
     {
         Buforownia buforownia = new Buforownia(4096);
 
+        /// <summary>
+        /// Zaoferowano nam plik
+        /// </summary>
         public event PlikZaoferowano PlikZaoferowano;
 
+        /// <summary>
+        /// Odebralismy plik
+        /// </summary>
         public event PlikOdebrano PlikOdebrano;
 
+        /// <summary>
+        /// Wczytaj nazwe oferowanego pliku
+        /// </summary>
+        /// <param name="strumien">skad czytac</param>
+        /// <param name="idPolaczenia">Identyfikator polaczenia</param>
+        /// <param name="idUzytkownika">Identyfikator uzytkownika</param>
+        /// <param name="dlugoscNazwy">dlugosc nazwy pliku</param>
         public void WczytajNazwe(Stream strumien, string idPolaczenia, String idUzytkownika, int dlugoscNazwy)
         {
             var status = new WczytajNazweStatus()
@@ -31,6 +44,12 @@ namespace MojCzat.komunikacja
             wczytajCzescNazwyPliku(status);
         }
 
+        /// <summary>
+        /// Zaoferuj plik innemu uzytkownikowi
+        /// </summary>
+        /// <param name="idUzytkownika">komu</param>
+        /// <param name="plik">jaki plik</param>
+        /// <param name="strumien">ktorym strumieniem</param>
         public void OferujPlik(string idUzytkownika, string plik, Stream strumien)
         {
             FileInfo info = new FileInfo(plik);
@@ -45,12 +64,23 @@ namespace MojCzat.komunikacja
             strumien.BeginWrite(komunikat, 0, komunikat.Length, zaoferowanoPlik, status);
         }
 
+        /// <summary>
+        /// Popros innego uzytkownika o plik
+        /// </summary>
+        /// <param name="strumien">skad</param>
+        /// <param name="idStrumienia">id strumienia skad</param>
         public void PoprosPlik(Stream strumien, string idStrumienia)
         {
             var komunikat = Komunikat.Generuj(Komunikat.DajPlik, "");
             strumien.BeginWrite(komunikat, 0, komunikat.Length, poproszonoOPlik, strumien);
         }
 
+        /// <summary>
+        /// Wyslij plik do innego uzytkownika
+        /// </summary>
+        /// <param name="strumien">ktoredy</param>
+        /// <param name="idStrumienia">identyfikator strumiena ktoredy</param>
+        /// <param name="sciezka">jaki plik</param>
         public void WyslijPlik(Stream strumien, string idStrumienia, string sciezka)
         {
             FileInfo fi = new FileInfo(sciezka);
@@ -68,6 +98,13 @@ namespace MojCzat.komunikacja
             strumien.BeginWrite(naglowek, 0, naglowek.Length, wyslanoNaglowek, status);
         }
 
+        /// <summary>
+        /// Pobierz plik oferowany przez innego uzytkownika
+        /// </summary>
+        /// <param name="strumien">skad</param>
+        /// <param name="idStrumienia">identyfikator strumienia skad</param>
+        /// <param name="plik">nazwa pliku</param>
+        /// <param name="rozmiarPliku">rozmiar pliku</param>
         public void PobierzPlik(Stream strumien, string idStrumienia, string plik, int rozmiarPliku)
         {
             FileStream fs = new FileStream(plik, FileMode.Create, FileAccess.Write);
@@ -185,6 +222,7 @@ namespace MojCzat.komunikacja
             status.StrumienSieciowy.EndWrite(wynik);
         }
 
+        //Klasy uzywane do operacji asynchronicznych
         class OferujPlikStatus
         {
             public string IdUzytkownika { get; set; }

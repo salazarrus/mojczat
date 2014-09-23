@@ -19,19 +19,19 @@ namespace MojCzat.model
         /// Czy komunikacja przebiega przy uzyciu SSL
         /// </summary>
         public bool SSLWlaczone { get; set; }
-        
+
         /// <summary>
         /// Sciezka do pliku .pfx z certyfikatem, ktorego uzywamy do oferowania polaczen SSL
         /// </summary>
         public string SSLCertyfikatSciezka { get; set; }
-        
-        
+
+
         /// <summary>
         /// Wczytany certyfikat
         /// </summary>
         public X509Certificate2 Certyfikat { get; set; }
-        
-        
+
+
         /// <summary>
         /// Opis wlasny
         /// </summary>
@@ -41,13 +41,14 @@ namespace MojCzat.model
         /// Kopiowanie obiektu
         /// </summary>
         /// <returns></returns>
-        public Ustawienia Kopiuj() {
+        public Ustawienia Kopiuj()
+        {
             return new Ustawienia()
             {
                 SSLCertyfikatSciezka = this.SSLCertyfikatSciezka,
                 SSLWlaczone = this.SSLWlaczone,
                 Opis = this.Opis
-            }; 
+            };
         }
 
         /// <summary>
@@ -110,8 +111,9 @@ namespace MojCzat.model
         public override bool Equals(object obj)
         {
             var ustawienia = obj as Ustawienia;
-            
-            if (ustawienia != null) {
+
+            if (ustawienia != null)
+            {
                 return this.SSLCertyfikatSciezka == ustawienia.SSLCertyfikatSciezka &&
                     this.SSLWlaczone == ustawienia.SSLWlaczone;
             }

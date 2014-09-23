@@ -148,9 +148,7 @@ namespace MojCzat.komunikacja
         /// <param name="idUzytkownika">Identyfikator uzytkownika</param>
         /// <param name="sciezka">sciezka do pliku</param>
         public void WyslijPlik(String idUzytkownika, String sciezka)
-        {
-            strumieniownia.NawiazPolaczeniePlikowe(sciezka, idUzytkownika);
-        }
+        { strumieniownia.NawiazPolaczeniePlikowe(sciezka, idUzytkownika); }
 
         /// <summary>
         /// Popros plik, ktory nam zaoferowano
@@ -193,11 +191,11 @@ namespace MojCzat.komunikacja
             var polaczenie = strumieniownia.DajPolaczenie(idPolaczenia);
             var wynik = new StatusObsluzZapytanie() { IdStrumienia = idPolaczenia, Naglowek = new byte[Komunikat.DlugoscNaglowka] };
             polaczenie.Strumien.BeginRead(wynik.Naglowek, 0, Komunikat.DlugoscNaglowka, obsluzZapytanie, wynik);
-         }
+        }
 
         // przyszlo nowe zapytanie / wiadomosc
         void obsluzZapytanie(IAsyncResult wynik)
-        {           
+        {
             var status = (StatusObsluzZapytanie)wynik.AsyncState;
             int dlugoscWiadomosci = BitConverter.ToInt32(status.Naglowek, 1);
             if (!strumieniownia.CzyZnasz(status.IdStrumienia)) { return; }
@@ -247,14 +245,12 @@ namespace MojCzat.komunikacja
                     strumieniownia.Rozlacz(status.IdStrumienia);
                     break;
             }
-   
+
         }
 
         // strumien jest gotowy do czytania z niego
         void strumieniownia_GotowyDoOdbioru(string idStrumienia)
         { czekajNaZapytanie(idStrumienia, "gotowydoodbioru"); }
-
-
 
         // klasa uzywana do operacji asynchronicznej
         class StatusObsluzZapytanie

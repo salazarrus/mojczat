@@ -53,7 +53,8 @@ namespace MojCzat.komunikacja
         public void CzytajZawartosc(Stream strumien, string idStrumienia,
             string idUzytkownika, TypWiadomosci rodzaj, int dlugoscWiadomosci)
         {
-            if (dlugoscWiadomosci == 0) { 
+            if (dlugoscWiadomosci == 0)
+            {
                 czytanieSkonczone(idStrumienia, "CzytajZawartosc");
                 return;
             }
@@ -173,8 +174,8 @@ namespace MojCzat.komunikacja
                     return;
                 }
             }
-            catch (Exception ex) { }
-            
+            catch { }
+
             // dekodujemy wiadomosc
             string wiadomosc = Encoding.UTF8.GetString(buforownia[status.IdNadawcy], 0, status.DlugoscWiadomosci);
 
