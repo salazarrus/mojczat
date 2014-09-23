@@ -1,5 +1,4 @@
-﻿#define TRACE
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Configuration;
 using System.Diagnostics;
@@ -13,14 +12,14 @@ using System.Windows.Forms;
 
 namespace MojCzat.komunikacja
 {
-    public delegate void OtwartoPolaczenie(string idStrumienia, Kierunek kierunek , Stream strumien, IPAddress ip);
-    public delegate void ZamknietoPoloczenie(string idStrumienia);
-    
+    delegate void OtwartoPolaczenie(string idStrumienia, Kierunek kierunek, Stream strumien, IPAddress ip);
+    delegate void ZamknietoPoloczenie(string idStrumienia);
+
     /// <summary>
     /// Obiekt odpowiedzialny za otwieranie i zamykanie polaczen z innymi uzytkownikami
     /// </summary>
     class Centrala
-    {       
+    {
         // Polaczenia TCP ktore zostaly otwarte. Klucz to indentyfikator polaczenia.
         Dictionary<string, TcpClient> polaczenia = new Dictionary<string, TcpClient>();
 
@@ -30,7 +29,7 @@ namespace MojCzat.komunikacja
         // obiekt nasluchujacy nadchodzacych polaczen
         TcpListener serwer;
 
-        const int POLOCZENIE_TIMEOUT = 1000;
+        const int POLACZENIE_TIMEOUT = 1000;
 
         protected virtual int Port { get { return 5080; } }
 
@@ -62,47 +61,43 @@ namespace MojCzat.komunikacja
                     zachowajNowePolaczenie(polaczenie, Kierunek.DO_NAS, Guid.NewGuid().ToString(), strumien);
                 }
             }
-            catch (Exception ex) { Trace.TraceInformation(ex.ToString()); } // program zostal zamkniety
+            catch { } // program zostal zamkniety
             finally { Stop(); }
         }
 
         /// <summary>
         /// zatrzymaj nasluch 
         /// </summary>
-        public void Stop() 
-        { 
-            if (serwer != null) { 
+        public void Stop()
+        {
+            if (serwer != null)
+            {
                 serwer.Stop();
                 RozlaczWszystkich();
-            } 
+            }
         }
 
         /// <summary>
         /// Raportowanie o niedzialajacym polaczeniu
         /// </summary>
         /// <param name="idPolaczenia"></param>
-        public void ToNieDziala(string idPolaczenia) {
-            Rozlacz(idPolaczenia , "niedziala" );
-        }
-        
+        public void ToNieDziala(string idPolaczenia)
+        { Rozlacz(idPolaczenia); }
+
         /// <summary>
         /// Polacz z wybranym adresem IP
         /// </summary>
         /// <param name="ip">adres IP</param>
         /// <returns>identyfikator, ktory otrzyma polaczenie</returns>
-        public void Polacz(string idPolaczenia ,IPAddress ip)
+        public void Polacz(string idPolaczenia, IPAddress ip)
         {
-            Trace.TraceInformation("Centrala.Polacz " + idPolaczenia); 
             // tworzymy nowe polaczenie 
             var klient = new TcpClient();
             var wynik = klient.BeginConnect(ip, Port, new AsyncCallback(nawiazPolaczenieWynik),
                 new NawiazPolaczenieStatus() { IdStrumienia = idPolaczenia, Polaczenie = klient });
 
-            if (!wynik.AsyncWaitHandle.WaitOne(POLOCZENIE_TIMEOUT, true))
-            {
-                Rozlacz(idPolaczenia, "timeout");
-            }
-       
+            if (!wynik.AsyncWaitHandle.WaitOne(POLACZENIE_TIMEOUT, true))
+            { Rozlacz(idPolaczenia); }
         }
 
 
@@ -111,18 +106,19 @@ namespace MojCzat.komunikacja
         /// Zamknij dane polaczenie
         /// </summary>
         /// <param name="idPolaczenia">Identyfikator polaczenia</param>
-        public void Rozlacz(string idPolaczenia, string powod)
+        public void Rozlacz(string idPolaczenia)
         {
-            Trace.TraceInformation("Centrala.Rozlacz " + idPolaczenia + " " + powod);
             if (polaczenia.ContainsKey(idPolaczenia))
             {
-                try { polaczenia[idPolaczenia].Close(); } catch { }
+                try { polaczenia[idPolaczenia].Close(); }
+                catch { }
                 polaczenia.Remove(idPolaczenia);
             }
 
             if (strumienie.ContainsKey(idPolaczenia))
             {
-                try { strumienie[idPolaczenia].Close(); } catch { }
+                try { strumienie[idPolaczenia].Close(); }
+                catch { }
                 strumienie.Remove(idPolaczenia);
             }
             if (ZamknietoPolaczenie != null) { ZamknietoPolaczenie(idPolaczenia); }
@@ -131,9 +127,9 @@ namespace MojCzat.komunikacja
         /// <summary>
         /// Rozlacz wszystkie polaczenia
         /// </summary>
-        public void RozlaczWszystkich() 
-        { polaczenia.Keys.ToList().ForEach(i => Rozlacz(i, "wszystkich")); }
-        
+        public void RozlaczWszystkich()
+        { polaczenia.Keys.ToList().ForEach(i => Rozlacz(i)); }
+
         protected virtual Stream dajStrumienJakoKlient(TcpClient polaczenie)
         { return polaczenie.GetStream(); }
 
@@ -145,37 +141,37 @@ namespace MojCzat.komunikacja
         {
             var status = (NawiazPolaczenieStatus)wynik.AsyncState;
             try
-            {                
+            {
                 status.Polaczenie.EndConnect(wynik);
 
                 if (!status.Polaczenie.Connected)
-                {   status.Polaczenie.Close();
-                    return; }
+                {
+                    status.Polaczenie.Close();
+                    return;
+                }
 
                 var strumien = dajStrumienJakoKlient(status.Polaczenie);
-                zachowajNowePolaczenie(status.Polaczenie, Kierunek.OD_NAS ,status.IdStrumienia, strumien);
+                zachowajNowePolaczenie(status.Polaczenie, Kierunek.OD_NAS, status.IdStrumienia, strumien);
             }
             catch
             { if (ZamknietoPolaczenie != null) { ZamknietoPolaczenie(status.IdStrumienia); } }
         }
 
         // zachowujemy polaczenie na pozniej
-        void zachowajNowePolaczenie(TcpClient polaczenie, Kierunek kierunek ,string idStrumienia ,Stream strumien)
+        void zachowajNowePolaczenie(TcpClient polaczenie, Kierunek kierunek, string idStrumienia, Stream strumien)
         {
-            Trace.TraceInformation("Centrala.zachowajNowePolaczenie " + idStrumienia);
             polaczenia.Add(idStrumienia, polaczenie);
             strumienie.Add(idStrumienia, strumien);
             var ip = ((IPEndPoint)polaczenie.Client.RemoteEndPoint).Address;
 
-            if (OtwartoPolaczenie != null) { OtwartoPolaczenie(idStrumienia, kierunek , strumien, ip); }
+            if (OtwartoPolaczenie != null) { OtwartoPolaczenie(idStrumienia, kierunek, strumien, ip); }
         }
 
         // obiekt uzywany do operacji asynchronicznej
-        class NawiazPolaczenieStatus 
+        class NawiazPolaczenieStatus
         {
             public TcpClient Polaczenie { get; set; }
             public string IdStrumienia { get; set; }
         }
-
     }
 }

@@ -25,8 +25,6 @@ namespace MojCzat.komunikacja
         Mapownik mapownik;
         Strumieniownia strumieniownia;
 
-        const int DlugoscNaglowka = 5; // 1 bajt na rodzaj komunikatu, 4 na dlugosc
-
         /// <summary>
         /// Konstruktor
         /// </summary>
@@ -193,8 +191,8 @@ namespace MojCzat.komunikacja
         void czekajNaZapytanie(string idPolaczenia, string zrodlo)
         {
             var polaczenie = strumieniownia.DajPolaczenie(idPolaczenia);
-            var wynik = new StatusObsluzZapytanie() { IdStrumienia = idPolaczenia, Naglowek = new byte[DlugoscNaglowka] };
-            polaczenie.Strumien.BeginRead(wynik.Naglowek, 0, DlugoscNaglowka, obsluzZapytanie, wynik);
+            var wynik = new StatusObsluzZapytanie() { IdStrumienia = idPolaczenia, Naglowek = new byte[Komunikat.DlugoscNaglowka] };
+            polaczenie.Strumien.BeginRead(wynik.Naglowek, 0, Komunikat.DlugoscNaglowka, obsluzZapytanie, wynik);
          }
 
         // przyszlo nowe zapytanie / wiadomosc

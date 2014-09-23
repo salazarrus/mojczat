@@ -15,12 +15,9 @@ using System.Diagnostics;
 
 namespace MojCzat.komunikacja
 {
-    // delegata definiujaca funkcje obslugujace zdarzenie NowaWiadomosc
     public delegate void NowaWiadomosc(string id, TypWiadomosci rodzaj, string wiadomosc);
 
     public delegate void PlikZaoferowano(string idUzytkownika, string nazwaPliku, string idPolaczenia);
-
-    public delegate void PlikWyslano(string id, string nazwa);
 
     public delegate void PlikOdebrano(string idPolaczenia);
 
@@ -32,6 +29,9 @@ namespace MojCzat.komunikacja
     /// </summary>
     public class Komunikator
     {
+        /// <summary>
+        /// Opis wlasny
+        /// </summary>
         public String Opis { get; set; }
 
         // Dostepnosc uzytkownikow
@@ -72,6 +72,9 @@ namespace MojCzat.komunikacja
             remove { protokol.NowaWiadomosc -= value; }
         }
 
+        /// <summary>
+        /// Zaoferowano nam plik
+        /// </summary>
         public event PlikZaoferowano PlikZaoferowano
         {
             add { protokol.PlikZaoferowano += value; }
@@ -118,9 +121,18 @@ namespace MojCzat.komunikacja
         public void WyslijPlik(String idUzytkownika, String sciezka)
         { protokol.WyslijPlik(idUzytkownika, sciezka); }
 
+        /// <summary>
+        /// Popros o przeslanie pliku
+        /// </summary>
+        /// <param name="idPrzesylu">identyfikator polaczenia ktorym przeslany bedzie plik</param>
+        /// <param name="nazwaPliku">nazwa pliku</param>
         public void PoprosPlik(String idPrzesylu, string nazwaPliku)
         { protokol.PoprosPlik(idPrzesylu, nazwaPliku); }
 
+        /// <summary>
+        /// Nie chcemy tego pliku
+        /// </summary>
+        /// <param name="idPrzesylu"></param>
         public void OdmowPliku(String idPrzesylu)
         { protokol.OdmowPliku(idPrzesylu); }
 
@@ -162,9 +174,7 @@ namespace MojCzat.komunikacja
         /// <param name="idUzytkownika">Identyfikator uzytkownika</param>
         /// <param name="ip">adres IP</param>
         public void DodajKontakt(string idUzytkownika, IPAddress ip)
-        {
-            dodajKontakt(idUzytkownika, ip, false);
-        }
+        { dodajKontakt(idUzytkownika, ip, false); }
 
         /// <summary>
         /// Usunieto uzytkownika z list kontaktow
@@ -201,6 +211,7 @@ namespace MojCzat.komunikacja
                 .ForEach(id => protokol.Polacz(id));
         }
 
+        // uplynelo pare sekund, znowu sprobuj sie polaczyc
         void pingacz_Elapsed(object sender, System.Timers.ElapsedEventArgs e)
         { sprobojPolaczyc(); }
 

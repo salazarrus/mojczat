@@ -106,7 +106,7 @@ namespace MojCzat.komunikacja
         /// </summary>
         /// <param name="idStrumienia">Identyfikator strumienia</param>
         public void Rozlacz(string idStrumienia)
-        { centrala.Rozlacz(idStrumienia, "wiele");}
+        { centrala.Rozlacz(idStrumienia);}
 
         /// <summary>
         /// Zamknij polaczenia do uzytkownika
@@ -115,12 +115,11 @@ namespace MojCzat.komunikacja
         public void RozlaczUzytkownika(string idUzytkownika)
         {
             polaczeniaZasadnicze.Where(k => k.Value.IdUzytkownika == idUzytkownika).ToList().ForEach(
-                k => centrala.Rozlacz(k.Key, "uzytkownika"));
+                k => centrala.Rozlacz(k.Key));
         }
 
         public IPolaczenie DajPolaczenie(string idPolaczenia)
         {
-            Trace.TraceInformation("Strumieniownia.DajPolaczenie " + idPolaczenia);
             if(polaczeniaZasadnicze.ContainsKey(idPolaczenia))
             { return polaczeniaZasadnicze[idPolaczenia]; }
             
@@ -155,7 +154,6 @@ namespace MojCzat.komunikacja
         // centrala informuje, ze otwarto nowe polaczenie
         void centrala_OtwartoPolaczenie(string idPolaczenia, Kierunek kierunek , Stream strumien, IPAddress ip)
         {
-            Trace.TraceInformation("centrala_OtwartoPolaczenie " + idPolaczenia);
             string idUzytkownika;
             idUzytkownika = mapownik.CzyZnasz(ip) ? mapownik[ip] : ip.ToString();
 
@@ -165,7 +163,6 @@ namespace MojCzat.komunikacja
                 var mamyZasadnicze = polaczeniaZasadnicze.Any(p => p.Value.IdUzytkownika == idUzytkownika);
                 if (!mamyZasadnicze)
                 {
-                    Trace.TraceInformation("centrala_OtwartoPolaczenie dodajemy zasadnicze " + (kierunek==Kierunek.OD_NAS?"od nas": "do nas"));
                     polaczeniaZasadnicze.Add(idPolaczenia, new PolaczenieZasadnicze() { IdUzytkownika = idUzytkownika, Strumien = strumien });
                     dodanoZasadnicze = true;
                 }
@@ -176,12 +173,10 @@ namespace MojCzat.komunikacja
             {
                 if (kierunek == Kierunek.DO_NAS)
                 {
-                    Trace.TraceInformation("centrala_OtwartoPolaczenie dodajemy plikowe do nas");
                     polaczeniaPlikowe.Add(idPolaczenia, new PolaczeniePlikowe() { IdUzytkownika = idUzytkownika, Strumien = strumien });
                 }
                 else if (kierunek == Kierunek.OD_NAS)
                 {
-                    Trace.TraceInformation("centrala_OtwartoPolaczenie otwarto plikowe od nas");
                     if (!polaczeniaPlikowe.ContainsKey(idPolaczenia)) 
                     {
                         Rozlacz(idPolaczenia);
@@ -214,24 +209,17 @@ namespace MojCzat.komunikacja
         void rozlaczPolaczeniaPlikowe(string idUzytkownika)
         {
             polaczeniaPlikowe.Where(p => p.Value.IdUzytkownika == idUzytkownika).ToList()
-                .ForEach(p => centrala.Rozlacz(p.Key, "plikowe"));
+                .ForEach(p => centrala.Rozlacz(p.Key));
         }
 
         // usun strumien
         void usunStrumien(string idStrumienia)
         {
-            Trace.TraceInformation("Strumieniownia.usunStrumien " + idStrumienia);
-
             if (polaczeniaZasadnicze.ContainsKey(idStrumienia)) 
-            {
-                polaczeniaZasadnicze.Remove(idStrumienia); 
-            }
-            if (polaczeniaPlikowe.ContainsKey(idStrumienia)) 
-            {
-                polaczeniaPlikowe.Remove(idStrumienia); 
-            }
-            Trace.TraceInformation("Strumieniownia.usunStrumien liczba zasadniczych" + polaczeniaZasadnicze.Count);
+            { polaczeniaZasadnicze.Remove(idStrumienia); }
             
+            if (polaczeniaPlikowe.ContainsKey(idStrumienia)) 
+            { polaczeniaPlikowe.Remove(idStrumienia); }           
         }
 
         // znajdz polaczenie plikowe

@@ -12,7 +12,6 @@ namespace MojCzat.komunikacja
         /// </summary>
         public int RozmiarBufora { get; private set; }
 
-
         // bufory na przychodzace dane
         Dictionary<string, byte[]> bufory = new Dictionary<string, byte[]>();
 
@@ -20,10 +19,7 @@ namespace MojCzat.komunikacja
         {
             get
             {
-                if (!bufory.ContainsKey(id))
-                {
-                    bufory.Add(id, new byte[RozmiarBufora]);
-                }
+                if (!bufory.ContainsKey(id)) { bufory.Add(id, new byte[RozmiarBufora]); }
                 return bufory[id];
             }
         }
@@ -32,16 +28,13 @@ namespace MojCzat.komunikacja
         /// Konstruktor
         /// </summary>
         /// <param name="rozmiarBufora">ile bajtow ma bufor</param>
-        public Buforownia(int rozmiarBufora)
-        { RozmiarBufora = rozmiarBufora; }
+        public Buforownia(int rozmiarBufora) { RozmiarBufora = rozmiarBufora; }
 
         /// <summary>
         /// Nie potrzebujemy juz tego bufora
         /// </summary>
         /// <param name="idBufora">Identyfikator bufora</param>
         public void Usun(String idBufora)
-        {
-            if (bufory.ContainsKey(idBufora)) { bufory.Remove(idBufora); }
-        }
+        { if (bufory.ContainsKey(idBufora)) { bufory.Remove(idBufora); } }
     }
 }
