@@ -11,10 +11,10 @@ namespace MojCzat.ui
 {
     public partial class ZachowajPlik : Form
     {
-        public ZachowajPlik(string nazwaPliku)
+        public ZachowajPlik(string nazwaPliku, string nazwaUzytkownika)
         {
             InitializeComponent();
-            lblPlik.Text = nazwaPliku;
+            lblPlik.Text = string.Format("{0} (od {1})", nazwaPliku, nazwaUzytkownika);
         }
     }
 }

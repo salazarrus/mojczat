@@ -162,7 +162,8 @@ namespace MojCzat.ui
 
         void zaoferujPlik(string idUzytkownika, string nazwa, string idPrzesylu)
         {
-            var wynik = new ZachowajPlik(nazwa).ShowDialog(this);
+            var odKogo = kontakty.Where(k => k.ID == idUzytkownika).Select(k => k.Nazwa).SingleOrDefault() ?? "nieznany";
+            var wynik = new ZachowajPlik(nazwa, odKogo).ShowDialog(this);
 
             if (wynik == System.Windows.Forms.DialogResult.OK)
             {

@@ -197,7 +197,7 @@ namespace MojCzat.komunikacja
             else // z cudziej strony
             {
                 dodajPolaczenie(idPolaczenia, new PolaczeniePlikowe() 
-                    { IdUzytkownika = idPolaczenia, Strumien = strumien });
+                    { IdUzytkownika = idUzytkownika, Strumien = strumien });
             }
             if (GotowyDoOdbioru != null) { GotowyDoOdbioru(idPolaczenia); }
         }
