@@ -92,10 +92,6 @@
             this.btnWyslijPlik.UseVisualStyleBackColor = true;
             this.btnWyslijPlik.Click += new System.EventHandler(this.btnWyslijPlik_Click);
             // 
-            // ofdWyslij
-            // 
-            this.ofdWyslij.FileName = "openFileDialog1";
-            // 
             // OknoCzat
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
