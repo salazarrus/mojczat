@@ -121,6 +121,9 @@ namespace MojCzat.komunikacja
         public void PoprosPlik(String idPrzesylu, string nazwaPliku)
         { protokol.PoprosPlik(idPrzesylu, nazwaPliku); }
 
+        public void OdmowPliku(String idPrzesylu)
+        { protokol.OdmowPliku(idPrzesylu); }
+
         /// <summary>
         /// Wyslij swoj opis do uzytkownikow z listy kontaktow
         /// </summary>

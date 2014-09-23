@@ -167,6 +167,9 @@ namespace MojCzat.komunikacja
             plikownia.PoprosPlik(strumieniownia.DajPolaczenie(idPrzesylu).Strumien, idPrzesylu);
         }
 
+        public void OdmowPliku(String idPrzesylu)
+        { strumieniownia.Rozlacz(idPrzesylu); }
+
         // wyslij wiadomosc tekstowa
         void wyslijWiadomosc(String idRozmowcy, byte rodzaj, String wiadomosc)
         {
