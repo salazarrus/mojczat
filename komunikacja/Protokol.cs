@@ -1,5 +1,4 @@
-﻿#define TRACE
-using MojCzat.model;
+﻿using MojCzat.model;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -193,7 +192,6 @@ namespace MojCzat.komunikacja
         // Czekaj (pasywnie) na zapytania i wiadomosci
         void czekajNaZapytanie(string idPolaczenia, string zrodlo)
         {
-            Trace.TraceInformation("Protokol.czekajNaZapytanie " + idPolaczenia + " " + zrodlo);
             var polaczenie = strumieniownia.DajPolaczenie(idPolaczenia);
             var wynik = new StatusObsluzZapytanie() { IdStrumienia = idPolaczenia, Naglowek = new byte[DlugoscNaglowka] };
             polaczenie.Strumien.BeginRead(wynik.Naglowek, 0, DlugoscNaglowka, obsluzZapytanie, wynik);
@@ -203,11 +201,9 @@ namespace MojCzat.komunikacja
         void obsluzZapytanie(IAsyncResult wynik)
         {           
             var status = (StatusObsluzZapytanie)wynik.AsyncState;
-            Trace.TraceInformation("Protoko.obsluzZapytanie " + status.Naglowek[0].ToString() + " " + status.IdStrumienia);
             int dlugoscWiadomosci = BitConverter.ToInt32(status.Naglowek, 1);
             if (!strumieniownia.CzyZnasz(status.IdStrumienia)) { return; }
             var polaczenie = strumieniownia.DajPolaczenie(status.IdStrumienia);
-            Trace.TraceInformation(string.Format("Protoko.obsluzZapytanie {0} , {1}", status.IdStrumienia, polaczenie.IdUzytkownika));
             try { polaczenie.Strumien.EndRead(wynik); }
             catch // zostalismy rozlaczeni
             {
@@ -225,17 +221,14 @@ namespace MojCzat.komunikacja
                         polaczenie.IdUzytkownika, TypWiadomosci.Zwykla, dlugoscWiadomosci);
                     break;
                 case Komunikat.DajOpis: // prosza nas o nasz opis
-                    Trace.TraceInformation("dajopis " + status.IdStrumienia);
                     czekajNaZapytanie(status.IdStrumienia, "dajopis");
                     if (ustawienia.Opis != null) { WyslijOpis(polaczenie.IdUzytkownika, ustawienia.Opis); }
                     break;
                 case Komunikat.WezOpis: // my prosimy o opis
-                    Trace.TraceInformation(string.Format("wezopis {0}, {1}", status.IdStrumienia, polaczenie.IdUzytkownika));
                     wiadomosciownia.CzytajZawartosc(polaczenie.Strumien, status.IdStrumienia,
                         polaczenie.IdUzytkownika, TypWiadomosci.Opis, dlugoscWiadomosci);
                     break;
                 case Komunikat.ChceszPlik:
-                    Trace.TraceInformation("zaoferowano nam plik " + status.IdStrumienia);
                     plikownia.WczytajNazwe(polaczenie.Strumien, status.IdStrumienia,
                         polaczenie.IdUzytkownika, dlugoscWiadomosci);
                     czekajNaZapytanie(status.IdStrumienia, "chceszplik");
@@ -261,10 +254,7 @@ namespace MojCzat.komunikacja
 
         // strumien jest gotowy do czytania z niego
         void strumieniownia_GotowyDoOdbioru(string idStrumienia)
-        { 
-            Trace.TraceInformation("gotowyDoOdbioru " + idStrumienia);
-            czekajNaZapytanie(idStrumienia, "gotowydoodbioru"); 
-        }
+        { czekajNaZapytanie(idStrumienia, "gotowydoodbioru"); }
 
 
 
